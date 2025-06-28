@@ -1,4 +1,4 @@
-import './wc/desktop-component.js';
-import './wc/menu-bar-component.js';
-import './wc/dock-component.js';
-import './wc/window-component.js';
+import './src/components/desktop-component.js';
+import './src/components/menu-bar-component.js';
+import './src/components/dock-component.js';
+import './src/components/window-component.js';
