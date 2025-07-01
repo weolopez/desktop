@@ -28,7 +28,8 @@ export class FinderService {
                 type: 'file',
                 path: '/Desktop/Project Folder/index.html',
                 size: 2048,
-                modified: new Date('2024-01-15')
+                modified: new Date('2024-01-15'),
+                url: 'https://example.com/project/index.html'
             },
             '/Desktop/Project Folder/style.css': {
                 name: 'style.css',
@@ -456,9 +457,24 @@ export class FinderService {
                     size: item.size || 0,
                     modified: item.modified || new Date(),
                     created: item.created || new Date(),
-                    permissions: item.permissions || 'read-write'
+                    permissions: item.permissions || 'read-write',
+                    url: item.url || ''
                 });
             }, 50);
+        });
+    }
+
+    async updateItemUrl(path, newUrl) {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                const item = this.fileSystem[path];
+                if (!item) {
+                    reject(new Error(`Item not found: ${path}`));
+                    return;
+                }
+                item.url = newUrl;
+                resolve(item);
+            }, 100);
         });
     }
 

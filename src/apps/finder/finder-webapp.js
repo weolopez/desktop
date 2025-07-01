@@ -1056,6 +1056,33 @@ class FinderWebApp extends HTMLElement {
         modified.textContent = itemInfo.modified ? itemInfo.modified.toLocaleString() : '--';
         location.textContent = itemInfo.path.substring(0, itemInfo.path.lastIndexOf('/')) || '/';
         
+        console.log('itemInfo in displayInfoModal:', itemInfo); // Debug log
+
+        const infoModalBody = modal.querySelector('.info-modal-body');
+        let urlRow = infoModalBody.querySelector('#url-info-row');
+
+        if (itemInfo.type === 'file') {
+            if (!urlRow) {
+                urlRow = document.createElement('div');
+                urlRow.id = 'url-info-row';
+                urlRow.classList.add('info-row');
+                urlRow.innerHTML = `
+                    <span class="info-label">URL:</span>
+                    <span class="info-value">
+                        <input type="text" id="info-url" />
+                    </span>
+                `;
+                infoModalBody.appendChild(urlRow);
+            }
+            const urlInput = urlRow.querySelector('#info-url');
+            urlInput.value = itemInfo.url || '';
+            urlRow.style.display = 'flex'; // Ensure it's visible
+        } else {
+            if (urlRow) {
+                urlRow.style.display = 'none'; // Hide for folders
+            }
+        }
+
         modal.classList.remove('hidden');
         this.infoModalVisible = true;
         this.currentInfoItem = itemInfo;
@@ -1071,22 +1098,41 @@ class FinderWebApp extends HTMLElement {
     async saveFileInfo() {
         if (!this.currentInfoItem) return;
         
-        const newName = this.shadowRoot.getElementById('info-name').value.trim();
-        if (newName && newName !== this.currentInfoItem.name) {
+        const nameInput = this.shadowRoot.getElementById('info-name');
+        const urlInput = this.shadowRoot.getElementById('info-url');
+        
+        const newName = nameInput.value.trim();
+        const oldName = this.currentInfoItem.name;
+        const oldUrl = this.currentInfoItem.url || '';
+        const newUrl = urlInput ? urlInput.value : '';
+
+        let changesMade = false;
+
+        if (newName && newName !== oldName) {
             try {
                 await this.finderService.renameItem(this.currentInfoItem.path, newName);
-                this.loadDirectory(this.currentPath);
-                
                 this.dispatchEvent(new CustomEvent('item-renamed', {
                     detail: { oldPath: this.currentInfoItem.path, newName },
                     bubbles: true
                 }));
+                changesMade = true;
             } catch (error) {
                 alert(`Failed to rename item: ${error.message}`);
-                return;
             }
         }
-        
+
+        if (this.currentInfoItem.type === 'file' && newUrl !== oldUrl) {
+            try {
+                await this.finderService.updateItemUrl(this.currentInfoItem.path, newUrl);
+                changesMade = true;
+            } catch (error) {
+                alert(`Failed to update URL: ${error.message}`);
+            }
+        }
+
+        if (changesMade) {
+            this.loadDirectory(this.currentPath);
+        }
         this.hideInfoModal();
     }
 
