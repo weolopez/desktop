@@ -96,17 +96,17 @@ class DesktopComponent extends HTMLElement {
             <div class="desktop-background"></div>
             
             <div class="desktop-surface">
-                <div class="menu-bar-container">
+                <!--<div class="menu-bar-container">
                     <menu-bar-component></menu-bar-component>
-                </div>
-                
+                </div>-->
+
                 <div class="desktop-content">
                     <slot></slot>
                 </div>
                 
-                <div class="dock-container">
+                <!--div class="dock-container">
                     <dock-component></dock-component>
-                </div>
+                </div-->
             </div>
         `;
         this.wallpaperManager.updateWallpaperClass();
