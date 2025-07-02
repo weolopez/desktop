@@ -8,9 +8,10 @@ export class ContextMenuManager {
             <div class="context-menu" id="contextMenu">
                 <div class="context-menu-item" data-action="change-wallpaper">Change Desktop Background...</div>
                 <div class="context-menu-separator"></div>
-                <div class="context-menu-item" data-action="show-view-options">Show View Options</div>
                 <div class="context-menu-item" data-action="use-stacks">Use Stacks</div>
+                <div class="context-menu-item" data-action="show-view-options">Show View Options</div>
                 <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="paste">Paste</div>
                 <div class="context-menu-item" data-action="get-info">Get Info</div>
                 <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="open-finder-webapp">Open Finder Web App</div>
@@ -116,7 +117,7 @@ export class ContextMenuManager {
         }
     }
 
-    handleContextMenuAction(action) {
+    async handleContextMenuAction(action) {
         switch (action) {
             case 'change-wallpaper':
                 if (this.wallpaperManager) {
@@ -129,11 +130,21 @@ export class ContextMenuManager {
             case 'use-stacks':
                 console.log('Use stacks clicked');
                 break;
+            case 'paste':
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) {
+                        this.appService.handleText([text]);
+                    }
+                } catch (err) {
+                    console.error('Failed to read clipboard contents: ', err);
+                }
+                break;
             case 'get-info':
                 console.log('Get info clicked');
                 break;
             case 'open-finder-webapp':
-                this.appService.handleText(['https://weolopez.com/desktop/src/apps/finder/finder-webapp.js']);
+                this.appService.handleText(['finder-webapp']);
                 break;
         }
     }

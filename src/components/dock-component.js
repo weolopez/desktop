@@ -283,7 +283,7 @@ class DockComponent extends HTMLElement {
             }
         });
 
-        this.shadowRoot.addEventListener('mouseleave', () => {
+        this.shadowRoot.addEventListener('mouseout', () => {
             if (this.magnification) {
                 this.resetMagnificationEffect();
             }
