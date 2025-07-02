@@ -5,19 +5,19 @@ export class WindowManager {
 
     setupEventListeners() {
         // Window management events
-        this.shadowRoot.addEventListener('window-close', (e) => {
+        document.addEventListener('window-close', (e) => {
             this.handleWindowClose(e.detail);
         });
 
-        this.shadowRoot.addEventListener('window-minimize', (e) => {
+        document.addEventListener('window-minimize', (e) => {
             this.handleWindowMinimize(e.detail);
         });
 
-        this.shadowRoot.addEventListener('restore-window', (e) => {
+        document.addEventListener('restore-window', (e) => {
             this.handleWindowRestore(e.detail);
         });
 
-        this.shadowRoot.addEventListener('window-focus', (e) => {
+        document.addEventListener('window-focus', (e) => {
             this.handleWindowFocus(e.detail);
         });
     }
@@ -26,9 +26,9 @@ export class WindowManager {
         const { windowId, appName } = details;
         
         // Update dock to remove running indicator if no more windows
-        const remainingWindows = this.shadowRoot.querySelectorAll(`window-component[app-name="${appName}"]`);
+        const remainingWindows = document.querySelectorAll(`window-component[app-name="${appName}"]`);
         if (remainingWindows.length <= 1) { // <= 1 because the closing window is still in DOM
-            const dock = this.shadowRoot.querySelector('dock-component');
+            const dock = document.querySelector('dock-component');
             if (dock) {
                 const appService = new AppService(this.shadowRoot);
                 dock.closeApp(appService.getAppIdFromName(appName));
@@ -50,7 +50,7 @@ export class WindowManager {
         const { windowId } = details;
         
         // Find and restore the window
-        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windows = document.querySelectorAll('window-component');
         windows.forEach(window => {
             if (window.windowState && window.windowState.id === windowId) {
                 window.restore();
@@ -62,7 +62,7 @@ export class WindowManager {
         const { windowId, appName } = details;
         
         // Unfocus all other windows
-        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windows = document.querySelectorAll('window-component');
         windows.forEach(window => {
             if (window.windowState && window.windowState.id !== windowId) {
                 window.unfocus();
@@ -70,7 +70,7 @@ export class WindowManager {
         });
         
         // Dispatch focus event
-        this.shadowRoot.dispatchEvent(new CustomEvent('window-focused', {
+        document.dispatchEvent(new CustomEvent('window-focused', {
             detail: { windowId, appName },
             bubbles: true,
             composed: true

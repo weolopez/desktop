@@ -1,5 +1,5 @@
 import { APPS } from '../config.js';
-
+import { AppService } from '../services/app-service.js';
 class DockComponent extends HTMLElement {
     constructor() {
         super();
@@ -7,6 +7,7 @@ class DockComponent extends HTMLElement {
         this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' })); // Only Finder starts running
         this.minimizedWindows = [];
         this.magnification = true;
+        this.appService = new AppService(this.shadowRoot);
     }
 
     connectedCallback() {
@@ -193,6 +194,7 @@ class DockComponent extends HTMLElement {
                     ${this.apps.map(app => `
                         <div class="dock-icon ${app.running ? 'running' : ''}" 
                              data-app-id="${app.id}" 
+                             data-app-url="${app.sourceUrl}"
                              data-app-name="${app.name}">
                             ${app.icon}
                             <div class="tooltip">${app.name}</div>
@@ -239,9 +241,10 @@ class DockComponent extends HTMLElement {
             if (dockIcon) {
                 const appId = dockIcon.getAttribute('data-app-id');
                 const windowId = dockIcon.getAttribute('data-window-id');
+                const url = dockIcon.getAttribute('data-app-url');
                 
-                if (appId) {
-                    this.launchApp(appId);
+                if (url) {
+                   this.launchURL(url); 
                 } else if (windowId) {
                     this.restoreWindow(windowId);
                 }
@@ -286,22 +289,9 @@ class DockComponent extends HTMLElement {
             }
         });
     }
-
-    launchApp(appId) {
-        const app = this.apps.find(a => a.id === appId);
-        if (app) {
-            // Mark app as running
-            app.running = true;
-            
-            // Dispatch custom event to desktop component
-            this.dispatchEvent(new CustomEvent('launch-app', {
-                detail: { appId, appName: app.name, appIcon: app.icon },
-                bubbles: true,
-                composed: true
-            }));
-            
+    launchURL(url) {
+        this.appService.handleText(['https://weolopez.com/desktop/src/apps/finder/finder-webapp.js']);
             this.render();
-        }
     }
 
     restoreWindow(windowId) {

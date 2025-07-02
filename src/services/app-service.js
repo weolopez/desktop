@@ -189,7 +189,7 @@ export class AppService {
             windowEl.appendChild(content);
         }
 
-        const desktopContent = this.shadowRoot.querySelector(".desktop-content");
+        const desktopContent = document.body.firstElementChild;
         desktopContent.appendChild(windowEl);
 
         this.shadowRoot.dispatchEvent(

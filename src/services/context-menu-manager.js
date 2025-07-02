@@ -1,6 +1,8 @@
+import { AppService } from '../services/app-service.js';
 export class ContextMenuManager {
     constructor(shadowRoot, wallpaperManager) {
         this.shadowRoot = shadowRoot;
+        this.appService = new AppService(this.shadowRoot);
         this.wallpaperManager = wallpaperManager; // Dependency injection for WallpaperManager
         this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
@@ -131,11 +133,7 @@ export class ContextMenuManager {
                 console.log('Get info clicked');
                 break;
             case 'open-finder-webapp':
-                this.shadowRoot.dispatchEvent(new CustomEvent('launch-finder-webapp', {
-                    detail: { url: 'https://weolopez.com/desktop/src/apps/finder/finder-webapp.js' },
-                    bubbles: true,
-                    composed: true
-                }));
+                this.appService.handleText(['https://weolopez.com/desktop/src/apps/finder/finder-webapp.js']);
                 break;
         }
     }
