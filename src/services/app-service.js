@@ -49,7 +49,7 @@ export class AppService {
         }
 
         await this.loadComponentFromString(text, sourceUrl);
-        this.loadWebComponentFromTag(tag);
+        this.loadWebComponentFromTag(tag, sourceUrl);
     }
 
     async _handleUrl(url) {
@@ -78,6 +78,7 @@ export class AppService {
                     width: 500,
                     height: 300,
                     content: element,
+                    sourceUrl: url.href
                 });
             } catch (error) {
                 console.error("Failed to handle JavaScript URL:", error);
@@ -124,7 +125,7 @@ export class AppService {
         }
     }
 
-    loadWebComponentFromTag(tag) {
+    loadWebComponentFromTag(tag, sourceUrl) {
         const myComplexElement = document.createElement(tag);
         const description = document.createElement("span");
         description.setAttribute("slot", "description");
@@ -137,6 +138,7 @@ export class AppService {
             width: 600,
             height: 400,
             content: myComplexElement,
+            sourceUrl: sourceUrl
         });
         console.log("Web component instance created and added to the window.");
     }
@@ -166,31 +168,108 @@ export class AppService {
         });
     }
 
+    async launchApp(appName, initialState = null) {
+        console.log(`Attempting to launch app: ${appName} with state:`, initialState);
+        try {
+            let element;
+            let sourceUrl = initialState ? initialState.sourceUrl : null;
+
+            if (sourceUrl) {
+                console.log(`Restoring from source URL: ${sourceUrl}`);
+                await import(sourceUrl);
+                const sourceText = await (await fetch(sourceUrl)).text();
+                const tag = this.getTagNameFromSource(sourceText);
+                if (!tag) {
+                    throw new Error(`Could not determine tag name from source: ${sourceUrl}`);
+                }
+                console.log(`Determined tag: ${tag}`);
+                element = document.createElement(tag);
+            } else if (appName === 'Safari') {
+                console.log('Creating new Safari instance.');
+                element = document.createElement('safari-chrome-webapp');
+            } else {
+                console.log(`Creating generic div for app: ${appName}`);
+                element = document.createElement('div');
+                element.textContent = `Content for ${appName}`;
+            }
+
+            if (initialState && initialState.appState) {
+                element.setAttribute('initial-state', JSON.stringify(initialState.appState));
+            }
+
+            this._createWindow({
+                appName,
+                appIcon: initialState ? initialState.appIcon : '📄',
+                content: element,
+                initialState: initialState,
+                sourceUrl: sourceUrl
+            });
+            console.log(`Successfully launched app: ${appName}`);
+        } catch (error) {
+            console.error(`Failed to launch app "${appName}" with state:`, { initialState, error });
+        }
+    }
+
     _createWindow(options) {
         const {
             appName,
             appIcon,
-            x = 150 + (Math.random() * 200),
-            y = 150 + (Math.random() * 100),
-            width = 600,
-            height = 400,
             content,
+            initialState,
+            sourceUrl
         } = options;
+
+        const x = initialState?.x != null ? initialState.x : 150 + (Math.random() * 200);
+        const y = initialState?.y != null ? initialState.y : 150 + (Math.random() * 100);
+        const width = initialState?.width != null ? initialState.width : 600;
+        const height = initialState?.height != null ? initialState.height : 400;
+
+        console.log('🏭 AppService _createWindow - Creating window with values:', {
+            x, y, width, height,
+            isMinimized: initialState?.isMinimized,
+            isMaximized: initialState?.isMaximized,
+            initialState
+        });
 
         const windowEl = document.createElement("window-component");
         windowEl.setAttribute("app-name", appName);
         windowEl.setAttribute("app-icon", appIcon);
+        if (sourceUrl) {
+            windowEl.setAttribute("source-url", sourceUrl);
+        }
         windowEl.setAttribute("x", x);
         windowEl.setAttribute("y", y);
         windowEl.setAttribute("width", width);
         windowEl.setAttribute("height", height);
 
+        console.log('🏭 AppService _createWindow - Set basic attributes, now checking state flags');
+
+        if (initialState?.isMinimized) {
+            console.log('🏭 AppService _createWindow - Setting minimized attribute');
+            windowEl.setAttribute('minimized', '');
+        }
+        if (initialState?.isMaximized) {
+            console.log('🏭 AppService _createWindow - Setting maximized attributes');
+            windowEl.setAttribute('maximized', '');
+            windowEl.setAttribute('saved-x', initialState.savedX);
+            windowEl.setAttribute('saved-y', initialState.savedY);
+            windowEl.setAttribute('saved-width', initialState.savedWidth);
+            windowEl.setAttribute('saved-height', initialState.savedHeight);
+        }
+
+        console.log('🏭 AppService _createWindow - All attributes set, element ready for DOM insertion');
+
         if (content) {
             windowEl.appendChild(content);
         }
 
-        const desktopContent = document.body.firstElementChild;
-        desktopContent.appendChild(windowEl);
+        const desktopContentContainer = this.shadowRoot.querySelector('.desktop-content');
+        if (desktopContentContainer) {
+            desktopContentContainer.appendChild(windowEl);
+        } else {
+            // Fallback for safety, though it shouldn't be needed if render() runs first.
+            this.shadowRoot.appendChild(windowEl);
+        }
 
         this.shadowRoot.dispatchEvent(
             new CustomEvent("app-launched", {
@@ -201,5 +280,10 @@ export class AppService {
         );
 
         return windowEl;
+    }
+
+    getTagNameFromSource(source) {
+        const match = source.match(WEB_COMPONENT_TAG_REGEX);
+        return match ? match[1] : null;
     }
 }

@@ -7,15 +7,40 @@ class WindowComponent extends HTMLElement {
         this.windowId = 'window-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         this.appName = this.getAttribute('app-name') || 'Untitled';
         this.appIcon = this.getAttribute('app-icon') || '📄';
-        this.isMinimized = false;
-        this.isMaximized = false;
         this.isFocused = true;
-        
+
+        // State flags
+        this.isMinimized = this.hasAttribute('minimized');
+        this.isMaximized = this.hasAttribute('maximized');
+
         // Position and size
-        this.x = parseInt(this.getAttribute('x')) || 100;
-        this.y = parseInt(this.getAttribute('y')) || 100;
-        this.width = parseInt(this.getAttribute('width')) || 600;
-        this.height = parseInt(this.getAttribute('height')) || 400;
+        const initialX = this.getAttribute('x');
+        const initialY = this.getAttribute('y');
+        const initialWidth = this.getAttribute('width');
+        const initialHeight = this.getAttribute('height');
+
+        console.log('🪟 WindowComponent constructor - Reading attributes:', {
+            x: initialX, y: initialY, width: initialWidth, height: initialHeight,
+            minimized: this.hasAttribute('minimized'),
+            maximized: this.hasAttribute('maximized')
+        });
+
+        this.x = initialX !== null ? parseInt(initialX) : 100;
+        this.y = initialY !== null ? parseInt(initialY) : 100;
+        this.width = initialWidth !== null ? parseInt(initialWidth) : 600;
+        this.height = initialHeight !== null ? parseInt(initialHeight) : 400;
+
+        console.log('🪟 WindowComponent constructor - Final values:', {
+            x: this.x, y: this.y, width: this.width, height: this.height,
+            isMinimized: this.isMinimized, isMaximized: this.isMaximized
+        });
+
+        if (this.isMaximized) {
+            this.savedX = parseInt(this.getAttribute('saved-x'));
+            this.savedY = parseInt(this.getAttribute('saved-y'));
+            this.savedWidth = parseInt(this.getAttribute('saved-width'));
+            this.savedHeight = parseInt(this.getAttribute('saved-height'));
+        }
         this.minWidth = 400;
         this.minHeight = 300;
         
@@ -28,9 +53,34 @@ class WindowComponent extends HTMLElement {
     }
 
     connectedCallback() {
+        console.log('🪟 WindowComponent connectedCallback - Starting with state:', {
+            x: this.x, y: this.y, width: this.width, height: this.height,
+            isMinimized: this.isMinimized, isMaximized: this.isMaximized
+        });
+        
         this.render();
         this.setupEventListeners();
         this.updatePosition();
+
+        if (this.isMinimized) {
+            console.log('🪟 WindowComponent - Applying minimized state');
+            this.style.display = 'none';
+            this.dispatchEvent(new CustomEvent('window-minimize', {
+                detail: {
+                    windowId: this.windowId,
+                    appName: this.appName,
+                    appIcon: this.appIcon
+                },
+                bubbles: true,
+                composed: true
+            }));
+        }
+        
+        console.log('🪟 WindowComponent connectedCallback - Final DOM state:', {
+            styleLeft: this.style.left,
+            styleTop: this.style.top,
+            styleDisplay: this.style.display
+        });
     }
 
     render() {
@@ -543,17 +593,28 @@ class WindowComponent extends HTMLElement {
 
     // Getters for window state
     get windowState() {
+        const appContent = this.children[0];
+        const appState = appContent && typeof appContent.getAppState === 'function'
+            ? appContent.getAppState()
+            : {};
+
         return {
             id: this.windowId,
             appName: this.appName,
             appIcon: this.appIcon,
+            sourceUrl: this.getAttribute('source-url'),
             x: this.x,
             y: this.y,
             width: this.width,
             height: this.height,
             isMinimized: this.isMinimized,
             isMaximized: this.isMaximized,
-            isFocused: this.isFocused
+            isFocused: this.isFocused,
+            savedX: this.savedX,
+            savedY: this.savedY,
+            savedWidth: this.savedWidth,
+            savedHeight: this.savedHeight,
+            appState: appState
         };
     }
 }

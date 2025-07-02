@@ -7,10 +7,25 @@ class SafariChromeWebapp extends HTMLElement {
         this.isLoading = false;
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         this.render();
         this.setupEventListeners();
-        this.initializeSession();
+
+        // Always initialize the session and wait for it to be ready.
+        await this.initializeSession();
+
+        // Once the session is ready, check if there's a URL to restore.
+        const initialStateRaw = this.getAttribute('initial-state');
+        if (initialStateRaw) {
+            try {
+                const initialState = JSON.parse(initialStateRaw);
+                if (initialState.currentUrl) {
+                    this.loadUrl(initialState.currentUrl);
+                }
+            } catch (e) {
+                console.error("Failed to parse initial state for Safari app:", e);
+            }
+        }
     }
 
     disconnectedCallback() {
@@ -556,6 +571,12 @@ class SafariChromeWebapp extends HTMLElement {
     updateStatus(text) {
         const statusText = this.shadowRoot.getElementById('status-text');
         statusText.textContent = text;
+    }
+
+    getAppState() {
+        return {
+            currentUrl: this.currentUrl
+        };
     }
 }
 

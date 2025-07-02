@@ -1,6 +1,7 @@
 export class WindowManager {
-    constructor(shadowRoot) {
+    constructor(shadowRoot, appService) {
         this.shadowRoot = shadowRoot;
+        this.appService = appService;
     }
 
     setupEventListeners() {
@@ -20,13 +21,17 @@ export class WindowManager {
         document.addEventListener('window-focus', (e) => {
             this.handleWindowFocus(e.detail);
         });
+
+        window.addEventListener('beforeunload', () => {
+            this.saveWindowsState();
+        });
     }
 
     handleWindowClose(details) {
         const { windowId, appName } = details;
         
         // Update dock to remove running indicator if no more windows
-        const remainingWindows = document.querySelectorAll(`window-component[app-name="${appName}"]`);
+        const remainingWindows = this.shadowRoot.querySelectorAll(`window-component[app-name="${appName}"]`);
         if (remainingWindows.length <= 1) { // <= 1 because the closing window is still in DOM
             const dock = document.querySelector('dock-component');
             if (dock) {
@@ -50,7 +55,7 @@ export class WindowManager {
         const { windowId } = details;
         
         // Find and restore the window
-        const windows = document.querySelectorAll('window-component');
+        const windows = this.shadowRoot.querySelectorAll('window-component');
         windows.forEach(window => {
             if (window.windowState && window.windowState.id === windowId) {
                 window.restore();
@@ -62,7 +67,7 @@ export class WindowManager {
         const { windowId, appName } = details;
         
         // Unfocus all other windows
-        const windows = document.querySelectorAll('window-component');
+        const windows = this.shadowRoot.querySelectorAll('window-component');
         windows.forEach(window => {
             if (window.windowState && window.windowState.id !== windowId) {
                 window.unfocus();
@@ -75,5 +80,37 @@ export class WindowManager {
             bubbles: true,
             composed: true
         }));
+    }
+
+    saveWindowsState() {
+        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windowsState = [];
+        windows.forEach(window => {
+            windowsState.push(window.windowState);
+        });
+        localStorage.setItem('desktopWindowsState', JSON.stringify(windowsState));
+    }
+
+    async restoreWindowsState() {
+        console.log('🔄 WindowManager - Starting window state restoration');
+        const savedState = localStorage.getItem('desktopWindowsState');
+        if (savedState) {
+            try {
+                const windowsState = JSON.parse(savedState);
+                console.log('🔄 WindowManager - Found saved state:', windowsState);
+                
+                // Use a for...of loop to handle async app launching sequentially
+                for (const state of windowsState) {
+                    console.log('🔄 WindowManager - Restoring window:', state);
+                    await this.appService.launchApp(state.appName, state);
+                }
+                console.log('🔄 WindowManager - All windows restored');
+            } catch (e) {
+                console.error("Failed to parse or restore window state:", e);
+                localStorage.removeItem('desktopWindowsState'); // Clear corrupted state
+            }
+        } else {
+            console.log('🔄 WindowManager - No saved state found');
+        }
     }
 }

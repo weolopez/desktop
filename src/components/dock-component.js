@@ -290,7 +290,7 @@ class DockComponent extends HTMLElement {
         });
     }
     launchURL(url) {
-        this.appService.handleText(['https://weolopez.com/desktop/src/apps/finder/finder-webapp.js']);
+        this.appService.handleText([url]);
             this.render();
     }
 

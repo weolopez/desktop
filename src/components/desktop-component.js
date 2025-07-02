@@ -12,7 +12,7 @@ class DesktopComponent extends HTMLElement {
         this.wallpaperManager = new WallpaperManager(this.shadowRoot);
         this.contextMenuManager = new ContextMenuManager(this.shadowRoot, this.wallpaperManager);
         this.appService = new AppService(this.shadowRoot);
-        this.windowManager = new WindowManager(this.shadowRoot);
+        this.windowManager = new WindowManager(this.shadowRoot, this.appService);
         // this.previewService = new PreviewService(this.shadowRoot);
     }
 
@@ -20,6 +20,7 @@ class DesktopComponent extends HTMLElement {
         this.render();
         this.contextMenuManager.init();
         this.windowManager.setupEventListeners();
+        this.windowManager.restoreWindowsState();
         // this.appService.loadAppsFromURL();
         this.setupPasteDrop();
         this.setupAppEventListeners();
