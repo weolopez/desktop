@@ -100,4 +100,116 @@ export class AppService {
         
         window.history.replaceState({}, '', url);
     }
+    
+    async handleText(texts) {
+        // Handle pasted text
+        const textArray = Array.isArray(texts) ? texts : [texts];
+        for (const text of textArray) {
+            console.log('Pasted text:', text);
+
+            // Check if it's a URL
+            try {
+                const url = new URL(text);
+                if (url.protocol === 'http:' || url.protocol === 'https:') {
+                    // Check if it's a JavaScript file
+                    if (url.pathname.endsWith('.js')) {
+                        try {
+                            // Dynamically import the module
+                            const module = await import(url.href);
+
+                            // Attempt to find a custom element definition
+                            // Assuming the web component registers itself with a tag name
+                            // We'll try to infer a tag name from the URL or module
+                            let tagName = null;
+                            if (module.default && module.default.name) {
+                                // If the module exports a default class, use its name
+                                tagName = module.default.name.toLowerCase();
+                            } else {
+                                // Otherwise, try to infer from the filename
+                                const fileName = url.pathname.split('/').pop();
+                                if (fileName) {
+                                    tagName = fileName.replace('.js', '').replace(/([A-Z])/g, '-$1').toLowerCase();
+                                }
+                            }
+
+                            if (tagName && customElements.get(tagName)) {
+                                console.log(`Found web component: ${tagName}`);
+                                // Launch it in a window-component
+                                const window = document.createElement('window-component');
+                                window.setAttribute('app-name', tagName);
+                                window.setAttribute('app-icon', '🌐'); // Generic web icon
+                                window.setAttribute('x', 150 + (Math.random() * 200));
+                                window.setAttribute('y', 150 + (Math.random() * 100));
+                                window.setAttribute('width', '800');
+                                window.setAttribute('height', '600');
+
+                                const webComponent = document.createElement(tagName);
+                                window.appendChild(webComponent);
+
+                                const desktopContent = document.body.firstElementChild;
+                                desktopContent.appendChild(window);
+
+                                // const menuBar = this.shadowRoot.querySelector('menu-bar-component');
+                                // if (menuBar) {
+                                //     menuBar.setActiveApp(tagName);
+                                // }
+                                this.updateURLWithOpenApps();
+                            } else {
+                                console.log('Not a registered web component or could not infer tag name.');
+                                // Handle as plain text if not a web component
+                                this.displayPlainTextInWindow(text, 'Pasted URL Content');
+                            }
+                        } catch (importError) {
+                            console.warn('Failed to import JavaScript URL as module:', importError);
+                            // Fallback to plain text if import fails
+                            this.displayPlainTextInWindow(text, 'Pasted URL Content');
+                        }
+                    } else {
+                        // Not a JS file, treat as plain text or open in a generic viewer
+                        this.displayPlainTextInWindow(text, 'Pasted URL');
+                    }
+                } else {
+                    // Not http/https, treat as plain text
+                    this.displayPlainTextInWindow(text, 'Pasted Text');
+                }
+            } catch (e) {
+                // Not a valid URL, treat as plain text
+                this.displayPlainTextInWindow(text, 'Pasted Text');
+            }
+        }
+    }
+
+    displayPlainTextInWindow(content, title = 'Pasted Text') {
+        const window = document.createElement('window-component');
+        window.setAttribute('app-name', title);
+        window.setAttribute('app-icon', '📄');
+        window.setAttribute('x', 150 + (Math.random() * 200));
+        window.setAttribute('y', 150 + (Math.random() * 100));
+        window.setAttribute('width', '500');
+        window.setAttribute('height', '300');
+
+        const contentDiv = document.createElement('div');
+        contentDiv.style.padding = '20px';
+        contentDiv.style.whiteSpace = 'pre-wrap';
+        contentDiv.style.wordBreak = 'break-word';
+        contentDiv.textContent = content;
+        window.appendChild(contentDiv);
+
+        const desktopContent = this.shadowRoot.querySelector('.desktop-content');
+        desktopContent.appendChild(window);
+
+        const menuBar = this.shadowRoot.querySelector('menu-bar-component');
+        if (menuBar) {
+            menuBar.setActiveApp(title);
+        }
+        this.updateURLWithOpenApps();
+    }
+    handleFiles(files) {
+        // Handle dropped files
+        files.forEach(file => {
+            console.log('Dropped file:', file);
+            // You can implement further logic here, like creating a file icon or displaying it
+        });
+    }
+
 }

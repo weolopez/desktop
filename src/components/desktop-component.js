@@ -2,7 +2,8 @@ import { WallpaperManager } from '../services/wallpaper-manager.js';
 import { ContextMenuManager } from '../services/context-menu-manager.js';
 import { AppService } from '../services/app-service.js';
 import { WindowManager } from '../services/window-manager.js';
-import { PreviewService } from '../services/preview-service.js';
+
+// import { PreviewService } from '../services/preview-service.js';
 
 class DesktopComponent extends HTMLElement {
     constructor() {
@@ -12,7 +13,7 @@ class DesktopComponent extends HTMLElement {
         this.contextMenuManager = new ContextMenuManager(this.shadowRoot, this.wallpaperManager);
         this.appService = new AppService(this.shadowRoot);
         this.windowManager = new WindowManager(this.shadowRoot);
-        this.previewService = new PreviewService(this.shadowRoot);
+        // this.previewService = new PreviewService(this.shadowRoot);
     }
 
     connectedCallback() {
@@ -20,7 +21,7 @@ class DesktopComponent extends HTMLElement {
         this.contextMenuManager.init();
         this.windowManager.setupEventListeners();
         this.appService.loadAppsFromURL();
-        this.setupImageHandlers();
+        this.setupPasteDrop();
     }
 
     render() {
@@ -112,7 +113,7 @@ class DesktopComponent extends HTMLElement {
         this.wallpaperManager.updateWallpaperClass();
     }
 
-    setupImageHandlers() {
+    setupPasteDrop() {
         const desktopSurface = this.shadowRoot.querySelector('.desktop-surface');
         
         // Handle drag and drop
@@ -134,36 +135,37 @@ class DesktopComponent extends HTMLElement {
 
     handleFileDrop(e) {
         const files = Array.from(e.dataTransfer.files);
-        const imageFiles = files.filter(file => file.type.startsWith('image/'));
-        
-        if (imageFiles.length > 0) {
-            // Process the first image file
-            this.processImageFile(imageFiles[0]);
+        if (files.length > 0) {
+            this.appService.handleFiles(files);
         }
+        //handle text if available
+        if (e.dataTransfer.getData('text/plain')) {
+            const text = e.dataTransfer.getData('text/plain');
+            this.appService.handleText([text]);
+        }
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     handlePaste(e) {
         const items = Array.from(e.clipboardData.items);
-        const imageItems = items.filter(item => item.type.startsWith('image/'));
-        
-        if (imageItems.length > 0) {
-            e.preventDefault();
-            // Process the first image item
-            const file = imageItems[0].getAsFile();
-            if (file) {
-                this.processImageFile(file);
-            }
-        }
+        //emit an event to the app service to handle the pasted items
+        this.appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
+        items.filter(item => item.kind === 'string').map(item => item.getAsString(this.appService.handleText));
+
+        // Prevent default paste behavior
+        e.preventDefault();
+        e.stopPropagation();
     }
 
-    processImageFile(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const imageData = e.target.result;
-            this.previewService.launchPreview(imageData);
-        };
-        reader.readAsDataURL(file);
-    }
+    // processImageFile(file) {
+    //     const reader = new FileReader();
+    //     reader.onload = (e) => {
+    //         const imageData = e.target.result;
+    //         this.previewService.launchPreview(imageData);
+    //     };
+    //     reader.readAsDataURL(file);
+    // }
 }
 
 customElements.define('desktop-component', DesktopComponent);
