@@ -125,9 +125,9 @@ class DesktopComponent extends HTMLElement {
                     <slot></slot>
                 </div>
                 
-                <!--div class="dock-container">
+                <div class="dock-container">
                     <dock-component></dock-component>
-                </div-->
+                </div>
             </div>
         `;
         this.wallpaperManager.updateWallpaperClass();
