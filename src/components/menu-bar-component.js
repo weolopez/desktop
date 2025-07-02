@@ -266,6 +266,15 @@ class MenuBarComponent extends HTMLElement {
     }
 
     setupEventListeners() {
+        // Listen for app launch events on the parent (desktop-component)
+        this.getRootNode().host.addEventListener('app-launched', (e) => {
+            this.setActiveApp(e.detail.appName);
+        });
+
+        this.getRootNode().host.addEventListener('window-focused', (e) => {
+            this.setActiveApp(e.detail.appName);
+        });
+
         // Menu item clicks
         this.shadowRoot.addEventListener('click', (e) => {
             if (e.target.hasAttribute('data-menu')) {

@@ -434,7 +434,7 @@ class WindowComponent extends HTMLElement {
     }
 
     close() {
-        this.dispatchEvent(new CustomEvent('window-close', {
+        this.dispatchEvent(new CustomEvent('window-closed', {
             detail: { windowId: this.windowId, appName: this.appName },
             bubbles: true,
             composed: true

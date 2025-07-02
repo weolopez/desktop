@@ -1,17 +1,10 @@
-import { AppService } from './app-service.js';
-
 export class WindowManager {
     constructor(shadowRoot) {
         this.shadowRoot = shadowRoot;
-        this.appService = new AppService(shadowRoot); // WindowManager depends on AppService
     }
 
     setupEventListeners() {
         // Window management events
-        this.shadowRoot.addEventListener('launch-app', (e) => {
-            this.appService.launchApplication(e.detail);
-        });
-
         this.shadowRoot.addEventListener('window-close', (e) => {
             this.handleWindowClose(e.detail);
         });
@@ -37,14 +30,10 @@ export class WindowManager {
         if (remainingWindows.length <= 1) { // <= 1 because the closing window is still in DOM
             const dock = this.shadowRoot.querySelector('dock-component');
             if (dock) {
-                dock.closeApp(this.appService.getAppIdFromName(appName));
+                const appService = new AppService(this.shadowRoot);
+                dock.closeApp(appService.getAppIdFromName(appName));
             }
         }
-        
-        // Update URL after window closes
-        setTimeout(() => {
-            this.appService.updateURLWithOpenApps();
-        }, 100);
     }
 
     handleWindowMinimize(details) {
@@ -80,10 +69,11 @@ export class WindowManager {
             }
         });
         
-        // Update menu bar
-        const menuBar = this.shadowRoot.querySelector('menu-bar-component');
-        if (menuBar) {
-            menuBar.setActiveApp(appName);
-        }
+        // Dispatch focus event
+        this.shadowRoot.dispatchEvent(new CustomEvent('window-focused', {
+            detail: { windowId, appName },
+            bubbles: true,
+            composed: true
+        }));
     }
 }

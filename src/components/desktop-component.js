@@ -20,8 +20,26 @@ class DesktopComponent extends HTMLElement {
         this.render();
         this.contextMenuManager.init();
         this.windowManager.setupEventListeners();
-        this.appService.loadAppsFromURL();
+        // this.appService.loadAppsFromURL();
         this.setupPasteDrop();
+        this.setupAppEventListeners();
+    }
+
+    setupAppEventListeners() {
+        this.shadowRoot.addEventListener('app-launched', () => {
+            this.appService.updateURLWithOpenApps();
+        });
+
+        this.shadowRoot.addEventListener('window-closed', () => {
+            // Delay to allow the window to be removed from the DOM
+            setTimeout(() => {
+                this.appService.updateURLWithOpenApps();
+            }, 100);
+        });
+
+        this.shadowRoot.addEventListener('launch-finder-webapp', (e) => {
+            this.appService.handleText([e.detail.url]);
+        });
     }
 
     render() {
@@ -151,7 +169,7 @@ class DesktopComponent extends HTMLElement {
         const items = Array.from(e.clipboardData.items);
         //emit an event to the app service to handle the pasted items
         this.appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
-        items.filter(item => item.kind === 'string').map(item => item.getAsString(this.appService.handleText));
+        items.filter(item => item.kind === 'string').map(item => item.getAsString((text) => this.appService.handleText([text])));
 
         // Prevent default paste behavior
         e.preventDefault();

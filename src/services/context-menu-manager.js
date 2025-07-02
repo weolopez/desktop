@@ -10,6 +10,8 @@ export class ContextMenuManager {
                 <div class="context-menu-item" data-action="use-stacks">Use Stacks</div>
                 <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="get-info">Get Info</div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="open-finder-webapp">Open Finder Web App</div>
             </div>
         `;
         this.contextMenuCss = `
@@ -127,6 +129,13 @@ export class ContextMenuManager {
                 break;
             case 'get-info':
                 console.log('Get info clicked');
+                break;
+            case 'open-finder-webapp':
+                this.shadowRoot.dispatchEvent(new CustomEvent('launch-finder-webapp', {
+                    detail: { url: 'https://weolopez.com/desktop/src/apps/finder/finder-webapp.js' },
+                    bubbles: true,
+                    composed: true
+                }));
                 break;
         }
     }

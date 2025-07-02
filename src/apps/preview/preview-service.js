@@ -30,7 +30,7 @@ export class PreviewService {
     async loadPreviewComponent(windowElement, imageData) {
         try {
             // Import the preview webapp component dynamically
-            await import('../apps/preview-webapp.js');
+            await import('./preview-webapp.js');
             
             // Create and append the preview component
             const previewComponent = document.createElement('preview-webapp');
