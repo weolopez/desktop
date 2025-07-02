@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello World</title>
+</head>
+<body>
+    <h1>Hello, World!</h1>
+    <textarea id="textContent" style="width: 100%; height: 100px;">
+    </textarea>
+
+    <script>
+        const complexComponentModule = `
+  const template = document.createElement('template');
+  template.innerHTML = \`
+    <style>
+      .container {
+        padding: 20px;
+        border: 2px solid #3498db;
+        border-radius: 10px;
+        background-color: #f0f8ff;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-family: Arial, sans-serif;
+      }
+      .icon {
+        font-size: 2em;
+      }
+      .content p {
+        margin: 0;
+        color: #2c3e50;
+      }
+      .content p.title {
+        font-weight: bold;
+        color: #2980b9;
+      }
+    </style>
+    <div class="container">
+      <div class="icon">
+        <span>✅</span>
+      </div>
+      <div class="content">
+        <p class="title">Complex Component</p>
+        <p><slot name="description">This is the default description.</slot></p>
+      </div>
+    </div>
+  \`;
+
+  class ComplexComponent extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+      this.shadowRoot.appendChild(template.content.cloneNode(true));
+    }
+  }
+
+  customElements.define('complex-component', ComplexComponent);
+`;
+
+async function loadComponentFromString(moduleContent) {
+  const blob = new Blob([moduleContent], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+
+  try {
+    await import(url);
+    console.log('Web component loaded successfully.');
+  } catch (error) {
+    console.error('Error loading web component:', error);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function initializeAndUseComponent(text) {
+  await loadComponentFromString(text);
+
+  // Create an instance of the component
+  const myComplexElement = document.createElement('complex-component');
+
+  // (Optional) Provide content for the slot
+  const description = document.createElement('span');
+  description.setAttribute('slot', 'description');
+  description.textContent = 'This custom description has been inserted into the slot!';
+  myComplexElement.appendChild(description);
+
+  // Add the component to the page
+  document.body.appendChild(myComplexElement);
+}
+let textContent = document.getElementById('textContent')
+// on blur, initialize the component with the text content
+textContent.addEventListener('blur', () => {
+    initializeAndUseComponent(textContent.value);
+}); 
+//initializeAndUseComponent(textContent);
+
+    </script>
+</body>
+</html>

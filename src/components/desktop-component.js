@@ -27,13 +27,15 @@ class DesktopComponent extends HTMLElement {
 
     setupAppEventListeners() {
         this.shadowRoot.addEventListener('app-launched', () => {
-            this.appService.updateURLWithOpenApps();
+            // this.appService.updateURLWithOpenApps();
+            console.log('App launched event received');
         });
 
         this.shadowRoot.addEventListener('window-closed', () => {
             // Delay to allow the window to be removed from the DOM
             setTimeout(() => {
-                this.appService.updateURLWithOpenApps();
+                // this.appService.updateURLWithOpenApps();
+                console.log('Window closed event received');
             }, 100);
         });
 
@@ -169,7 +171,18 @@ class DesktopComponent extends HTMLElement {
         const items = Array.from(e.clipboardData.items);
         //emit an event to the app service to handle the pasted items
         this.appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
-        items.filter(item => item.kind === 'string').map(item => item.getAsString((text) => this.appService.handleText([text])));
+        // Handle pasted string items (e.g., plain text, URLs)
+        items
+            .filter(item => item.kind === 'string')
+            //also filter type : "text/plain"
+            .filter(item => item.type === 'text/plain')
+            .forEach(item => {
+            item.getAsString((text) => {
+                if (text && text.trim().length > 0) {
+                this.appService.handleText([text]);
+                }
+            });
+            });
 
         // Prevent default paste behavior
         e.preventDefault();

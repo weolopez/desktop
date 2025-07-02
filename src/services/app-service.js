@@ -8,109 +8,192 @@ export class AppService {
     async handleText(texts) {
         // Handle pasted text
         const textArray = Array.isArray(texts) ? texts : [texts];
+        console.log("=== APP SERVICE TEXT HANDLING ===");
+        console.log("Number of texts to process:", textArray.length);
+
         for (const text of textArray) {
-            console.log('Pasted text:', text);
+            console.log("Processing text:", {
+                length: text.length,
+                preview: text.substring(0, 200) +
+                    (text.length > 200 ? "..." : ""),
+                containsMeta: text.includes("<meta"),
+                containsHTML: text.includes("<") && text.includes(">"),
+                isURL: text.startsWith("http"),
+            });
+            //is text a javascript web component? contains customElements.define
+            const match = text.match(
+                /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/,
+            );
+            const tag = match ? match[1] : null;
+            if (tag) {
+                console.log("=== WEB COMPONENT DETECTED ===");
+                console.log("Component tag:", tag);
+                console.log(
+                    "Component contains imports:",
+                    text.includes("import"),
+                );
+                console.log(
+                    "Component contains relative imports:",
+                    text.includes("from './"),
+                );
+                console.log(
+                    "Specific finder-service import found:",
+                    text.includes("from './finder-service.js'"),
+                );
 
-            // Check if it's a URL
-            try {
-                const url = new URL(text);
-                if (url.protocol === 'http:' || url.protocol === 'https:') {
-                    // Check if it's a JavaScript file
-                    if (url.pathname.endsWith('.js')) {
-                        try {
-                            // Dynamically import the module
-                            const module = await import(url.href);
-                            // customElements.define('finder-webapp', FinderWebApp);
-                            console.log('Imported module:', module.default);
-                            // Check if the module has a default export that is a class
-                            if (module.default && typeof module.default === 'function') {
-                                // Create an instance of the web component
-                                const webComponent = document.createElement(module.default.name.toLowerCase());
-                                this._createWindow({
-                                    appName: module.default.name,
-                                    appIcon: '🌐',
-                                    width: 800,
-                                    height: 600,
-                                    content: webComponent
-                                });
-                            } else {
-                                console.warn('Imported module does not have a default export that is a class.');
-                                // Fallback to plain text if not a web component
-                                this.displayPlainTextInWindow(text, 'Pasted URL Content');
-                            }
+                // Determine source URL based on component type
+                let sourceUrl = null;
+                if (tag === "finder-webapp" || text.includes("FinderService")) {
+                    sourceUrl =
+                        "https://weolopez.com/desktop/src/apps/finder/finder-webapp.js";
+                    console.log(
+                        "Detected finder component, using source URL:",
+                        sourceUrl,
+                    );
+                }
 
+                await this.loadComponentFromString(text, sourceUrl);
+                this.loadWebComponentFromTag(tag);
+                return; // Stop further processing if a web component is detected
+            } else {
+                // Check if it's a URL
+                try {
+                    const url = new URL(text);
+                    if (url.protocol === "http:" || url.protocol === "https:") {
+                        // Check if it's a JavaScript file
+                        if (url.pathname.endsWith(".js")) {
+                            //import url to load web component
+                            console.log("Detected URL:", url.href);
+                            const res = await import(url.href)
+                            //fetch the url to get the text to find the tag
+                            const response = await fetch(url.href);
+                            const text = await response.text();
+                            let tagName = text.match(
+                                /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/,
+                            );
+                            tagName = tagName ? tagName[1] : null;
+                            let element = document.createElement(tagName || "div");
+                            this._createWindow({
+                                appName: tagName ? tagName[1] : "JavaScript File",
+                                appIcon: "📄", 
+                                width: 500,
+                                height: 300,
+                                content: element,
+                            });
 
-
-                            // Attempt to find a custom element definition
-                            // Assuming the web component registers itself with a tag name
-                            // We'll try to infer a tag name from the URL or module
-                            // let tagName = null;
-                            // if (module.default && module.default.name) {
-                            //     // If the module exports a default class, use its name
-                            //     tagName = module.default.name.toLowerCase();
-                            // } else {
-                            //     // Otherwise, try to infer from the filename
-                            //     const fileName = url.pathname.split('/').pop();
-                            //     if (fileName) {
-                            //         tagName = fileName.replace('.js', '').replace(/([A-Z])/g, '-$1').toLowerCase();
-                            //     }
-                            // }
-
-                            // if (tagName && customElements.get(tagName)) {
-                            //     console.log(`Found web component: ${tagName}`);
-                            //     // Launch it in a window-component
-                            //     const webComponent = document.createElement(tagName);
-                            //     this._createWindow({
-                            //         appName: tagName,
-                            //         appIcon: '🌐',
-                            //         width: 800,
-                            //         height: 600,
-                            //         content: webComponent
-                            //     });
-                            // } else {
-                            //     console.log('Not a registered web component or could not infer tag name.');
-                            //     // Handle as plain text if not a web component
-                            //     this.displayPlainTextInWindow(text, 'Pasted URL Content');
-                            // }
-                        } catch (importError) {
-                            console.warn('Failed to import JavaScript URL as module:', importError);
-                            // Fallback to plain text if import fails
-                            this.displayPlainTextInWindow(text, 'Pasted URL Content');
                         }
                     } else {
-                        // Not a JS file, treat as plain text or open in a generic viewer
-                        this.displayPlainTextInWindow(text, 'Pasted URL');
+                        // Not http/https, treat as plain text
+                        this.displayPlainTextInWindow(text, "Pasted Text");
                     }
-                } else {
-                    // Not http/https, treat as plain text
-                    this.displayPlainTextInWindow(text, 'Pasted Text');
+                } catch (e) {
+                    // Not a valid URL, treat as plain text
+                    this.displayPlainTextInWindow(text, "Pasted Text");
                 }
-            } catch (e) {
-                // Not a valid URL, treat as plain text
-                this.displayPlainTextInWindow(text, 'Pasted Text');
             }
         }
     }
 
-    displayPlainTextInWindow(content, title = 'Pasted Text') {
-        const contentDiv = document.createElement('div');
-        contentDiv.style.padding = '20px';
-        contentDiv.style.whiteSpace = 'pre-wrap';
-        contentDiv.style.wordBreak = 'break-word';
+    async loadComponentFromString(moduleContent, sourceUrl = null) {
+        console.log("=== DEBUGGING MODULE LOADING ===");
+        console.log("Module content preview:", moduleContent.substring(0, 300));
+        console.log(
+            "Contains relative imports:",
+            moduleContent.includes("from './"),
+        );
+        console.log(
+            "Contains finder-service import:",
+            moduleContent.includes("finder-service.js"),
+        );
+        console.log("Source URL provided:", sourceUrl);
+
+        // Convert relative imports to absolute URLs if we have a source URL
+        let processedContent = moduleContent;
+        if (sourceUrl && moduleContent.includes("from './")) {
+            console.log("Converting relative imports to absolute URLs...");
+            const baseUrl = sourceUrl.substring(
+                0,
+                sourceUrl.lastIndexOf("/") + 1,
+            );
+            console.log("Base URL for imports:", baseUrl);
+
+            // Replace relative imports with absolute URLs
+            processedContent = moduleContent.replace(
+                /from\s+['"`]\.\/([^'"`]+)['"`]/g,
+                (match, relativePath) => {
+                    const absoluteUrl = baseUrl + relativePath;
+                    console.log(
+                        `Converting: ${match} -> from '${absoluteUrl}'`,
+                    );
+                    return `from '${absoluteUrl}'`;
+                },
+            );
+        }
+
+        const blob = new Blob([processedContent], { type: "text/javascript" });
+        const url = URL.createObjectURL(blob);
+        console.log("Created blob URL:", url);
+        console.log("Blob URL scheme:", new URL(url).protocol);
+
+        try {
+            await import(url);
+            console.log("Web component loaded successfully.");
+        } catch (error) {
+            console.error("Error loading web component:", error);
+            console.error("Error type:", error.constructor.name);
+            console.error("Error message:", error.message);
+            if (error.message.includes("Failed to resolve module specifier")) {
+                console.error(
+                    "Module resolution still failing - check if all imports are converted correctly",
+                );
+            }
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    }
+
+    async loadWebComponentFromTag(tag) {
+        // Create an instance of the component
+        const myComplexElement = document.createElement(tag);
+
+        // (Optional) Provide content for the slot
+        const description = document.createElement("span");
+        description.setAttribute("slot", "description");
+        description.textContent =
+            "This custom description has been inserted into the slot!";
+        myComplexElement.appendChild(description);
+
+        // Add the component to the page
+        // document.body.appendChild(myComplexElement);
+        this._createWindow({
+            appName: "Web Component",
+            appIcon: "🌐",
+            width: 600,
+            height: 400,
+            content: myComplexElement,
+        });
+        console.log("Web component instance created and added to the window.");
+    }
+
+    displayPlainTextInWindow(content, title = "Pasted Text") {
+        const contentDiv = document.createElement("div");
+        contentDiv.style.padding = "20px";
+        contentDiv.style.whiteSpace = "pre-wrap";
+        contentDiv.style.wordBreak = "break-word";
         contentDiv.textContent = content;
 
         this._createWindow({
             appName: title,
-            appIcon: '📄',
+            appIcon: "📄",
             width: 500,
             height: 300,
-            content: contentDiv
+            content: contentDiv,
         });
     }
     handleFiles(files) {
         // Handle dropped files
-        files.forEach(file => {
-            console.log('Dropped file:', file);
+        files.forEach((file) => {
+            console.log("Dropped file:", file);
             // You can implement further logic here, like creating a file icon or displaying it
         });
     }
@@ -144,29 +227,33 @@ export class AppService {
             y = 150 + (Math.random() * 100),
             width = 600,
             height = 400,
-            content
+            content,
         } = options;
 
-        const windowEl = document.createElement('window-component');
-        windowEl.setAttribute('app-name', appName);
-        windowEl.setAttribute('app-icon', appIcon);
-        windowEl.setAttribute('x', x);
-        windowEl.setAttribute('y', y);
-        windowEl.setAttribute('width', width);
-        windowEl.setAttribute('height', height);
+        const windowEl = document.createElement("window-component");
+        windowEl.setAttribute("app-name", appName);
+        windowEl.setAttribute("app-icon", appIcon);
+        windowEl.setAttribute("x", x);
+        windowEl.setAttribute("y", y);
+        windowEl.setAttribute("width", width);
+        windowEl.setAttribute("height", height);
 
         if (content) {
             windowEl.appendChild(content);
         }
 
-        const desktopContent = this.shadowRoot.querySelector('.desktop-content');
+        const desktopContent = this.shadowRoot.querySelector(
+            ".desktop-content",
+        );
         desktopContent.appendChild(windowEl);
 
-        this.shadowRoot.dispatchEvent(new CustomEvent('app-launched', {
-            detail: { appName },
-            bubbles: true,
-            composed: true
-        }));
+        this.shadowRoot.dispatchEvent(
+            new CustomEvent("app-launched", {
+                detail: { appName },
+                bubbles: true,
+                composed: true,
+            }),
+        );
 
         return windowEl;
     }
@@ -174,10 +261,10 @@ export class AppService {
     // async loadAppComponent(appId, windowElement) {
     //     try {
     //         const webappFileName = `${appId}-webapp.js`;
-            
+
     //         // Import the app component dynamically
     //         await import(`../apps/${webappFileName}`);
-            
+
     //         // Create and append the app component
     //         const appComponent = document.createElement(`${appId}-webapp`);
     //         windowElement.appendChild(appComponent);
@@ -196,7 +283,7 @@ export class AppService {
     // loadAppsFromURL() {
     //     const urlParams = new URLSearchParams(window.location.search);
     //     const appsParam = urlParams.get('apps');
-        
+
     //     if (appsParam) {
     //         const appFileNames = appsParam.split(',');
     //         appFileNames.forEach(async (fileName) => {
@@ -218,15 +305,14 @@ export class AppService {
     //         const appId = this.getAppIdFromName(appName);
     //         return `${appId}-webapp.js`;
     //     });
-        
+
     //     const url = new URL(window.location);
     //     if (openApps.length > 0) {
     //         url.searchParams.set('apps', openApps.join(','));
     //     } else {
     //         url.searchParams.delete('apps');
     //     }
-        
+
     //     window.history.replaceState({}, '', url);
     // }
-    
 }
