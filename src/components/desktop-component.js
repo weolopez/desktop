@@ -2,6 +2,8 @@ import { WallpaperManager } from '../services/wallpaper-manager.js';
 import { ContextMenuManager } from '../services/context-menu-manager.js';
 import { AppService } from '../services/app-service.js';
 import { WindowManager } from '../services/window-manager.js';
+import '../services/notification/notification-service.js';
+import '../services/notification/notification-display-component.js';
 
 // import { PreviewService } from '../services/preview-service.js';
 
@@ -24,6 +26,20 @@ class DesktopComponent extends HTMLElement {
         // this.appService.loadAppsFromURL();
         this.setupPasteDrop();
         this.setupAppEventListeners();
+        this.showTestNotification();
+    }
+
+    showTestNotification() {
+        setTimeout(() => {
+            document.dispatchEvent(new CustomEvent('create-notification', {
+                detail: {
+                    sourceAppId: 'system',
+                    title: 'Welcome to your Desktop!',
+                    body: 'The notification system is now active.',
+                    icon: '🎉'
+                }
+            }));
+        }, 2000);
     }
 
     setupAppEventListeners() {
@@ -130,6 +146,7 @@ class DesktopComponent extends HTMLElement {
                     <dock-component></dock-component>
                 </div>
             </div>
+            <notification-display-component></notification-display-component>
         `;
         this.wallpaperManager.updateWallpaperClass();
     }
