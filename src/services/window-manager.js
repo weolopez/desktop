@@ -1,6 +1,6 @@
 export class WindowManager {
-    constructor(shadowRoot, appService) {
-        this.shadowRoot = shadowRoot;
+    constructor(desktopComponent, appService) {
+        this.desktopComponent = desktopComponent;
         this.appService = appService;
     }
 
@@ -8,10 +8,12 @@ export class WindowManager {
         // Window management events
         document.addEventListener('window-close', (e) => {
             this.handleWindowClose(e.detail);
+            this.saveWindowsState();
         });
 
         document.addEventListener('window-minimize', (e) => {
             this.handleWindowMinimize(e.detail);
+            this.saveWindowsState();
         });
 
         document.addEventListener('restore-window', (e) => {
@@ -31,12 +33,18 @@ export class WindowManager {
         const { windowId, appName } = details;
         
         // Update dock to remove running indicator if no more windows
-        const remainingWindows = this.shadowRoot.querySelectorAll(`window-component[app-name="${appName}"]`);
-        if (remainingWindows.length <= 1) { // <= 1 because the closing window is still in DOM
+        const remainingWindows = this.desktopComponent.getWindows();
+        let count = 0;
+        remainingWindows.forEach(win => {
+            if (win.getAttribute('app-name') === appName) {
+                count++;
+            }
+        });
+
+        if (count <= 1) { // <= 1 because the closing window is still in DOM
             const dock = document.querySelector('dock-component');
             if (dock) {
-                const appService = new AppService(this.shadowRoot);
-                dock.closeApp(appService.getAppIdFromName(appName));
+                dock.closeApp(this.appService.getAppIdFromName(appName));
             }
         }
     }
@@ -45,7 +53,7 @@ export class WindowManager {
         const { windowId, appName, appIcon } = details;
         
         // Add to dock's minimized windows
-        const dock = this.shadowRoot.querySelector('dock-component');
+        const dock = this.desktopComponent.shadowRoot.querySelector('dock-component');
         if (dock) {
             dock.minimizeWindow(windowId, appName, appIcon);
         }
@@ -55,7 +63,7 @@ export class WindowManager {
         const { windowId } = details;
         
         // Find and restore the window
-        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windows = this.desktopComponent.getWindows();
         windows.forEach(window => {
             if (window.windowState && window.windowState.id === windowId) {
                 window.restore();
@@ -67,7 +75,7 @@ export class WindowManager {
         const { windowId, appName } = details;
         
         // Unfocus all other windows
-        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windows = this.desktopComponent.getWindows();
         windows.forEach(window => {
             if (window.windowState && window.windowState.id !== windowId) {
                 window.unfocus();
@@ -83,7 +91,7 @@ export class WindowManager {
     }
 
     saveWindowsState() {
-        const windows = this.shadowRoot.querySelectorAll('window-component');
+        const windows = this.desktopComponent.getWindows();
         const windowsState = [];
         windows.forEach(window => {
             windowsState.push(window.windowState);

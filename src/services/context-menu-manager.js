@@ -1,8 +1,7 @@
-import { AppService } from '../services/app-service.js';
+import { appService } from '../services/app-service.js';
 export class ContextMenuManager {
-    constructor(shadowRoot, wallpaperManager) {
-        this.shadowRoot = shadowRoot;
-        this.appService = new AppService(this.shadowRoot);
+    constructor(desktopComponent, wallpaperManager) {
+        this.desktopComponent = desktopComponent;
         this.wallpaperManager = wallpaperManager; // Dependency injection for WallpaperManager
         this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
@@ -53,68 +52,32 @@ export class ContextMenuManager {
     }
 
     init() {
-        // Append context menu HTML to shadowRoot
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = this.contextMenuHtml;
-        while (tempDiv.firstChild) {
-            this.shadowRoot.appendChild(tempDiv.firstChild);
-        }
-
-        // Append context menu CSS to shadowRoot
         const style = document.createElement('style');
         style.textContent = this.contextMenuCss;
-        this.shadowRoot.appendChild(style);
-
+        this.desktopComponent.appendContextMenu(this.contextMenuHtml, style);
         this.setupEventListeners();
     }
 
     setupEventListeners() {
-        // Desktop right-click context menu
-        this.shadowRoot.addEventListener('contextmenu', (e) => {
-            if (e.target.classList.contains('desktop-content') || 
-                e.target === this.shadowRoot.querySelector('.desktop-surface')) {
-                e.preventDefault();
-                this.showContextMenu(e.clientX, e.clientY);
-            }
+        this.desktopComponent.getDesktopSurface().addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.desktopComponent.showContextMenu(e.clientX, e.clientY);
         });
 
-        // Hide context menu on click elsewhere
-        this.shadowRoot.addEventListener('click', (e) => {
-            const contextMenu = this.shadowRoot.getElementById('contextMenu');
+        this.desktopComponent.addEventListener('click', (e) => {
+            const contextMenu = this.desktopComponent.shadowRoot.getElementById('contextMenu');
             if (contextMenu && !contextMenu.contains(e.target)) {
-                contextMenu.style.display = 'none';
+                this.desktopComponent.hideContextMenu();
             }
         });
 
-        // Context menu actions
-        this.shadowRoot.addEventListener('click', (e) => {
+        this.desktopComponent.addEventListener('click', (e) => {
             if (e.target.hasAttribute('data-action')) {
                 const action = e.target.getAttribute('data-action');
                 this.handleContextMenuAction(action);
-                const contextMenu = this.shadowRoot.getElementById('contextMenu');
-                if (contextMenu) {
-                    contextMenu.style.display = 'none';
-                }
+                this.desktopComponent.hideContextMenu();
             }
         });
-    }
-
-    showContextMenu(x, y) {
-        const contextMenu = this.shadowRoot.getElementById('contextMenu');
-        if (!contextMenu) return;
-
-        contextMenu.style.display = 'block';
-        contextMenu.style.left = `${x}px`;
-        contextMenu.style.top = `${y}px`;
-
-        // Adjust position if menu would go off screen
-        const rect = contextMenu.getBoundingClientRect();
-        if (rect.right > window.innerWidth) {
-            contextMenu.style.left = `${x - rect.width}px`;
-        }
-        if (rect.bottom > window.innerHeight) {
-            contextMenu.style.top = `${y - rect.height}px`;
-        }
     }
 
     async handleContextMenuAction(action) {
@@ -134,7 +97,7 @@ export class ContextMenuManager {
                 try {
                     const text = await navigator.clipboard.readText();
                     if (text) {
-                        this.appService.handleText([text]);
+                        appService.handleText([text]);
                     }
                 } catch (err) {
                     console.error('Failed to read clipboard contents: ', err);
@@ -144,7 +107,7 @@ export class ContextMenuManager {
                 console.log('Get info clicked');
                 break;
             case 'open-finder-webapp':
-                this.appService.handleText(['finder-webapp']);
+                appService.handleText(['finder-webapp']);
                 break;
         }
     }
