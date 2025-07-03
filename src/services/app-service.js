@@ -236,29 +236,41 @@ class AppService {
         });
 
         const windowEl = document.createElement("window-component");
-        windowEl.setAttribute("app-name", appName);
-        windowEl.setAttribute("app-icon", appIcon);
+        windowEl.appName = appName;
+        windowEl.appIcon = appIcon || "📄"; // Default icon if not provided
+        // windowEl.setAttribute("app-name", appName);
+        // windowEl.setAttribute("app-icon", appIcon);
         if (sourceUrl) {
             windowEl.setAttribute("source-url", sourceUrl);
         }
-        windowEl.setAttribute("x", x);
-        windowEl.setAttribute("y", y);
-        windowEl.setAttribute("width", width);
-        windowEl.setAttribute("height", height);
+        //windowEl.setAttribute("x", x);
+        windowEl.x = x; // For consistency with existing code
+        // windowEl.setAttribute("y", y);
+        // windowEl.setAttribute("width", width);
+        // windowEl.setAttribute("height", height);
+        windowEl.y = y; // For consistency with existing code
+        windowEl.width = width; // For consistency with existing code
+        windowEl.height = height; // For consistency with existing code
 
         console.log('🏭 AppService _createWindow - Set basic attributes, now checking state flags');
 
         if (initialState?.isMinimized) {
             console.log('🏭 AppService _createWindow - Setting minimized attribute');
-            windowEl.setAttribute('minimized', '');
+            //windowEl.setAttribute('minimized', '');
+            windowEl.isMinimized = true; // For consistency with existing code
+
         }
         if (initialState?.isMaximized) {
             console.log('🏭 AppService _createWindow - Setting maximized attributes');
-            windowEl.setAttribute('maximized', '');
-            windowEl.setAttribute('saved-x', initialState.savedX);
-            windowEl.setAttribute('saved-y', initialState.savedY);
-            windowEl.setAttribute('saved-width', initialState.savedWidth);
-            windowEl.setAttribute('saved-height', initialState.savedHeight);
+            windowEl.isMaximized = true; // For consistency with existing code
+            windowEl.x = initialState.savedX || x; // Use saved position if available
+            windowEl.y = initialState.savedY || y; // Use saved position if available
+            windowEl.width = initialState.savedWidth || width; // Use saved size if available
+            windowEl.height = initialState.savedHeight || height; // Use saved size if available
+            // windowEl.setAttribute('saved-x', initialState.savedX);
+            // windowEl.setAttribute('saved-y', initialState.savedY);
+            // windowEl.setAttribute('saved-width', initialState.savedWidth);
+            // windowEl.setAttribute('saved-height', initialState.savedHeight);
         }
 
         console.log('🏭 AppService _createWindow - All attributes set, element ready for DOM insertion');
