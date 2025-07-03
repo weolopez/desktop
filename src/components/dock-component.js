@@ -1,5 +1,5 @@
 import { APPS } from '../config.js';
-import { AppService } from '../services/app-service.js';
+import { appService } from '../services/app-service.js';
 class DockComponent extends HTMLElement {
     constructor() {
         super();
@@ -7,7 +7,6 @@ class DockComponent extends HTMLElement {
         this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' })); // Only Finder starts running
         this.minimizedWindows = [];
         this.magnification = true;
-        this.appService = new AppService(this.shadowRoot);
     }
 
     connectedCallback() {
@@ -290,7 +289,7 @@ class DockComponent extends HTMLElement {
         });
     }
     launchURL(url) {
-        this.appService.handleText([url]);
+        appService.handleText([url]);
             this.render();
     }
 

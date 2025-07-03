@@ -2,9 +2,13 @@ import { APP_URL_MAP } from '../config.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
-export class AppService {
-    constructor(shadowRoot) {
-        this.shadowRoot = shadowRoot;
+class AppService {
+    constructor() {
+        this.desktopComponent = null;
+    }
+
+    init(desktopComponent) {
+        this.desktopComponent = desktopComponent;
     }
 
     async handleText(texts) {
@@ -263,15 +267,9 @@ export class AppService {
             windowEl.appendChild(content);
         }
 
-        const desktopContentContainer = this.shadowRoot.querySelector('.desktop-content');
-        if (desktopContentContainer) {
-            desktopContentContainer.appendChild(windowEl);
-        } else {
-            // Fallback for safety, though it shouldn't be needed if render() runs first.
-            this.shadowRoot.appendChild(windowEl);
-        }
+        this.desktopComponent.addWindow(windowEl);
 
-        this.shadowRoot.dispatchEvent(
+        this.desktopComponent.dispatchEvent(
             new CustomEvent("app-launched", {
                 detail: { appName },
                 bubbles: true,
@@ -287,3 +285,5 @@ export class AppService {
         return match ? match[1] : null;
     }
 }
+
+export const appService = new AppService();

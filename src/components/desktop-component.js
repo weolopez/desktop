@@ -1,6 +1,6 @@
 import { WallpaperManager } from '../services/wallpaper-manager.js';
 import { ContextMenuManager } from '../services/context-menu-manager.js';
-import { AppService } from '../services/app-service.js';
+import { appService } from '../services/app-service.js';
 import { WindowManager } from '../services/window-manager.js';
 
 // import { PreviewService } from '../services/preview-service.js';
@@ -9,11 +9,10 @@ class DesktopComponent extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.wallpaperManager = new WallpaperManager(this.shadowRoot);
-        this.contextMenuManager = new ContextMenuManager(this.shadowRoot, this.wallpaperManager);
-        this.appService = new AppService(this.shadowRoot);
-        this.windowManager = new WindowManager(this.shadowRoot, this.appService);
-        // this.previewService = new PreviewService(this.shadowRoot);
+        appService.init(this);
+        this.wallpaperManager = new WallpaperManager(this);
+        this.contextMenuManager = new ContextMenuManager(this, this.wallpaperManager);
+        this.windowManager = new WindowManager(this, appService);
     }
 
     connectedCallback() {
@@ -21,27 +20,23 @@ class DesktopComponent extends HTMLElement {
         this.contextMenuManager.init();
         this.windowManager.setupEventListeners();
         this.windowManager.restoreWindowsState();
-        // this.appService.loadAppsFromURL();
         this.setupPasteDrop();
         this.setupAppEventListeners();
     }
 
     setupAppEventListeners() {
-        this.shadowRoot.addEventListener('app-launched', () => {
-            // this.appService.updateURLWithOpenApps();
+        this.addEventListener('app-launched', () => {
             console.log('App launched event received');
         });
 
-        this.shadowRoot.addEventListener('window-closed', () => {
-            // Delay to allow the window to be removed from the DOM
+        this.addEventListener('window-closed', () => {
             setTimeout(() => {
-                // this.appService.updateURLWithOpenApps();
                 console.log('Window closed event received');
             }, 100);
         });
 
-        this.shadowRoot.addEventListener('launch-finder-webapp', (e) => {
-            this.appService.handleText([e.detail.url]);
+        this.addEventListener('launch-finder-webapp', (e) => {
+            appService.handleText([e.detail.url]);
         });
     }
 
@@ -131,13 +126,12 @@ class DesktopComponent extends HTMLElement {
                 </div>
             </div>
         `;
-        this.wallpaperManager.updateWallpaperClass();
+        this.updateWallpaperClass(this.wallpaperManager.wallpaper);
     }
 
     setupPasteDrop() {
         const desktopSurface = this.shadowRoot.querySelector('.desktop-surface');
-        
-        // Handle drag and drop
+
         desktopSurface.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
@@ -157,12 +151,12 @@ class DesktopComponent extends HTMLElement {
     handleFileDrop(e) {
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            this.appService.handleFiles(files);
+            appService.handleFiles(files);
         }
         //handle text if available
         if (e.dataTransfer.getData('text/plain')) {
             const text = e.dataTransfer.getData('text/plain');
-            this.appService.handleText([text]);
+            appService.handleText([text]);
         }
         e.preventDefault();
         e.stopPropagation();
@@ -171,7 +165,7 @@ class DesktopComponent extends HTMLElement {
     handlePaste(e) {
         const items = Array.from(e.clipboardData.items);
         //emit an event to the app service to handle the pasted items
-        this.appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
+        appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
         // Handle pasted string items (e.g., plain text, URLs)
         items
             .filter(item => item.kind === 'string')
@@ -180,7 +174,7 @@ class DesktopComponent extends HTMLElement {
             .forEach(item => {
             item.getAsString((text) => {
                 if (text && text.trim().length > 0) {
-                this.appService.handleText([text]);
+                appService.handleText([text]);
                 }
             });
             });
@@ -198,6 +192,59 @@ class DesktopComponent extends HTMLElement {
     //     };
     //     reader.readAsDataURL(file);
     // }
+
+    // Methods to be called by services
+    addWindow(windowElement) {
+        this.shadowRoot.querySelector('.desktop-content').appendChild(windowElement);
+    }
+
+    getWindows() {
+        return this.shadowRoot.querySelectorAll('window-component');
+    }
+
+    getDesktopSurface() {
+        return this.shadowRoot.querySelector('.desktop-surface');
+    }
+
+    updateWallpaperClass(wallpaper) {
+        const background = this.shadowRoot.querySelector('.desktop-background');
+        if (background) {
+            background.className = `desktop-background wallpaper-${wallpaper}`;
+        }
+    }
+
+    showContextMenu(x, y) {
+        const contextMenu = this.shadowRoot.getElementById('contextMenu');
+        if (!contextMenu) return;
+
+        contextMenu.style.display = 'block';
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+
+        const rect = contextMenu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            contextMenu.style.left = `${x - rect.width}px`;
+        }
+        if (rect.bottom > window.innerHeight) {
+            contextMenu.style.top = `${y - rect.height}px`;
+        }
+    }
+
+    hideContextMenu() {
+        const contextMenu = this.shadowRoot.getElementById('contextMenu');
+        if (contextMenu) {
+            contextMenu.style.display = 'none';
+        }
+    }
+
+    appendContextMenu(menuHtml, style) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = menuHtml;
+        while (tempDiv.firstChild) {
+            this.shadowRoot.appendChild(tempDiv.firstChild);
+        }
+        this.shadowRoot.appendChild(style);
+    }
 }
 
 customElements.define('desktop-component', DesktopComponent);
