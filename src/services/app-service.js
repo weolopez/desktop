@@ -11,17 +11,17 @@ class AppService {
         this.desktopComponent = desktopComponent;
     }
 
-    async handleText(texts) {
+    async handleText(texts, icon = "📄") {
         const textArray = Array.isArray(texts) ? texts : [texts];
         console.log("=== APP SERVICE TEXT HANDLING ===");
         console.log("Number of texts to process:", textArray.length);
 
         for (const text of textArray) {
-            this._processSingleText(text);
+            this._processSingleText(text, icon);
         }
     }
 
-    async _processSingleText(text) {
+    async _processSingleText(text, icon) {
         console.log("Processing text:", {
             length: text.length,
             preview: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
@@ -36,7 +36,7 @@ class AppService {
         } else {
             try {
                 const url = new URL(text);
-                await this._handleUrl(url);
+                await this._handleUrl(url, icon);
             } catch (e) {
                 this._handlePlainText(text);
             }
@@ -56,7 +56,7 @@ class AppService {
         this.loadWebComponentFromTag(tag, sourceUrl);
     }
 
-    async _handleUrl(url) {
+    async _handleUrl(url, icon = "📄") {
         if ((url.protocol === "http:" || url.protocol === "https:") && url.pathname.endsWith(".js")) {
             console.log("Detected JavaScript URL:", url.href);
             try {
@@ -78,7 +78,7 @@ class AppService {
                 const element = document.createElement(tagName || "div");
                 this._createWindow({
                     appName: tagName || "JavaScript File",
-                    appIcon: "📄",
+                    appIcon: icon,
                     width: 500,
                     height: 300,
                     content: element,

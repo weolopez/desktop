@@ -239,11 +239,16 @@ class DockComponent extends HTMLElement {
             const dockIcon = e.target.closest('.dock-icon');
             if (dockIcon) {
                 const appId = dockIcon.getAttribute('data-app-id');
+                const app = this.apps.find(a => a.id === appId);
                 const windowId = dockIcon.getAttribute('data-window-id');
                 const url = dockIcon.getAttribute('data-app-url');
+                let icon;
+                if (app) {
+                    icon = app.icon;
+                }
                 
                 if (url) {
-                   this.launchURL(url); 
+                   this.launchURL(url, icon); 
                 } else if (windowId) {
                     this.restoreWindow(windowId);
                 }
@@ -288,8 +293,8 @@ class DockComponent extends HTMLElement {
             }
         });
     }
-    launchURL(url) {
-        appService.handleText([url]);
+    launchURL(url, icon = "📄") {
+        appService.handleText([url], icon);
             this.render();
     }
 
