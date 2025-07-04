@@ -60,7 +60,10 @@ class NotificationService {
                 }
                 return String(arg);
             }).join(' ');
-
+            //if errorMessage is an object, stringify it
+            if (typeof errorMessage === 'object') {
+                errorMessage = JSON.stringify(errorMessage);
+            }
             document.dispatchEvent(new CustomEvent('create-notification', {
                 detail: {
                     sourceAppId: 'system',

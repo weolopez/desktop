@@ -125,8 +125,7 @@ export class AppService {
             await import(url);
             console.log("Web component loaded successfully from string.");
         } catch (error) {
-            console.warn("Error loading web component from string:", error);
-            // Optionally, provide user feedback here
+            console.error("Error loading web component from string:", error);
         } finally {
             URL.revokeObjectURL(url);
         }
@@ -183,7 +182,18 @@ export class AppService {
 
             if (sourceUrl) {
                 console.log(`Restoring from source URL: ${sourceUrl}`);
-                await import(sourceUrl);
+                try {
+                    const module = await import(sourceUrl);
+                    console.log('✅ Module imported successfully:', sourceUrl);
+                    // Optionally check if expected exports exist
+                    if (module.default || Object.keys(module).length > 0) {
+                        console.log('✅ Module has exports:', Object.keys(module));
+                    }
+                } catch (error) {
+                    console.error('❌ Failed to import module:', sourceUrl, error);
+                    // Handle the failure case
+                    throw new Error(`Module import failed: ${error.message}`);
+                }
                 const sourceText = await (await fetch(sourceUrl)).text();
                 const tag = this.getTagNameFromSource(sourceText);
                 if (!tag) {
