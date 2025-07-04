@@ -1,8 +1,7 @@
-import { appService } from '../services/app-service.js';
 export class ContextMenuManager {
     constructor(desktopComponent, wallpaperManager) {
         this.desktopComponent = desktopComponent;
-        this.wallpaperManager = wallpaperManager; // Dependency injection for WallpaperManager
+        this.wallpaperManager = wallpaperManager;
         this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
                 <div class="context-menu-item" data-action="change-wallpaper">Change Desktop Background...</div>
@@ -97,7 +96,7 @@ export class ContextMenuManager {
                 try {
                     const text = await navigator.clipboard.readText();
                     if (text) {
-                        appService.handleText([text]);
+                        this.desktopComponent.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [text] } }));
                     }
                 } catch (err) {
                     console.error('Failed to read clipboard contents: ', err);
@@ -107,7 +106,7 @@ export class ContextMenuManager {
                 console.log('Get info clicked');
                 break;
             case 'open-finder-webapp':
-                appService.handleText(['finder-webapp']);
+                this.desktopComponent.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: ['finder-webapp'] } }));
                 break;
         }
     }

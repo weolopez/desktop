@@ -1,9 +1,9 @@
 import { WallpaperManager } from '../services/wallpaper-manager.js';
 import { ContextMenuManager } from '../services/context-menu-manager.js';
-import { appService } from '../services/app-service.js';
 import { WindowManager } from '../services/window-manager.js';
 import '../services/notification/notification-service.js';
 import '../services/notification/notification-display-component.js';
+import { AppService } from '../services/app-service.js';
 
 // import { PreviewService } from '../services/preview-service.js';
 
@@ -11,10 +11,11 @@ class DesktopComponent extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        appService.init(this);
+        this.appService = new AppService();
+        this.appService.init(this);
         this.wallpaperManager = new WallpaperManager(this);
         this.contextMenuManager = new ContextMenuManager(this, this.wallpaperManager);
-        this.windowManager = new WindowManager(this, appService);
+        this.windowManager = new WindowManager(this, this.appService);
     }
 
     connectedCallback() {
@@ -52,7 +53,7 @@ class DesktopComponent extends HTMLElement {
         });
 
         this.addEventListener('launch-finder-webapp', (e) => {
-            appService.handleText([e.detail.url]);
+            this.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [e.detail.url] } }));
         });
     }
 
@@ -168,12 +169,12 @@ class DesktopComponent extends HTMLElement {
     handleFileDrop(e) {
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            appService.handleFiles(files);
+            this.appService.handleFiles(files);
         }
         //handle text if available
         if (e.dataTransfer.getData('text/plain')) {
             const text = e.dataTransfer.getData('text/plain');
-            appService.handleText([text]);
+            this.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [text] } }));
         }
         e.preventDefault();
         e.stopPropagation();
@@ -182,7 +183,7 @@ class DesktopComponent extends HTMLElement {
     handlePaste(e) {
         const items = Array.from(e.clipboardData.items);
         //emit an event to the app service to handle the pasted items
-        appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
+        this.appService.handleFiles(items.filter(item => item.kind === 'file').map(item => item.getAsFile()));
         // Handle pasted string items (e.g., plain text, URLs)
         items
             .filter(item => item.kind === 'string')
@@ -191,7 +192,7 @@ class DesktopComponent extends HTMLElement {
             .forEach(item => {
             item.getAsString((text) => {
                 if (text && text.trim().length > 0) {
-                appService.handleText([text]);
+                this.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [text] } }));
                 }
             });
             });

@@ -45,6 +45,9 @@ class NotificationService {
     initializeEventListeners() {
         document.addEventListener('create-notification', (e) => this.handleCreateNotification(e));
         document.addEventListener('app-launched', (e) => this.handleAppLaunched(e));
+        //add generic custom 'run-code'
+        document.addEventListener('PUBLISH_TEXT', (e) => this.handleAppLaunched(e));
+
     }
 
     initializeErrorHandling() {
@@ -83,6 +86,16 @@ class NotificationService {
             this.registeredApps.set(appName, { name: appName, icon: appIcon || '📄' });
             console.log(`NotificationService: Registered app "${appName}"`);
         }
+        this.displayNotification(new Notification({
+            sourceAppId: 'system',
+            title: `App Launched: ${appName}`,
+            body: `The app "${appName}" has been launched successfully.`,
+            icon: appIcon || '📄',
+            priority: 'low',
+            isSilent: true,
+            canCoalesce: false,
+            coalesceId: `app-launch-${appName}`
+        }));
     }
 
     evaluateNotificationCriteria(notification) {

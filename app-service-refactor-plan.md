@@ -28,6 +28,7 @@ A new private helper method, `_createWindow(options)`, will be added to the `App
 We will introduce a set of custom events to facilitate communication between components, eliminating direct method calls.
 
 **New Custom Events:**
+-   **`PUBLISH_TEXT`**: Dispatched by components (e.g., `ContextMenuManager`, `DesktopComponent`, `DockComponent`) when text needs to be processed by the `AppService`. The event detail will contain the `texts` array and an optional `icon`.
 -   **`app-launched`**: Dispatched by `AppService` after a new application window is created. The event detail will contain the application information.
 -   **`window-focused`**: Dispatched by `WindowManager` when a window gains focus. The event detail will contain the window and application name.
 -   **`window-closed`**: Dispatched by `window-component` when it is closed. The event detail will contain the window ID and application name.
@@ -35,7 +36,8 @@ We will introduce a set of custom events to facilitate communication between com
 ### 2.3. Component and Service Refactoring
 
 -   **`app-service.js`**:
-    -   `launchApplication`, `handleText`, and `displayPlainTextInWindow` will be refactored to use the `_createWindow` helper.
+    -   Will listen for `PUBLISH_TEXT` events on the `desktop-component` to handle text processing.
+    -   `launchApplication` and `displayPlainTextInWindow` will be refactored to use the `_createWindow` helper.
     -   `updateURLWithOpenApps` will be refactored to listen for `app-launched` and `window-closed` events instead of being called directly.
 -   **`menu-bar-component.js`**:
     -   Will listen for `app-launched` and `window-focused` events on the `desktop-component`.
@@ -50,14 +52,22 @@ The following diagram illustrates the new event-driven flow:
 
 ```mermaid
 graph TD
-    subgraph "User Action"
-        UA(Launches App) --> AS;
+    subgraph "User Action / Component Interaction"
+        UA(Launches App / Pastes Text) --> PT(PUBLISH_TEXT event);
+    end
+
+    subgraph "Event Bus on desktop-component"
+        PT --> Bus;
+        AL(app-launched event) --> Bus;
+        WF(window-focused event) --> Bus;
+        WC_Event(window-closed event) --> Bus;
     end
 
     subgraph "AppService"
-        AS[app-service.js] -- calls --> CW[_createWindow];
+        Bus -- triggers --> AS[app-service.js];
+        AS -- calls --> CW[_createWindow];
         CW -- creates --> WC[window-component];
-        CW -- dispatches --> AL(app-launched event);
+        CW -- dispatches --> AL;
     end
 
     subgraph "Event Bus on desktop-component"

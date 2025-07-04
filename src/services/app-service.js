@@ -2,18 +2,21 @@ import { APP_URL_MAP } from '../config.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
-class AppService {
+export class AppService {
     constructor() {
         this.desktopComponent = null;
     }
 
     init(desktopComponent) {
         this.desktopComponent = desktopComponent;
+       document.addEventListener('PUBLISH_TEXT', this.handlePublishTextEvent.bind(this));
+        
     }
 
-    async handleText(texts, icon = "📄") {
+    async handlePublishTextEvent(event) {
+        const { texts, icon } = event.detail;
         const textArray = Array.isArray(texts) ? texts : [texts];
-        console.log("=== APP SERVICE TEXT HANDLING ===");
+        console.log("=== APP SERVICE TEXT HANDLING (via PUBLISH_TEXT event) ===");
         console.log("Number of texts to process:", textArray.length);
 
         for (const text of textArray) {
@@ -21,7 +24,7 @@ class AppService {
         }
     }
 
-    async _processSingleText(text, icon) {
+    async _processSingleText(text, icon = "📄") {
         console.log("Processing text:", {
             length: text.length,
             preview: text.substring(0, 200) + (text.length > 200 ? "..." : ""),

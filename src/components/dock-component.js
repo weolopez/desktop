@@ -1,5 +1,4 @@
 import { APPS } from '../config.js';
-import { appService } from '../services/app-service.js';
 class DockComponent extends HTMLElement {
     constructor() {
         super();
@@ -294,7 +293,7 @@ class DockComponent extends HTMLElement {
         });
     }
     launchURL(url, icon = "📄") {
-        appService.handleText([url], icon);
+        document.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [url], icon: icon } }));
             this.render();
     }
 
