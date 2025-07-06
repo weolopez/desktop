@@ -9,8 +9,17 @@ class DockComponent extends HTMLElement {
     }
 
     connectedCallback() {
+        this.startup()
         this.render();
         this.setupEventListeners();
+    }
+
+    startup() {
+        this.apps.forEach(app => {
+            if (app.onstartup) {
+                this.launchURL(app.sourceUrl, app.icon);
+            }
+        })
     }
 
     render() {

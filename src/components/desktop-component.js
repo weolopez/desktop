@@ -1,8 +1,8 @@
 import { WallpaperManager } from "../services/wallpaper-manager.js";
 import { ContextMenuManager } from "../services/context-menu-manager.js";
 import { WindowManager } from "../services/window-manager.js";
-import "../services/notification/notification-service.js";
-import "../services/notification/notification-display-component.js";
+// import "../services/notification/notification-service.js";
+// import "../services/notification/notification-display-component.js";
 import { AppService } from "../services/app-service.js";
 
 // import { PreviewService } from '../services/preview-service.js';

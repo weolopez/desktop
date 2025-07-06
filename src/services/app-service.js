@@ -9,8 +9,7 @@ export class AppService {
 
     init(desktopComponent) {
         this.desktopComponent = desktopComponent;
-       document.addEventListener('PUBLISH_TEXT', this.handlePublishTextEvent.bind(this));
-        
+        document.addEventListener('PUBLISH_TEXT', this.handlePublishTextEvent.bind(this));
     }
 
     async handlePublishTextEvent(event) {
@@ -36,13 +35,15 @@ export class AppService {
 
         if (tag) {
             await this._handleWebComponentText(text, tag);
-        } else {
+        } else if (text.trim().toLowerCase().endsWith('.js')) {
             try {
-                const url = new URL(text);
+                const url = new URL(text, window.location.origin);
                 await this._handleUrl(url, icon);
             } catch (e) {
                 this._handlePlainText(text);
             }
+        } else {
+            this._handlePlainText(text);
         }
     }
 
@@ -78,15 +79,7 @@ export class AppService {
                     console.warn("Failed to import module:", error);   
                 }
 
-                const element = document.createElement(tagName || "div");
-                this._createWindow({
-                    appName: tagName || "JavaScript File",
-                    appIcon: icon,
-                    width: 500,
-                    height: 300,
-                    content: element,
-                    sourceUrl: url.href
-                });
+                loadWebComponentFromTag(tagName, url.href)
             } catch (error) {
                 console.error("Failed to handle JavaScript URL:", error);
                 this.displayPlainTextInWindow(url.href, "Failed to Load URL");
