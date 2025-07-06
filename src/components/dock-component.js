@@ -17,7 +17,7 @@ class DockComponent extends HTMLElement {
     startup() {
         this.apps.forEach(app => {
             if (app.onstartup) {
-                this.launchURL(app.sourceUrl, app.icon);
+                this.launchApp(app)
             }
         })
     }
@@ -249,16 +249,11 @@ class DockComponent extends HTMLElement {
                 const appId = dockIcon.getAttribute('data-app-id');
                 const app = this.apps.find(a => a.id === appId);
                 const windowId = dockIcon.getAttribute('data-window-id');
-                const url = dockIcon.getAttribute('data-app-url');
-                let icon;
-                if (app) {
-                    icon = app.icon;
-                }
-                
-                if (url) {
-                   this.launchURL(url, icon); 
-                } else if (windowId) {
-                    this.restoreWindow(windowId);
+
+                if (windowId) {
+                   this.restoreWindow(windowId);
+                } else {
+                    this.launchApp(app)
                 }
             }
 
@@ -301,9 +296,9 @@ class DockComponent extends HTMLElement {
             }
         });
     }
-    launchURL(url, icon = "📄") {
-        document.dispatchEvent(new CustomEvent('PUBLISH_TEXT', { detail: { texts: [url], icon: icon } }));
-            this.render();
+    launchApp(app) {
+        document.dispatchEvent(new CustomEvent('LAUNCH_APP', { detail: app }));
+        this.render();
     }
 
     restoreWindow(windowId) {

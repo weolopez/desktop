@@ -1,7 +1,7 @@
 export const APPS = [
-    { id: 'finder', name: 'Finder', icon: '📁', sourceUrl: 'https://weolopez.com/apps/finder/finder-webapp.js', onstartup: false  },
-    { id: 'chat', name: 'Chat', icon: '💬', sourceUrl: '/chat/chat-component.js' },
-    { id: 'notification', name: 'Notification', icon: '�', sourceUrl: '/apps/notification/notification-display-component.js', onstartup: true }
+    { id: 'finder', name: 'Finder', icon: '📁', sourceUrl: 'https://weolopez.com/apps/finder/finder-webapp.js', tag: "finder-webapp", onstartup: false  },
+    { id: 'chat', name: 'Chat', icon: '💬', sourceUrl: '/chat/chat-component.js', tag: "chat-component", onstartup: false },
+    { id: 'notification', name: 'Notification', icon: '�', sourceUrl: '/apps/notification/notification-display-component.js', tag:"notification-display-component", onstartup: true }
 ];
 
     // { id: 'finder', name: 'Finder', icon: '📁', sourceUrl: 'https://weolopez.com/desktop/src/apps/finder/finder-webapp.js' },

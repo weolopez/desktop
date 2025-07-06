@@ -10,9 +10,12 @@ export class AppService {
     init(desktopComponent) {
         this.desktopComponent = desktopComponent;
         document.addEventListener('PUBLISH_TEXT', this.handlePublishTextEvent.bind(this));
+        document.addEventListener('LAUNCH_APP', this.handleLaunchAppEvent.bind(this));
     }
-
-    async handlePublishTextEvent(event) {
+    handleLaunchAppEvent(event) {
+        this.launchApp( event.detail )
+    }
+    handlePublishTextEvent(event) {
         const { texts, icon } = event.detail;
         const textArray = Array.isArray(texts) ? texts : [texts];
         console.log("=== APP SERVICE TEXT HANDLING (via PUBLISH_TEXT event) ===");
@@ -24,11 +27,6 @@ export class AppService {
     }
 
     async _processSingleText(text, icon = "📄") {
-        console.log("Processing text:", {
-            length: text.length,
-            preview: text.substring(0, 200) + (text.length > 200 ? "..." : ""),
-            isURL: text.startsWith("http"),
-        });
 
         const match = text.match(WEB_COMPONENT_TAG_REGEX);
         const tag = match ? match[1] : null;
@@ -61,6 +59,18 @@ export class AppService {
     }
 
     async _handleUrl(url, icon = "📄") {
+        // Check if the URL is in APP_URL_MAP values
+        for (const app of APP_URL_MAP.entries()) {
+            const [id, sourceUrl] = app;
+            // Accept both absolute and relative matches
+            if (url.href === sourceUrl || url.pathname === sourceUrl) {
+                // If found, launch the app by appId (strip -webapp if present)
+                // Optionally, you can pass initialState with sourceUrl if needed
+                this.launchApp(app)
+                return;
+            }
+        }
+
         if ((url.protocol === "http:" || url.protocol === "https:") && url.pathname.endsWith(".js")) {
             console.log("Detected JavaScript URL:", url.href);
             try {
@@ -123,8 +133,9 @@ export class AppService {
             URL.revokeObjectURL(url);
         }
     }
-
-    loadWebComponentFromTag(tag, sourceUrl) {
+//  config={ id: 'chat', name: 'Chat', icon: '💬', sourceUrl: '/chat/chat-component.js', tag: "chat-component", onstartup: false },
+    loadWebComponentFromTag(tag, sourceUrl, config) {
+        tag = tag || (config && config.tag)
         const myComplexElement = document.createElement(tag);
         const description = document.createElement("span");
         description.setAttribute("slot", "description");
@@ -132,12 +143,12 @@ export class AppService {
         myComplexElement.appendChild(description);
 
         this._createWindow({
-            appName: "Web Component",
-            appIcon: "🌐",
+            appName: (config && config.name) || tag || "Web Component",
+            appIcon: (config && config.icon) || "🌐",
             width: 600,
             height: 400,
             content: myComplexElement,
-            sourceUrl: sourceUrl
+            sourceUrl: sourceUrl || (config && config.sourceUrl)
         });
         console.log("Web component instance created and added to the window.");
     }
@@ -167,56 +178,46 @@ export class AppService {
         });
     }
 
-    async launchApp(appName, initialState = null) {
-        console.log(`Attempting to launch app: ${appName} with state:`, initialState);
+    async launchApp(app) {
         try {
-            let element;
-            let sourceUrl = initialState ? initialState.sourceUrl : null;
-
-            if (sourceUrl) {
-                console.log(`Restoring from source URL: ${sourceUrl}`);
-                try {
-                    const module = await import(sourceUrl);
-                    console.log('✅ Module imported successfully:', sourceUrl);
-                    // Optionally check if expected exports exist
-                    if (module.default || Object.keys(module).length > 0) {
-                        console.log('✅ Module has exports:', Object.keys(module));
-                    }
-                } catch (error) {
-                    console.error('❌ Failed to import module:', sourceUrl, error);
-                    // Handle the failure case
-                    throw new Error(`Module import failed: ${error.message}`);
-                }
-                const sourceText = await (await fetch(sourceUrl)).text();
-                const tag = this.getTagNameFromSource(sourceText);
-                if (!tag) {
-                    throw new Error(`Could not determine tag name from source: ${sourceUrl}`);
-                }
-                console.log(`Determined tag: ${tag}`);
-                element = document.createElement(tag);
-            } else if (appName === 'Safari') {
-                console.log('Creating new Safari instance.');
-                element = document.createElement('safari-chrome-webapp');
-            } else {
-                console.log(`Creating generic div for app: ${appName}`);
-                element = document.createElement('div');
-                element.textContent = `Content for ${appName}`;
+            try {
+                const module = await import(app.sourceUrl);
+            } catch (error) {
+                console.error('❌ Failed to import module:', app.sourceUrl, error);
+                // Handle the failure case
+                throw new Error(`Module import failed: ${error.message}`);
             }
+            
+                // const sourceText = await (await fetch(sourceUrl)).text();
+                // const tag = this.getTagNameFromSource(sourceText);
+                // if (!tag) {
+                //     throw new Error(`Could not determine tag name from source: ${sourceUrl}`);
+                // }
+                // console.log(`Determined tag: ${tag}`);
+            let element = document.createElement(app.tag );
+            // if (appName === 'Safari') {
+            //     console.log('Creating new Safari instance.');
+            //     element = document.createElement('safari-chrome-webapp');
+            // } else {
+            //     console.log(`Creating generic div for app: ${appName}`);
+            //     element = document.createElement('div');
+            //     element.textContent = `Content for ${appName}`;
+            // }
 
-            if (initialState && initialState.appState) {
-                element.setAttribute('initial-state', JSON.stringify(initialState.appState));
-            }
+            // if (initialState && initialState.appState) {
+            //     element.setAttribute('initial-state', JSON.stringify(initialState.appState));
+            // }
 
             this._createWindow({
-                appName,
-                appIcon: initialState ? initialState.appIcon : '📄',
+                appName: app.name || app.id || "App",
+                appIcon: app.icon || (app.initialState ? app.initialState.appIcon : '📄'),
                 content: element,
-                initialState: initialState,
-                sourceUrl: sourceUrl
+                initialState: app.initialState || {},
+                sourceUrl: app.sourceUrl
             });
-            console.log(`Successfully launched app: ${appName}`);
+            console.log(`Successfully launched app: ${JSON.stringify(app)}`);
         } catch (error) {
-            console.error(`Failed to launch app "${appName}" with state:`, { initialState, error });
+            console.error(`Failed to launch app "${app.name || app.id || "App"}" with state:`, { initialState: app.initialState || {}, error });
         }
     }
 
