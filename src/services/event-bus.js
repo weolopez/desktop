@@ -5,6 +5,18 @@
 class EventBus {
     constructor() {
         this.events = new Map();
+        this.listenForAllEvents();
+    }
+
+    /**
+     * Listen for all EVENTS and publish them
+     */
+    listenForAllEvents() {
+        Object.values(EVENTS).forEach(eventName => {
+            document.addEventListener(eventName, (e) => {
+                this.publish(eventName, e.detail);
+            });
+        });
     }
 
     /**
@@ -81,5 +93,6 @@ export const eventBus = new EventBus();
 // Define standard event names
 export const EVENTS = {
     SYSTEM_STARTUP: 'sys:startup',
+    LAUNCH_APP: 'sys:launch-app',
     DB_INIT_REQUESTED: 'db:init-requested',
 };

@@ -110,7 +110,7 @@ export class WindowManager {
                 // Use a for...of loop to handle async app launching sequentially
                 for (const state of windowsState) {
                     console.log('🔄 WindowManager - Restoring window:', state);
-                    await this.appService.launchApp(state.appName, state);
+                    await this.appService.launchApp(state);
                 }
                 console.log('🔄 WindowManager - All windows restored');
             } catch (e) {

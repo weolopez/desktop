@@ -13,7 +13,9 @@ export class AppService {
         document.addEventListener('LAUNCH_APP', this.handleLaunchAppEvent.bind(this));
     }
     handleLaunchAppEvent(event) {
-        this.launchApp( event.detail )
+        if (event.detail && event.detail.id) {
+            this.launchApp(event.detail);
+        }
     }
     handlePublishTextEvent(event) {
         const { texts, icon } = event.detail;
@@ -178,8 +180,11 @@ export class AppService {
         });
     }
 
-    async launchApp(app) {
+    async launchApp(app, state) {
         try {
+            if (!app || !app.sourceUrl) {
+                throw new Error("Invalid app configuration. Missing sourceUrl.");
+            }
             try {
                 const module = await import(app.sourceUrl);
             } catch (error) {
@@ -212,7 +217,7 @@ export class AppService {
                 appName: app.name || app.id || "App",
                 appIcon: app.icon || (app.initialState ? app.initialState.appIcon : '📄'),
                 content: element,
-                initialState: app.initialState || {},
+                initialState: state || {},
                 sourceUrl: app.sourceUrl
             });
             console.log(`Successfully launched app: ${JSON.stringify(app)}`);
