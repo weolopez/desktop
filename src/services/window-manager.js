@@ -50,12 +50,12 @@ export class WindowManager {
     }
 
     handleWindowMinimize(details) {
-        const { windowId, appName, appIcon } = details;
+        const { windowId, appName, appIcon, appTag } = details;
         
         // Add to dock's minimized windows
         const dock = this.desktopComponent.shadowRoot.querySelector('dock-component');
         if (dock) {
-            dock.minimizeWindow(windowId, appName, appIcon);
+            dock.minimizeWindow(windowId, appName, appIcon, appTag);
         }
     }
 
@@ -109,8 +109,21 @@ export class WindowManager {
                 
                 // Use a for...of loop to handle async app launching sequentially
                 for (const state of windowsState) {
+
+                    await this.desktopComponent.importUrl(state.sourceUrl)
+
                     console.log('🔄 WindowManager - Restoring window:', state);
-                    await this.appService.launchApp(state);
+                    this.desktopComponent.addApp({
+                        name: state.appName,
+                        icon: state.appIcon,
+                        tag: state.appTag,
+                        sourceUrl: state.sourceUrl,
+                        x: state.x,
+                        y: state.y,
+                        width: state.width,
+                        height: state.height,
+                    });
+                    // await this.appService.launchApp(state);
                 }
                 console.log('🔄 WindowManager - All windows restored');
             } catch (e) {

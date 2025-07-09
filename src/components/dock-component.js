@@ -315,13 +315,14 @@ class DockComponent extends HTMLElement {
         this.render();
     }
 
-    minimizeWindow(windowId, appName, appIcon) {
+    minimizeWindow(windowId, appName, appIcon, appTag) {
         // Add to minimized windows if not already there
         if (!this.minimizedWindows.find(w => w.id === windowId)) {
             this.minimizedWindows.push({
                 id: windowId,
                 name: appName,
-                icon: appIcon
+                icon: appIcon,
+                tag: appTag
             });
             this.render();
         }

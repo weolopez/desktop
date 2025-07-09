@@ -7,7 +7,9 @@ class WindowComponent extends HTMLElement {
         this.windowId = 'window-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         this.appName = this.getAttribute('app-name') || 'Untitled';
         this.appIcon = this.getAttribute('app-icon') || '📄';
+        this.sourceUrl = this.getAttribute('source-url') || '';
         this.isFocused = true;
+        this.appTag = this.getAttribute('app-tag') || ''
 
         // State flags
         this.isMinimized = this.hasAttribute('minimized');
@@ -69,7 +71,8 @@ class WindowComponent extends HTMLElement {
                 detail: {
                     windowId: this.windowId,
                     appName: this.appName,
-                    appIcon: this.appIcon
+                    appIcon: this.appIcon,
+                    appTag: this.appTag
                 },
                 bubbles: true,
                 composed: true
@@ -500,7 +503,8 @@ class WindowComponent extends HTMLElement {
             detail: { 
                 windowId: this.windowId, 
                 appName: this.appName, 
-                appIcon: this.appIcon 
+                appIcon: this.appIcon,
+                appTag: this.appTag
             },
             bubbles: true,
             composed: true
@@ -602,7 +606,8 @@ class WindowComponent extends HTMLElement {
             id: this.windowId,
             appName: this.appName,
             appIcon: this.appIcon,
-            sourceUrl: this.getAttribute('source-url'),
+            appTag: this.appTag,
+            sourceUrl: this.sourceUrl,
             x: this.x,
             y: this.y,
             width: this.width,

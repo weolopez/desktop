@@ -11,8 +11,10 @@ class DesktopComponent extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+
     this.appService = new AppService();
     this.appService.init(this);
+
     this.wallpaperManager = new WallpaperManager(this);
     this.contextMenuManager = new ContextMenuManager(
       this,
@@ -27,42 +29,42 @@ class DesktopComponent extends HTMLElement {
     this.windowManager.setupEventListeners();
     this.windowManager.restoreWindowsState();
     this.setupPasteDrop();
-    this.setupAppEventListeners();
-    this.showTestNotification();
+    // this.setupAppEventListeners();
+    // this.showTestNotification();
   }
 
-  showTestNotification() {
-    setTimeout(() => {
-      document.dispatchEvent(
-        new CustomEvent("create-notification", {
-          detail: {
-            sourceAppId: "system",
-            title: "Welcome to your Desktop!",
-            body: "The notification system is now active.",
-            icon: "🎉",
-          },
-        }),
-      );
-    }, 2000);
-  }
+  // showTestNotification() {
+  //   setTimeout(() => {
+  //     document.dispatchEvent(
+  //       new CustomEvent("create-notification", {
+  //         detail: {
+  //           sourceAppId: "system",
+  //           title: "Welcome to your Desktop!",
+  //           body: "The notification system is now active.",
+  //           icon: "🎉",
+  //         },
+  //       }),
+  //     );
+  //   }, 2000);
+  // }
 
-  setupAppEventListeners() {
-    this.addEventListener("app-launched", () => {
-      console.log("App launched event received");
-    });
+  // setupAppEventListeners() {
+  //   this.addEventListener("app-launched", () => {
+  //     console.log("App launched event received");
+  //   });
 
-    this.addEventListener("window-closed", () => {
-      setTimeout(() => {
-        console.log("Window closed event received");
-      }, 100);
-    });
+  //   this.addEventListener("window-closed", () => {
+  //     setTimeout(() => {
+  //       console.log("Window closed event received");
+  //     }, 100);
+  //   });
 
-    this.addEventListener("launch-finder-webapp", (e) => {
-      document.dispatchEvent(
-        new CustomEvent("PUBLISH_TEXT", { detail: { texts: [e.detail.url] } }),
-      );
-    });
-  }
+  //   this.addEventListener("launch-finder-webapp", (e) => {
+  //     document.dispatchEvent(
+  //       new CustomEvent("PUBLISH_TEXT", { detail: { texts: [e.detail.url] } }),
+  //     );
+  //   });
+  // }
 
   render() {
     this.shadowRoot.innerHTML = `
@@ -233,6 +235,52 @@ class DesktopComponent extends HTMLElement {
     );
   }
 
+  async importUrl(sourceUrl) {
+    await import(sourceUrl);
+  }
+  addApp(app) {
+    const {
+        name = app.name || "Untitled App", // Default name if not provided
+        icon = app.icon || "📄", // Default icon if not provided
+        tag = app.tag || "untagged",
+        sourceUrl = app.sourceUrl || "",
+        x = app.x || 150 + (Math.random() * 200),
+        y = app.y || 150 + (Math.random() * 100),
+        width = app.width || 600, // Default width if not provided
+        height = app.height || 400, // Default height if not provided
+    } = app;
+    // Create the content element for the app
+    const content = document.createElement(tag);    
+
+    const windowEl = document.createElement("window-component");
+    windowEl.appName = name
+    windowEl.appIcon = icon
+    windowEl.sourceUrl = sourceUrl
+    windowEl.appTag = tag
+    windowEl.x = x
+    windowEl.y = y
+    windowEl.width = width
+    windowEl.height = height
+
+    windowEl.appendChild(content);
+    this.addWindow(windowEl);
+
+    // this.dispatchEvent(
+    //     new CustomEvent("app-launched", {
+    //         detail: { appName },
+    //         bubbles: true,
+    //         composed: true,
+    //     }),
+    // );
+  }
+  addContent(div){
+            // appName: title,
+            // appIcon: "📄",
+            // width: 500,
+            // height: 300,
+            // content: contentDiv,
+       alert("addContent is deprecated, use addApp instead", div); 
+  }
   getWindows() {
     return this.shadowRoot.querySelectorAll("window-component");
   }

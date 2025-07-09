@@ -1,4 +1,4 @@
-import { APP_URL_MAP } from '../config.js';
+import { APPS } from '../config.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
@@ -61,13 +61,9 @@ export class AppService {
     }
 
     async _handleUrl(url, icon = "📄") {
-        // Check if the URL is in APP_URL_MAP values
         for (const app of APP_URL_MAP.entries()) {
             const [id, sourceUrl] = app;
-            // Accept both absolute and relative matches
             if (url.href === sourceUrl || url.pathname === sourceUrl) {
-                // If found, launch the app by appId (strip -webapp if present)
-                // Optionally, you can pass initialState with sourceUrl if needed
                 this.launchApp(app)
                 return;
             }
@@ -137,6 +133,16 @@ export class AppService {
     }
 //  config={ id: 'chat', name: 'Chat', icon: '💬', sourceUrl: '/chat/chat-component.js', tag: "chat-component", onstartup: false },
     loadWebComponentFromTag(tag, sourceUrl, config) {
+        //check to see if talk is already loaded and if config.static is true
+        if (customElements.get(tag)) {
+            console.log(`Web component with tag "${tag}" is already defined.`);
+            if (config && config.static) {
+                console.log(`Static component "${tag}" already loaded, skipping creation.`);
+                return;
+            }
+        }
+
+
         tag = tag || (config && config.tag)
         const myComplexElement = document.createElement(tag);
         const description = document.createElement("span");
@@ -144,12 +150,12 @@ export class AppService {
         description.textContent = "This custom description has been inserted into the slot!";
         myComplexElement.appendChild(description);
 
-        this._createWindow({
-            appName: (config && config.name) || tag || "Web Component",
-            appIcon: (config && config.icon) || "🌐",
+        this.desktopComponent.addApp({
+            name: (config && config.name) || tag || "Web Component",
+            icon: (config && config.icon) || "🌐",
             width: 600,
             height: 400,
-            content: myComplexElement,
+            tag: tag,
             sourceUrl: sourceUrl || (config && config.sourceUrl)
         });
         console.log("Web component instance created and added to the window.");
@@ -162,7 +168,8 @@ export class AppService {
         contentDiv.style.wordBreak = "break-word";
         contentDiv.textContent = content;
 
-        this._createWindow({
+        // this._createWindow({
+        this.desktopComponent.addContent({
             appName: title,
             appIcon: "📄",
             width: 500,
@@ -181,10 +188,23 @@ export class AppService {
     }
 
     async launchApp(app, state) {
+
         try {
             if (!app || !app.sourceUrl) {
-                throw new Error("Invalid app configuration. Missing sourceUrl.");
+                app = APPS.find(a => a.id === app.id || a.name === app.name);
+                if (!app || !app.sourceUrl) {
+                    throw new Error("Invalid app configuration. Missing sourceUrl.");
+                }
             }
+            // Set isRunning to true for the launched app
+            const appRef = APPS.find(a => a.id === app.id);
+            if (appRef) {
+                appRef.isRunning = true;
+            }
+            if (app.running && app.static) {
+                console.log(`Static component "${app.tag}" already loaded, skipping creation.`);
+                return;
+            } else app.running = true;
             try {
                 const module = await import(app.sourceUrl);
             } catch (error) {
@@ -192,117 +212,27 @@ export class AppService {
                 // Handle the failure case
                 throw new Error(`Module import failed: ${error.message}`);
             }
-            
-                // const sourceText = await (await fetch(sourceUrl)).text();
-                // const tag = this.getTagNameFromSource(sourceText);
-                // if (!tag) {
-                //     throw new Error(`Could not determine tag name from source: ${sourceUrl}`);
-                // }
-                // console.log(`Determined tag: ${tag}`);
-            let element = document.createElement(app.tag );
-            // if (appName === 'Safari') {
-            //     console.log('Creating new Safari instance.');
-            //     element = document.createElement('safari-chrome-webapp');
-            // } else {
-            //     console.log(`Creating generic div for app: ${appName}`);
-            //     element = document.createElement('div');
-            //     element.textContent = `Content for ${appName}`;
-            // }
 
-            // if (initialState && initialState.appState) {
-            //     element.setAttribute('initial-state', JSON.stringify(initialState.appState));
-            // }
+            this.desktopComponent.addApp(app);
 
-            this._createWindow({
-                appName: app.name || app.id || "App",
-                appIcon: app.icon || (app.initialState ? app.initialState.appIcon : '📄'),
-                content: element,
-                initialState: state || {},
-                sourceUrl: app.sourceUrl
-            });
+
+            // let element = document.createElement(app.tag );
+            // this._createWindow({
+            //     appName: app.name || app.id || "App",
+            //     appIcon: app.icon || (app.initialState ? app.initialState.appIcon : '📄'),
+            //     content: element,
+            //     initialState: state || {},
+            //     sourceUrl: app.sourceUrl
+            // });
             console.log(`Successfully launched app: ${JSON.stringify(app)}`);
         } catch (error) {
             console.error(`Failed to launch app "${app.name || app.id || "App"}" with state:`, { initialState: app.initialState || {}, error });
         }
     }
 
-    _createWindow(options) {
-        const {
-            appName,
-            appIcon,
-            content,
-            initialState,
-            sourceUrl
-        } = options;
-
-        const x = initialState?.x != null ? initialState.x : 150 + (Math.random() * 200);
-        const y = initialState?.y != null ? initialState.y : 150 + (Math.random() * 100);
-        const width = initialState?.width != null ? initialState.width : 600;
-        const height = initialState?.height != null ? initialState.height : 400;
-
-        console.log('🏭 AppService _createWindow - Creating window with values:', {
-            x, y, width, height,
-            isMinimized: initialState?.isMinimized,
-            isMaximized: initialState?.isMaximized,
-            initialState
-        });
-
-        const windowEl = document.createElement("window-component");
-        windowEl.appName = appName;
-        windowEl.appIcon = appIcon || "📄"; // Default icon if not provided
-        // windowEl.setAttribute("app-name", appName);
-        // windowEl.setAttribute("app-icon", appIcon);
-        if (sourceUrl) {
-            windowEl.setAttribute("source-url", sourceUrl);
-        }
-        //windowEl.setAttribute("x", x);
-        windowEl.x = x; // For consistency with existing code
-        // windowEl.setAttribute("y", y);
-        // windowEl.setAttribute("width", width);
-        // windowEl.setAttribute("height", height);
-        windowEl.y = y; // For consistency with existing code
-        windowEl.width = width; // For consistency with existing code
-        windowEl.height = height; // For consistency with existing code
-
-        console.log('🏭 AppService _createWindow - Set basic attributes, now checking state flags');
-
-        if (initialState?.isMinimized) {
-            console.log('🏭 AppService _createWindow - Setting minimized attribute');
-            //windowEl.setAttribute('minimized', '');
-            windowEl.isMinimized = true; // For consistency with existing code
-
-        }
-        if (initialState?.isMaximized) {
-            console.log('🏭 AppService _createWindow - Setting maximized attributes');
-            windowEl.isMaximized = true; // For consistency with existing code
-            windowEl.x = initialState.savedX || x; // Use saved position if available
-            windowEl.y = initialState.savedY || y; // Use saved position if available
-            windowEl.width = initialState.savedWidth || width; // Use saved size if available
-            windowEl.height = initialState.savedHeight || height; // Use saved size if available
-            // windowEl.setAttribute('saved-x', initialState.savedX);
-            // windowEl.setAttribute('saved-y', initialState.savedY);
-            // windowEl.setAttribute('saved-width', initialState.savedWidth);
-            // windowEl.setAttribute('saved-height', initialState.savedHeight);
-        }
-
-        console.log('🏭 AppService _createWindow - All attributes set, element ready for DOM insertion');
-
-        if (content) {
-            windowEl.appendChild(content);
-        }
-
-        this.desktopComponent.addWindow(windowEl);
-
-        this.desktopComponent.dispatchEvent(
-            new CustomEvent("app-launched", {
-                detail: { appName },
-                bubbles: true,
-                composed: true,
-            }),
-        );
-
-        return windowEl;
-    }
+    // _createWindow(options) {
+    //     this.desktopComponent.addApp(options);
+    // }
 
     getTagNameFromSource(source) {
         const match = source.match(WEB_COMPONENT_TAG_REGEX);
