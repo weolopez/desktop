@@ -122,6 +122,7 @@ export class WindowManager {
                         y: state.y,
                         width: state.width,
                         height: state.height,
+                        isMinimized: state.isMinimized || false,
                     });
                     // await this.appService.launchApp(state);
                 }

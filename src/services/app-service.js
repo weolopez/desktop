@@ -1,4 +1,4 @@
-import { APPS } from '../config.js';
+import { APPS, APP_URL_MAP } from '../config.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
@@ -61,7 +61,7 @@ export class AppService {
     }
 
     async _handleUrl(url, icon = "📄") {
-        for (const app of APP_URL_MAP.entries()) {
+        for (const app of APPS.entries()) {
             const [id, sourceUrl] = app;
             if (url.href === sourceUrl || url.pathname === sourceUrl) {
                 this.launchApp(app)
@@ -87,7 +87,13 @@ export class AppService {
                     console.warn("Failed to import module:", error);   
                 }
 
-                loadWebComponentFromTag(tagName, url.href)
+                  this.desktopComponent.addApp({
+                        name: tagName, // Default name if not provided
+                        icon: "🖥️", // Use provided icon, fallback to app.icon or default app icon
+                        tag: tagName,
+                        sourceUrl: url.href,
+                    } ) 
+                // loadWebComponentFromTag(tagName, url.href)
             } catch (error) {
                 console.error("Failed to handle JavaScript URL:", error);
                 this.displayPlainTextInWindow(url.href, "Failed to Load URL");

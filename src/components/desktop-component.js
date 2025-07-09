@@ -261,6 +261,7 @@ class DesktopComponent extends HTMLElement {
     windowEl.y = y
     windowEl.width = width
     windowEl.height = height
+    windowEl.isMinimized = app.isMinimized || false; // Default to false if not provided
 
     windowEl.appendChild(content);
     this.addWindow(windowEl);
