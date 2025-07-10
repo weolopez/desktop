@@ -269,7 +269,12 @@ class DockComponent extends HTMLElement {
             const dockIcon = e.target.closest('.dock-icon');
             if (dockIcon && !dockIcon.classList.contains('minimized')) {
                 e.preventDefault();
+                e.stopPropagation();
                 this.showContextMenu(e.clientX, e.clientY, dockIcon);
+            } else {
+                // Prevent desktop context menu on dock area
+                e.preventDefault();
+                e.stopPropagation();
             }
         });
 

@@ -188,9 +188,6 @@ export class AppService {
     }
 
     handleFiles(files) {
-        // This method is a placeholder for handling dropped files.
-        // Future implementation could involve reading file contents,
-        // displaying images, or creating file icons on the desktop.
         files.forEach((file) => {
             console.log("Dropped file:", file.name, file.type);
         });
@@ -224,24 +221,12 @@ export class AppService {
 
             this.desktopComponent.addApp(app);
 
-
-            // let element = document.createElement(app.tag );
-            // this._createWindow({
-            //     appName: app.name || app.id || "App",
-            //     appIcon: app.icon || (app.initialState ? app.initialState.appIcon : '📄'),
-            //     content: element,
-            //     initialState: state || {},
-            //     sourceUrl: app.sourceUrl
-            // });
             console.log(`Successfully launched app: ${JSON.stringify(app)}`);
         } catch (error) {
             console.error(`Failed to launch app "${app.name || app.id || "App"}" with state:`, { initialState: app.initialState || {}, error });
         }
     }
 
-    // _createWindow(options) {
-    //     this.desktopComponent.addApp(options);
-    // }
 
     getTagNameFromSource(source) {
         const match = source.match(WEB_COMPONENT_TAG_REGEX);

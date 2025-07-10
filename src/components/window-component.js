@@ -379,9 +379,19 @@ class WindowComponent extends HTMLElement {
             this.focus();
         });
 
-        // Prevent context menu on title bar
+        // Prevent context menu on title bar and window chrome only
         titleBar.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Prevent desktop context menu from showing when right-clicking on window content
+        // but allow the browser's native context menu for the content area
+        this.shadowRoot.addEventListener('contextmenu', (e) => {
+            // Only stop propagation if not clicking on the content area
+            if (!e.target.closest('.window-content')) {
+                e.stopPropagation();
+            }
         });
     }
 
