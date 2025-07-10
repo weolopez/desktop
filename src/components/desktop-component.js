@@ -235,32 +235,73 @@ class DesktopComponent extends HTMLElement {
     );
   }
 
+  async importText(text, sourceUrl = undefined) {
+    try {
+      let processedContent = text;
+      //default to domain as base
+      let baseUrl = window.location.origin + "/";
+      if (sourceUrl && text.includes("from './")) {
+        baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
+      } 
+      if (text.includes("from './")) {
+        console.log("Converting relative imports to absolute URLs...");
+        console.log("Base URL for imports:", baseUrl);
+
+        processedContent = text.replace(
+          /from\s+['"`]\.\/([^'"`]+)['"`]/g,
+          (match, relativePath) => {
+            const absoluteUrl = baseUrl + relativePath;
+            console.log(`Converting: ${match} -> from '${absoluteUrl}'`);
+            return `from '${absoluteUrl}'`;
+          },
+        );
+      }
+      const blob = new Blob([processedContent], { type: "application/javascript" });
+      const url = URL.createObjectURL(blob);
+      this.importUrl(url);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to import text as module:", error);
+      // Optionally, you can display the text in a window or handle it differently
+      this.appService.displayPlainTextInWindow(processedContent, "Pasted Text");
+    }
+  }
+
   async importUrl(sourceUrl) {
     await import(sourceUrl);
   }
   addApp(app) {
     const {
-        name = app.name || "Untitled App", // Default name if not provided
-        icon = app.icon || "📄", // Default icon if not provided
-        tag = app.tag || "untagged",
-        sourceUrl = app.sourceUrl || "",
-        x = app.x || 150 + (Math.random() * 200),
-        y = app.y || 150 + (Math.random() * 100),
-        width = app.width || 600, // Default width if not provided
-        height = app.height || 400, // Default height if not provided
+      name = app.name || "Untitled App", // Default name if not provided
+      icon = app.icon || "📄", // Default icon if not provided
+      tag = app.tag || "untagged",
+      sourceUrl = app.sourceUrl || "",
+      x = app.x || 150 + (Math.random() * 200),
+      y = app.y || 150 + (Math.random() * 100),
+      width = app.width || 600, // Default width if not provided
+      height = app.height || 400, // Default height if not provided
     } = app;
     // Create the content element for the app
-    const content = document.createElement(tag);    
-
+    const content = document.createElement(tag);
     const windowEl = document.createElement("window-component");
+
+    // Get content's derived width and height
+    const { width: contentWidth, height: contentHeight } = content.getBoundingClientRect();
+    // If content's width or height is less than 10px, use the defaults passed in
+    if (contentWidth < 10 || contentHeight < 10) {
+      windowEl.width = width;
+      windowEl.height = height;
+    } else {
+      windowEl.width = contentWidth;
+      windowEl.height = contentHeight;
+    }
+
     windowEl.appName = name
     windowEl.appIcon = icon
     windowEl.sourceUrl = sourceUrl
     windowEl.appTag = tag
     windowEl.x = x
     windowEl.y = y
-    windowEl.width = width
-    windowEl.height = height
     windowEl.isMinimized = app.isMinimized || false; // Default to false if not provided
 
     windowEl.appendChild(content);
@@ -274,13 +315,13 @@ class DesktopComponent extends HTMLElement {
     //     }),
     // );
   }
-  addContent(div){
-            // appName: title,
-            // appIcon: "📄",
-            // width: 500,
-            // height: 300,
-            // content: contentDiv,
-       alert("addContent is deprecated, use addApp instead", div); 
+  addContent(div) {
+    // appName: title,
+    // appIcon: "📄",
+    // width: 500,
+    // height: 300,
+    // content: contentDiv,
+    alert("addContent is deprecated, use addApp instead", div);
   }
   getWindows() {
     return this.shadowRoot.querySelectorAll("window-component");

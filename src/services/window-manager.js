@@ -110,7 +110,19 @@ export class WindowManager {
                 // Use a for...of loop to handle async app launching sequentially
                 for (const state of windowsState) {
 
-                    await this.desktopComponent.importUrl(state.sourceUrl)
+                    if (!state || !state.sourceUrl) {
+                        console.warn('🔄 WindowManager - Invalid window state, skipping:', state);
+
+                        // get text and tag to local storage
+                        const text = localStorage.getItem(`web-component-${tag}`);
+                        if (text) {
+                            console.log('🔄 WindowManager - Found saved text for tag:', tag);
+                        }
+                        await this.desktopComponent.importText(text, tag);
+                        continue;
+                    } else {
+                        await this.desktopComponent.importUrl(state.sourceUrl);
+                    }
 
                     console.log('🔄 WindowManager - Restoring window:', state);
                     this.desktopComponent.addApp({

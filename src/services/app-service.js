@@ -57,6 +57,9 @@ export class AppService {
         }
 
         await this.loadComponentFromString(text, sourceUrl);
+
+       // save text and tag to local storage
+        localStorage.setItem(`web-component-${tag}`, text);
         this.loadWebComponentFromTag(tag, sourceUrl);
     }
 
