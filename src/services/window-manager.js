@@ -114,12 +114,11 @@ export class WindowManager {
                         console.warn('🔄 WindowManager - Invalid window state, skipping:', state);
 
                         // get text and tag to local storage
-                        const text = localStorage.getItem(`web-component-${tag}`);
+                        const text = localStorage.getItem(`web-component-${state.appTag}`);
                         if (text) {
-                            console.log('🔄 WindowManager - Found saved text for tag:', tag);
+                            console.log('🔄 WindowManager - Found saved text for tag:', state.appTag);
                         }
-                        await this.desktopComponent.importText(text, tag);
-                        continue;
+                        await this.desktopComponent.importText(text, state.sourceUrl);
                     } else {
                         await this.desktopComponent.importUrl(state.sourceUrl);
                     }

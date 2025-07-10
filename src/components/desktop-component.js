@@ -259,7 +259,7 @@ class DesktopComponent extends HTMLElement {
       const blob = new Blob([processedContent], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
       this.importUrl(url);
-      URL.revokeObjectURL(url);
+      //URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Failed to import text as module:", error);
       // Optionally, you can display the text in a window or handle it differently
