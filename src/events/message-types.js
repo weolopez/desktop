@@ -35,10 +35,28 @@ export const MESSAGES = {
     DOCK_ICON_CLICK: 'dock-icon-click',
     DOCK_CONTEXT_MENU: 'dock-context-menu',
     
-    // Notification system
+    // Notification system - Core events
     CREATE_NOTIFICATION: 'create-notification',
     NOTIFICATION_CLICKED: 'notification-clicked',
     NOTIFICATION_DISMISSED: 'notification-dismissed',
+    
+    // Notification system - Management events
+    NOTIFICATION_PERMISSION_REQUEST: 'notification-permission-request',
+    NOTIFICATION_PERMISSION_RESULT: 'notification-permission-result',
+    NOTIFICATION_CLEAR_ALL: 'notification-clear-all',
+    NOTIFICATION_CLEAR_APP: 'notification-clear-app',
+    NOTIFICATION_SETTINGS_UPDATE: 'notification-settings-update',
+    NOTIFICATION_HISTORY_REQUEST: 'notification-history-request',
+    
+    // Notification system - Status events
+    NOTIFICATION_CREATED: 'notification-created',
+    NOTIFICATION_ERROR: 'notification-error',
+    NOTIFICATION_ACTION: 'notification-action',
+    NOTIFICATION_ACTION_TRIGGERED: 'notification-action-triggered',
+    NOTIFICATION_DISMISSED_COMPLETE: 'notification-dismissed-complete',
+    NOTIFICATIONS_CLEARED: 'notifications-cleared',
+    NOTIFICATION_SETTINGS_UPDATED: 'notification-settings-updated',
+    NOTIFICATION_HISTORY_RESPONSE: 'notification-history-response',
     
     // Finder app events
     FINDER_DIRECTORY_CHANGED: 'finder-directory-changed',
@@ -195,6 +213,87 @@ export const MESSAGES = {
  */
 
 /**
+ * Notification management event payloads
+ * @typedef {Object} NotificationPermissionRequestPayload
+ * @property {string} appId - App requesting permission
+ * @property {string} [level] - Permission level requested (default, alerts, banners)
+ */
+
+/**
+ * @typedef {Object} NotificationPermissionResultPayload
+ * @property {string} appId - App identifier
+ * @property {string} level - Permission level
+ * @property {boolean} granted - Whether permission was granted
+ * @property {string} [error] - Error message if permission failed
+ */
+
+/**
+ * @typedef {Object} NotificationClearAppPayload
+ * @property {string} appId - App identifier to clear notifications for
+ */
+
+/**
+ * @typedef {Object} NotificationSettingsUpdatePayload
+ * @property {boolean} [enableNotifications] - Whether notifications are enabled
+ * @property {boolean} [enableSounds] - Whether notification sounds are enabled
+ * @property {number} [defaultDuration] - Default notification duration in ms
+ * @property {number} [maxActiveNotifications] - Maximum active notifications
+ * @property {number} [historyLimit] - Maximum notifications in history
+ */
+
+/**
+ * @typedef {Object} NotificationHistoryRequestPayload
+ * @property {string} [requestId] - Request identifier for response matching
+ * @property {Object} [options] - Query options
+ * @property {string} [options.appId] - Filter by app ID
+ * @property {string} [options.category] - Filter by category
+ * @property {boolean} [options.unreadOnly] - Only unread notifications
+ * @property {number} [options.limit] - Limit number of results
+ */
+
+/**
+ * Notification status event payloads
+ * @typedef {Object} NotificationCreatedPayload
+ * @property {string} notificationId - Created notification ID
+ * @property {string} sourceAppId - Source app identifier
+ */
+
+/**
+ * @typedef {Object} NotificationErrorPayload
+ * @property {string} error - Error message
+ * @property {string} sourceAppId - Source app identifier
+ */
+
+/**
+ * @typedef {Object} NotificationActionPayload
+ * @property {string} notificationId - Notification identifier
+ * @property {string} [actionId] - Action identifier if action was triggered
+ * @property {string} type - Action type ('notification' or 'action')
+ * @property {string} sourceAppId - Source app identifier
+ * @property {string} category - Notification category
+ */
+
+/**
+ * @typedef {Object} NotificationActionTriggeredPayload
+ * @property {string} notificationId - Notification identifier
+ * @property {string} actionId - Action identifier
+ * @property {string} sourceAppId - Source app identifier
+ */
+
+/**
+ * @typedef {Object} NotificationsClearedPayload
+ * @property {number} count - Number of notifications cleared
+ * @property {string} type - Clear type ('all' or 'app')
+ * @property {string} [appId] - App ID if type is 'app'
+ */
+
+/**
+ * @typedef {Object} NotificationHistoryResponsePayload
+ * @property {Array} history - Array of historical notifications
+ * @property {string} [requestId] - Request identifier
+ */
+
+/**
  * Helper functions for creating typed messages
  */
 
@@ -287,6 +386,20 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.notificationId === 'string' && typeof payload.type === 'string';
         case MESSAGES.NOTIFICATION_DISMISSED:
             return typeof payload.notificationId === 'string';
+        case MESSAGES.NOTIFICATION_PERMISSION_REQUEST:
+            return typeof payload.appId === 'string';
+        case MESSAGES.NOTIFICATION_CLEAR_APP:
+            return typeof payload.appId === 'string';
+        case MESSAGES.NOTIFICATION_SETTINGS_UPDATE:
+            return typeof payload === 'object' && payload !== null;
+        case MESSAGES.NOTIFICATION_CREATED:
+            return typeof payload.notificationId === 'string' && typeof payload.sourceAppId === 'string';
+        case MESSAGES.NOTIFICATION_ERROR:
+            return typeof payload.error === 'string' && typeof payload.sourceAppId === 'string';
+        case MESSAGES.NOTIFICATION_ACTION:
+            return typeof payload.notificationId === 'string' && 
+                   typeof payload.type === 'string' && 
+                   typeof payload.sourceAppId === 'string';
         default:
             return true; // Unknown message types are allowed
     }
@@ -310,6 +423,20 @@ export function getMessageDescription(messageType) {
         [MESSAGES.CREATE_NOTIFICATION]: 'Create a system notification',
         [MESSAGES.NOTIFICATION_CLICKED]: 'Notification was clicked',
         [MESSAGES.NOTIFICATION_DISMISSED]: 'Notification was dismissed',
+        [MESSAGES.NOTIFICATION_PERMISSION_REQUEST]: 'App requests notification permission',
+        [MESSAGES.NOTIFICATION_PERMISSION_RESULT]: 'Notification permission result',
+        [MESSAGES.NOTIFICATION_CLEAR_ALL]: 'Clear all notifications',
+        [MESSAGES.NOTIFICATION_CLEAR_APP]: 'Clear app notifications',
+        [MESSAGES.NOTIFICATION_SETTINGS_UPDATE]: 'Update notification settings',
+        [MESSAGES.NOTIFICATION_HISTORY_REQUEST]: 'Request notification history',
+        [MESSAGES.NOTIFICATION_CREATED]: 'Notification was created successfully',
+        [MESSAGES.NOTIFICATION_ERROR]: 'Notification creation failed',
+        [MESSAGES.NOTIFICATION_ACTION]: 'Notification action was triggered',
+        [MESSAGES.NOTIFICATION_ACTION_TRIGGERED]: 'Specific notification action triggered',
+        [MESSAGES.NOTIFICATION_DISMISSED_COMPLETE]: 'Notification dismissal completed',
+        [MESSAGES.NOTIFICATIONS_CLEARED]: 'Notifications were cleared',
+        [MESSAGES.NOTIFICATION_SETTINGS_UPDATED]: 'Notification settings were updated',
+        [MESSAGES.NOTIFICATION_HISTORY_RESPONSE]: 'Notification history response',
         [MESSAGES.FINDER_DIRECTORY_CHANGED]: 'Finder directory was changed',
         [MESSAGES.FINDER_VIEW_MODE_CHANGED]: 'Finder view mode was changed',
         [MESSAGES.FINDER_SELECTION_CHANGED]: 'Finder selection was changed',

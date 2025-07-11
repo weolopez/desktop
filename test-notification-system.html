@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Notification System Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #1d1d1f;
+            border-bottom: 2px solid #007AFF;
+            padding-bottom: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .primary { background: #007AFF; color: white; }
+        .primary:hover { background: #0056CC; }
+        .secondary { background: #f0f0f0; color: #333; }
+        .secondary:hover { background: #e0e0e0; }
+        .success { background: #34C759; color: white; }
+        .warning { background: #FF9500; color: white; }
+        .error { background: #FF3B30; color: white; }
+        .info { background: #5AC8FA; color: white; }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 6px;
+        }
+        input[type="number"], input[type="range"] {
+            width: 100px;
+        }
+        input[type="checkbox"] {
+            transform: scale(1.2);
+        }
+        
+        .log-output {
+            background: #1d1d1f;
+            color: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .log-entry {
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+        .log-success { color: #34C759; }
+        .log-error { color: #FF3B30; }
+        .log-warning { color: #FF9500; }
+        .log-info { color: #5AC8FA; }
+        
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stat-card {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #007AFF;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔔 Integrated Notification System Test</h1>
+    <p>Test the new core notification system with advanced eventing and management features.</p>
+    
+    <div class="test-section">
+        <h2>🔧 System Controls</h2>
+        <div class="button-group">
+            <button class="primary" id="enableMonitor">Enable Event Monitor</button>
+            <button class="secondary" id="showStats">Show Statistics</button>
+            <button class="secondary" id="clearLog">Clear Log</button>
+            <button class="info" id="requestPermission">Request Permission</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 Basic Notifications</h2>
+        <div class="button-group">
+            <button class="primary" id="testBasic">Basic Notification</button>
+            <button class="success" id="testSuccess">Success Notification</button>
+            <button class="warning" id="testWarning">Warning Notification</button>
+            <button class="error" id="testError">Error Notification</button>
+            <button class="info" id="testInfo">Info Notification</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>⚡ Advanced Notifications</h2>
+        <div class="button-group">
+            <button class="primary" id="testWithActions">With Actions</button>
+            <button class="secondary" id="testPersistent">Persistent</button>
+            <button class="secondary" id="testLongDuration">Long Duration</button>
+            <button class="secondary" id="testBatch">Batch Notifications</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧹 Management Operations</h2>
+        <div class="button-group">
+            <button class="warning" id="clearAll">Clear All</button>
+            <button class="warning" id="clearTestApp">Clear Test App</button>
+            <button class="info" id="showHistory">Show History</button>
+            <button class="secondary" id="getStatistics">Get Statistics</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>⚙️ Settings</h2>
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label>Enable Notifications</label>
+                <input type="checkbox" id="enableNotifications" checked>
+            </div>
+            <div class="setting-item">
+                <label>Enable Sounds</label>
+                <input type="checkbox" id="enableSounds" checked>
+            </div>
+            <div class="setting-item">
+                <label>Default Duration (ms)</label>
+                <input type="number" id="defaultDuration" value="5000" min="1000" max="30000" step="1000">
+            </div>
+            <div class="setting-item">
+                <label>Max Active</label>
+                <input type="number" id="maxActive" value="5" min="1" max="20">
+            </div>
+        </div>
+        <div class="button-group">
+            <button class="primary" id="updateSettings">Update Settings</button>
+            <button class="secondary" id="resetSettings">Reset to Default</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Statistics</h2>
+        <div class="stats-display" id="statsDisplay">
+            <div class="stat-card">
+                <div class="stat-value" id="totalNotifications">-</div>
+                <div class="stat-label">Total Notifications</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeNotifications">-</div>
+                <div class="stat-label">Active Now</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="unreadNotifications">-</div>
+                <div class="stat-label">Unread</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="permissionCount">-</div>
+                <div class="stat-label">App Permissions</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 Event Log</h2>
+        <div class="log-output" id="logOutput">
+            <div class="log-entry log-info">Notification system test ready. Enable event monitor to see detailed events.</div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { MESSAGES, createNotificationMessage } from './src/events/message-types.js';
+        import { eventMonitor } from './src/events/event-monitor.js';
+        
+        const logOutput = document.getElementById('logOutput');
+        let notificationCounter = 1;
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logOutput.appendChild(entry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+        
+        function updateStatistics() {
+            // Request statistics from the system
+            document.dispatchEvent(new CustomEvent('notification-statistics-request', {
+                detail: { requestId: 'test-ui' }
+            }));
+        }
+        
+        function createTestNotification(type, overrides = {}) {
+            const baseNotification = {
+                sourceAppId: 'test-app',
+                title: `Test Notification #${notificationCounter++}`,
+                body: 'This is a test notification from the integrated system.',
+                icon: '🧪',
+                category: type,
+                ...overrides
+            };
+            
+            const event = createNotificationMessage(baseNotification);
+            document.dispatchEvent(event);
+            log(`Created ${type} notification: "${baseNotification.title}"`, 'success');
+        }
+        
+        // Basic notifications
+        document.getElementById('testBasic').addEventListener('click', () => {
+            createTestNotification('default');
+        });
+        
+        document.getElementById('testSuccess').addEventListener('click', () => {
+            createTestNotification('success', {
+                title: 'Success!',
+                body: 'Operation completed successfully.',
+                icon: '✅'
+            });
+        });
+        
+        document.getElementById('testWarning').addEventListener('click', () => {
+            createTestNotification('warning', {
+                title: 'Warning',
+                body: 'Something needs your attention.',
+                icon: '⚠️'
+            });
+        });
+        
+        document.getElementById('testError').addEventListener('click', () => {
+            createTestNotification('error', {
+                title: 'Error',
+                body: 'An error occurred that needs to be addressed.',
+                icon: '❌'
+            });
+        });
+        
+        document.getElementById('testInfo').addEventListener('click', () => {
+            createTestNotification('system', {
+                title: 'Information',
+                body: 'Here is some important information for you.',
+                icon: 'ℹ️'
+            });
+        });
+        
+        // Advanced notifications
+        document.getElementById('testWithActions').addEventListener('click', () => {
+            createTestNotification('default', {
+                title: 'Notification with Actions',
+                body: 'This notification has action buttons.',
+                actions: [
+                    { actionId: 'accept', label: 'Accept' },
+                    { actionId: 'decline', label: 'Decline' },
+                    { actionId: 'later', label: 'Remind Later' }
+                ]
+            });
+        });
+        
+        document.getElementById('testPersistent').addEventListener('click', () => {
+            createTestNotification('default', {
+                title: 'Persistent Notification',
+                body: 'This notification will not auto-dismiss.',
+                persistent: true,
+                icon: '📌'
+            });
+        });
+        
+        document.getElementById('testLongDuration').addEventListener('click', () => {
+            createTestNotification('default', {
+                title: 'Long Duration Notification',
+                body: 'This notification will stay for 15 seconds.',
+                duration: 15000,
+                icon: '⏰'
+            });
+        });
+        
+        document.getElementById('testBatch').addEventListener('click', () => {
+            for (let i = 1; i <= 3; i++) {
+                setTimeout(() => {
+                    createTestNotification('default', {
+                        title: `Batch Notification ${i}`,
+                        body: `This is notification ${i} of 3 in a batch.`,
+                        icon: `${i}️⃣`
+                    });
+                }, i * 500);
+            }
+            log('Created batch of 3 notifications with delays', 'info');
+        });
+        
+        // Management operations
+        document.getElementById('clearAll').addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('notification-clear-all'));
+            log('Cleared all notifications', 'warning');
+        });
+        
+        document.getElementById('clearTestApp').addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('notification-clear-app', {
+                detail: { appId: 'test-app' }
+            }));
+            log('Cleared test app notifications', 'warning');
+        });
+        
+        document.getElementById('showHistory').addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('notification-history-request', {
+                detail: { 
+                    requestId: 'test-history',
+                    options: { limit: 10 }
+                }
+            }));
+            log('Requested notification history', 'info');
+        });
+        
+        document.getElementById('getStatistics').addEventListener('click', () => {
+            updateStatistics();
+            log('Requested system statistics', 'info');
+        });
+        
+        // Settings
+        document.getElementById('updateSettings').addEventListener('click', () => {
+            const settings = {
+                enableNotifications: document.getElementById('enableNotifications').checked,
+                enableSounds: document.getElementById('enableSounds').checked,
+                defaultDuration: parseInt(document.getElementById('defaultDuration').value),
+                maxActiveNotifications: parseInt(document.getElementById('maxActive').value)
+            };
+            
+            document.dispatchEvent(new CustomEvent('notification-settings-update', {
+                detail: settings
+            }));
+            log('Updated notification settings', 'success');
+        });
+        
+        document.getElementById('resetSettings').addEventListener('click', () => {
+            document.getElementById('enableNotifications').checked = true;
+            document.getElementById('enableSounds').checked = true;
+            document.getElementById('defaultDuration').value = 5000;
+            document.getElementById('maxActive').value = 5;
+            log('Reset settings to default values', 'info');
+        });
+        
+        // System controls
+        document.getElementById('enableMonitor').addEventListener('click', () => {
+            eventMonitor.enable(true);
+            eventMonitor.filter('CREATE_NOTIFICATION', 'NOTIFICATION_CLICKED', 'NOTIFICATION_DISMISSED', 'NOTIFICATION_CREATED');
+            log('Event monitor enabled with notification filter', 'success');
+        });
+        
+        document.getElementById('showStats').addEventListener('click', () => {
+            eventMonitor.stats();
+            log('Event monitor statistics displayed in console', 'info');
+        });
+        
+        document.getElementById('clearLog').addEventListener('click', () => {
+            logOutput.innerHTML = '<div class="log-entry log-info">Log cleared.</div>';
+        });
+        
+        document.getElementById('requestPermission').addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent('notification-permission-request', {
+                detail: { appId: 'test-app', level: 'alerts' }
+            }));
+            log('Requested notification permission for test app', 'info');
+        });
+        
+        // Listen for notification system events
+        document.addEventListener('notification-created', (e) => {
+            log(`✅ Notification created: ${e.detail.notificationId}`, 'success');
+            updateStatistics();
+        });
+        
+        document.addEventListener('notification-error', (e) => {
+            log(`❌ Notification error: ${e.detail.error}`, 'error');
+        });
+        
+        document.addEventListener('notification-dismissed-complete', (e) => {
+            log(`🗑️ Notification dismissed: ${e.detail.notificationId}`, 'warning');
+            updateStatistics();
+        });
+        
+        document.addEventListener('notification-action', (e) => {
+            log(`👆 Notification ${e.detail.type}: ${e.detail.notificationId}${e.detail.actionId ? ` (action: ${e.detail.actionId})` : ''}`, 'info');
+        });
+        
+        document.addEventListener('notifications-cleared', (e) => {
+            log(`🧹 Cleared ${e.detail.count} notifications (${e.detail.type})`, 'warning');
+            updateStatistics();
+        });
+        
+        document.addEventListener('notification-permission-result', (e) => {
+            log(`🔐 Permission ${e.detail.granted ? 'granted' : 'denied'} for ${e.detail.appId} (${e.detail.level})`, e.detail.granted ? 'success' : 'warning');
+        });
+        
+        document.addEventListener('notification-history-response', (e) => {
+            if (e.detail.requestId === 'test-history') {
+                log(`📚 History received: ${e.detail.history.length} notifications`, 'info');
+                console.log('Notification History:', e.detail.history);
+            }
+        });
+        
+        document.addEventListener('notification-settings-updated', (e) => {
+            log('⚙️ Settings updated successfully', 'success');
+        });
+        
+        // Mock statistics response (since we don't have access to the actual service here)
+        let mockStats = {
+            total: 0,
+            active: 0,
+            unread: 0,
+            permissions: 1
+        };
+        
+        document.addEventListener('notification-created', () => {
+            mockStats.total++;
+            mockStats.active++;
+            mockStats.unread++;
+            updateStatsDisplay();
+        });
+        
+        document.addEventListener('notification-dismissed-complete', () => {
+            mockStats.active = Math.max(0, mockStats.active - 1);
+            updateStatsDisplay();
+        });
+        
+        document.addEventListener('notifications-cleared', (e) => {
+            mockStats.active = 0;
+            updateStatsDisplay();
+        });
+        
+        function updateStatsDisplay() {
+            document.getElementById('totalNotifications').textContent = mockStats.total;
+            document.getElementById('activeNotifications').textContent = mockStats.active;
+            document.getElementById('unreadNotifications').textContent = mockStats.unread;
+            document.getElementById('permissionCount').textContent = mockStats.permissions;
+        }
+        
+        // Initialize display
+        updateStatsDisplay();
+        
+        log('🎉 Notification system test interface ready!', 'success');
+        log('💡 Try different notification types and features above.', 'info');
+        
+        // Auto-request permission for test app
+        setTimeout(() => {
+            document.getElementById('requestPermission').click();
+        }, 1000);
+    </script>
+</body>
+</html>

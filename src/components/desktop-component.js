@@ -1,8 +1,8 @@
 import { WallpaperManager } from "../services/wallpaper-manager.js";
 import { ContextMenuManager } from "../services/context-menu-manager.js";
 import { WindowManager } from "../services/window-manager.js";
-// import "../services/notification/notification-service.js";
-// import "../services/notification/notification-display-component.js";
+import { NotificationManager } from "../services/notification-manager.js";
+import "../services/notification-display-component.js";
 import { AppService } from "../services/app-service.js";
 import { MESSAGES, createPublishTextMessage } from "../events/message-types.js";
 import "../events/event-monitor.js";
@@ -23,6 +23,7 @@ class DesktopComponent extends HTMLElement {
       this.wallpaperManager,
     );
     this.windowManager = new WindowManager(this, this.appService);
+    this.notificationManager = new NotificationManager(this);
   }
 
   connectedCallback() {
@@ -30,7 +31,9 @@ class DesktopComponent extends HTMLElement {
     this.contextMenuManager.init();
     this.windowManager.setupEventListeners();
     this.windowManager.restoreWindowsState();
+    this.notificationManager.init();
     this.setupPasteDrop();
+    this.setupNotificationDisplayConnection();
     // this.setupAppEventListeners();
     // this.showTestNotification();
   }
@@ -153,9 +156,22 @@ class DesktopComponent extends HTMLElement {
                     <dock-component></dock-component>
                 </div>
             </div>
-            <notification-display-component></notification-display-component>
+            <notification-display-component id="notification-display"></notification-display-component>
         `;
     this.updateWallpaperClass(this.wallpaperManager.wallpaper);
+  }
+
+  setupNotificationDisplayConnection() {
+    // Connect the notification manager to the display component
+    const notificationDisplay = this.shadowRoot.getElementById("notification-display");
+    if (notificationDisplay) {
+      this.notificationManager.setDisplayComponent(notificationDisplay);
+      
+      // Create a welcome notification to show the system is working
+      setTimeout(() => {
+        this.notificationManager.createTestNotification('system');
+      }, 2000);
+    }
   }
 
   setupPasteDrop() {

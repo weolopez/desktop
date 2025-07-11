@@ -15,15 +15,15 @@ export const APPS = [
         tag: "chat-component", 
         onstartup: false 
     },
-    { 
-        id: 'notification', 
-        name: 'Notification', 
-        icon: '🔔', 
-        sourceUrl: '/apps/notification/notification-display-component.js', 
-        tag: "notification-display-component", 
-        onstartup: true, 
-        static: true 
-    }
+    // { 
+    //     id: 'notification', 
+    //     name: 'Notification', 
+    //     icon: '🔔', 
+    //     sourceUrl: '/apps/notification/notification-display-component.js', 
+    //     tag: "notification-display-component", 
+    //     onstartup: true, 
+    //     static: true 
+    // }
 ];
 
     // { id: 'finder', name: 'Finder', icon: '📁', sourceUrl: 'https://weolopez.com/desktop/src/apps/finder/finder-webapp.js' },
