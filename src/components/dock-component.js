@@ -1,4 +1,5 @@
 import { APPS } from '../config.js';
+import { MESSAGES, createLaunchAppMessage } from '../events/message-types.js';
 class DockComponent extends HTMLElement {
     constructor() {
         super();
@@ -302,7 +303,7 @@ class DockComponent extends HTMLElement {
         });
     }
     launchApp(app) {
-        document.dispatchEvent(new CustomEvent('LAUNCH_APP', { detail: app }));
+        document.dispatchEvent(createLaunchAppMessage(app));
         this.render();
     }
 
@@ -311,7 +312,7 @@ class DockComponent extends HTMLElement {
         this.minimizedWindows = this.minimizedWindows.filter(w => w.id !== windowId);
         
         // Dispatch custom event to restore window
-        this.dispatchEvent(new CustomEvent('restore-window', {
+        this.dispatchEvent(new CustomEvent(MESSAGES.WINDOW_RESTORE, {
             detail: { windowId },
             bubbles: true,
             composed: true

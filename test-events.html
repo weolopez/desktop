@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event System Test</title>
+</head>
+<body>
+    <h1>Event System Test</h1>
+    <button id="testLaunchApp">Test Launch App</button>
+    <button id="testPublishText">Test Publish Text</button>
+    <button id="enableMonitor">Enable Event Monitor</button>
+    <button id="showHistory">Show Event History</button>
+    
+    <script type="module">
+        import { MESSAGES, createLaunchAppMessage, createPublishTextMessage } from './src/events/message-types.js';
+        import { eventMonitor } from './src/events/event-monitor.js';
+        
+        // Test launch app
+        document.getElementById('testLaunchApp').addEventListener('click', () => {
+            const event = createLaunchAppMessage({
+                id: 'test-app',
+                name: 'Test App',
+                icon: '🧪',
+                sourceUrl: '/test-app.js',
+                tag: 'test-app'
+            });
+            document.dispatchEvent(event);
+        });
+        
+        // Test publish text
+        document.getElementById('testPublishText').addEventListener('click', () => {
+            const event = createPublishTextMessage({
+                texts: ['Hello from enhanced event system!']
+            });
+            document.dispatchEvent(event);
+        });
+        
+        // Enable event monitor
+        document.getElementById('enableMonitor').addEventListener('click', () => {
+            eventMonitor.enable(true);
+        });
+        
+        // Show event history
+        document.getElementById('showHistory').addEventListener('click', () => {
+            eventMonitor.history();
+        });
+        
+        // Listen for events to verify they're working
+        document.addEventListener(MESSAGES.LAUNCH_APP, (e) => {
+            console.log('✅ LAUNCH_APP event received:', e.detail);
+        });
+        
+        document.addEventListener(MESSAGES.PUBLISH_TEXT, (e) => {
+            console.log('✅ PUBLISH_TEXT event received:', e.detail);
+        });
+        
+        console.log('🔧 Event system test ready!');
+        console.log('Available message types:', Object.keys(MESSAGES));
+    </script>
+</body>
+</html>

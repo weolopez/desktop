@@ -1,3 +1,5 @@
+import { MESSAGES, createWindowMessage } from '../events/message-types.js';
+
 class WindowComponent extends HTMLElement {
     constructor() {
         super();
@@ -67,15 +69,11 @@ class WindowComponent extends HTMLElement {
         if (this.isMinimized) {
             console.log('🪟 WindowComponent - Applying minimized state');
             this.style.display = 'none';
-            this.dispatchEvent(new CustomEvent('window-minimize', {
-                detail: {
-                    windowId: this.windowId,
-                    appName: this.appName,
-                    appIcon: this.appIcon,
-                    appTag: this.appTag
-                },
-                bubbles: true,
-                composed: true
+            this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_MINIMIZE, {
+                windowId: this.windowId,
+                appName: this.appName,
+                appIcon: this.appIcon,
+                appTag: this.appTag
             }));
         }
         
@@ -497,10 +495,9 @@ class WindowComponent extends HTMLElement {
     }
 
     close() {
-        this.dispatchEvent(new CustomEvent('window-closed', {
-            detail: { windowId: this.windowId, appName: this.appName },
-            bubbles: true,
-            composed: true
+        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_CLOSED, {
+            windowId: this.windowId,
+            appName: this.appName
         }));
         this.remove();
     }
@@ -509,15 +506,11 @@ class WindowComponent extends HTMLElement {
         const window = this.shadowRoot.querySelector('.window');
         window.classList.add('minimizing');
         
-        this.dispatchEvent(new CustomEvent('window-minimize', {
-            detail: { 
-                windowId: this.windowId, 
-                appName: this.appName, 
-                appIcon: this.appIcon,
-                appTag: this.appTag
-            },
-            bubbles: true,
-            composed: true
+        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_MINIMIZE, {
+            windowId: this.windowId, 
+            appName: this.appName, 
+            appIcon: this.appIcon,
+            appTag: this.appTag
         }));
         
         setTimeout(() => {
@@ -570,10 +563,9 @@ class WindowComponent extends HTMLElement {
         window.classList.add('focused');
         
         // Notify other windows to unfocus
-        this.dispatchEvent(new CustomEvent('window-focus', {
-            detail: { windowId: this.windowId, appName: this.appName },
-            bubbles: true,
-            composed: true
+        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_FOCUS, {
+            windowId: this.windowId,
+            appName: this.appName
         }));
     }
 

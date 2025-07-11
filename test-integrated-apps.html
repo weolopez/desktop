@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Apps Event Test</title>
+</head>
+<body>
+    <h1>Integrated Apps Event System Test</h1>
+    <div>
+        <button id="testNotification">Test Notification</button>
+        <button id="testFinderLaunch">Test Finder Launch</button>
+        <button id="enableMonitor">Enable Event Monitor</button>
+        <button id="showStats">Show Event Stats</button>
+    </div>
+    
+    <div id="output" style="margin-top: 20px; font-family: monospace; background: #f0f0f0; padding: 10px;"></div>
+    
+    <script type="module">
+        import { MESSAGES, createLaunchAppMessage, createNotificationMessage } from './src/events/message-types.js';
+        import { eventMonitor } from './src/events/event-monitor.js';
+        
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.innerHTML += message + '<br>';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Test notification
+        document.getElementById('testNotification').addEventListener('click', () => {
+            const notification = createNotificationMessage({
+                sourceAppId: 'test-app',
+                title: 'Test Notification',
+                body: 'This is a test notification from the integrated event system!',
+                icon: '🧪'
+            });
+            document.dispatchEvent(notification);
+            log('✅ Sent notification event');
+        });
+        
+        // Test finder launch
+        document.getElementById('testFinderLaunch').addEventListener('click', () => {
+            const launchEvent = createLaunchAppMessage({
+                id: 'finder',
+                name: 'Finder',
+                icon: '📁',
+                sourceUrl: '../weolopez.github.io/apps/finder/finder-webapp.js',
+                tag: 'finder-webapp'
+            });
+            document.dispatchEvent(launchEvent);
+            log('✅ Sent finder launch event');
+        });
+        
+        // Enable event monitor
+        document.getElementById('enableMonitor').addEventListener('click', () => {
+            eventMonitor.enable(true);
+            log('✅ Event monitor enabled');
+        });
+        
+        // Show event stats
+        document.getElementById('showStats').addEventListener('click', () => {
+            const stats = eventMonitor.stats();
+            log('📊 Event statistics displayed in console');
+        });
+        
+        // Listen for integrated app events
+        document.addEventListener(MESSAGES.CREATE_NOTIFICATION, (e) => {
+            log(`🔔 CREATE_NOTIFICATION: ${e.detail.title}`);
+        });
+        
+        document.addEventListener(MESSAGES.LAUNCH_APP, (e) => {
+            log(`🚀 LAUNCH_APP: ${e.detail.name || e.detail.id}`);
+        });
+        
+        document.addEventListener(MESSAGES.FINDER_DIRECTORY_CHANGED, (e) => {
+            log(`📁 FINDER_DIRECTORY_CHANGED: ${e.detail.path} (${e.detail.items.length} items)`);
+        });
+        
+        document.addEventListener(MESSAGES.FINDER_SELECTION_CHANGED, (e) => {
+            log(`📋 FINDER_SELECTION_CHANGED: ${e.detail.selectedItems.length} items selected`);
+        });
+        
+        document.addEventListener(MESSAGES.NOTIFICATION_CLICKED, (e) => {
+            log(`👆 NOTIFICATION_CLICKED: ${e.detail.notificationId} (${e.detail.type})`);
+        });
+        
+        document.addEventListener(MESSAGES.NOTIFICATION_DISMISSED, (e) => {
+            log(`❌ NOTIFICATION_DISMISSED: ${e.detail.notificationId}`);
+        });
+        
+        // Log all available message types
+        log('📋 Available message types:');
+        Object.keys(MESSAGES).forEach(key => {
+            log(`  - ${key}: ${MESSAGES[key]}`);
+        });
+        
+        log('🎉 Integrated apps event system ready!');
+        log('💡 Open browser console for detailed event monitoring');
+    </script>
+</body>
+</html>

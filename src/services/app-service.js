@@ -1,4 +1,5 @@
 import { APPS, APP_URL_MAP } from '../config.js';
+import { MESSAGES, createLaunchAppMessage, createPublishTextMessage, validateMessagePayload } from '../events/message-types.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
@@ -9,15 +10,26 @@ export class AppService {
 
     init(desktopComponent) {
         this.desktopComponent = desktopComponent;
-        document.addEventListener('PUBLISH_TEXT', this.handlePublishTextEvent.bind(this));
-        document.addEventListener('LAUNCH_APP', this.handleLaunchAppEvent.bind(this));
+        document.addEventListener(MESSAGES.PUBLISH_TEXT, this.handlePublishTextEvent.bind(this));
+        document.addEventListener(MESSAGES.LAUNCH_APP, this.handleLaunchAppEvent.bind(this));
     }
     handleLaunchAppEvent(event) {
+        if (!validateMessagePayload(MESSAGES.LAUNCH_APP, event.detail)) {
+            console.warn('Invalid LAUNCH_APP event payload:', event.detail);
+            return;
+        }
+        
         if (event.detail && event.detail.id) {
             this.launchApp(event.detail);
         }
     }
+    
     handlePublishTextEvent(event) {
+        if (!validateMessagePayload(MESSAGES.PUBLISH_TEXT, event.detail)) {
+            console.warn('Invalid PUBLISH_TEXT event payload:', event.detail);
+            return;
+        }
+        
         const { texts, icon } = event.detail;
         const textArray = Array.isArray(texts) ? texts : [texts];
         console.log("=== APP SERVICE TEXT HANDLING (via PUBLISH_TEXT event) ===");

@@ -1,3 +1,5 @@
+import { MESSAGES, createWindowMessage } from '../events/message-types.js';
+
 export class WindowManager {
     constructor(desktopComponent, appService) {
         this.desktopComponent = desktopComponent;
@@ -6,21 +8,21 @@ export class WindowManager {
 
     setupEventListeners() {
         // Window management events
-        document.addEventListener('window-close', (e) => {
+        document.addEventListener(MESSAGES.WINDOW_CLOSED, (e) => {
             this.handleWindowClose(e.detail);
             this.saveWindowsState();
         });
 
-        document.addEventListener('window-minimize', (e) => {
+        document.addEventListener(MESSAGES.WINDOW_MINIMIZE, (e) => {
             this.handleWindowMinimize(e.detail);
             this.saveWindowsState();
         });
 
-        document.addEventListener('restore-window', (e) => {
+        document.addEventListener(MESSAGES.WINDOW_RESTORE, (e) => {
             this.handleWindowRestore(e.detail);
         });
 
-        document.addEventListener('window-focus', (e) => {
+        document.addEventListener(MESSAGES.WINDOW_FOCUS, (e) => {
             this.handleWindowFocus(e.detail);
         });
 
@@ -83,10 +85,9 @@ export class WindowManager {
         });
         
         // Dispatch focus event
-        document.dispatchEvent(new CustomEvent('window-focused', {
-            detail: { windowId, appName },
-            bubbles: true,
-            composed: true
+        document.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_FOCUSED, {
+            windowId,
+            appName
         }));
     }
 
