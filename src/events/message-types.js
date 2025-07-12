@@ -78,7 +78,19 @@ export const MESSAGES = {
     
     // Settings
     WALLPAPER_CHANGED: 'wallpaper-changed',
-    SETTINGS_UPDATED: 'settings-updated'
+    SETTINGS_UPDATED: 'settings-updated',
+    
+    // Desktop Mouse Control (Camera Mouse Integration)
+    DESKTOP_MOUSE_MOVE: 'desktop-mouse-move',
+    DESKTOP_MOUSE_CLICK: 'desktop-mouse-click',
+    DESKTOP_MOUSE_RIGHT_CLICK: 'desktop-mouse-right-click',
+    DESKTOP_MOUSE_DOUBLE_CLICK: 'desktop-mouse-double-click',
+    DESKTOP_MOUSE_SCROLL: 'desktop-mouse-scroll',
+    DESKTOP_MOUSE_DRAG_START: 'desktop-mouse-drag-start',
+    DESKTOP_MOUSE_DRAG_END: 'desktop-mouse-drag-end',
+    DESKTOP_MOUSE_ENABLED: 'desktop-mouse-enabled',
+    DESKTOP_MOUSE_DISABLED: 'desktop-mouse-disabled',
+    DESKTOP_MOUSE_CALIBRATED: 'desktop-mouse-calibrated'
 };
 
 /**
@@ -154,6 +166,46 @@ export const MESSAGES = {
  * @property {number} x - Click x coordinate
  * @property {number} y - Click y coordinate
  * @property {MouseEvent} originalEvent - Original mouse event
+ */
+
+/**
+ * Desktop Mouse Control payloads
+ * @typedef {Object} DesktopMouseMovePayload
+ * @property {number} x - Screen x coordinate
+ * @property {number} y - Screen y coordinate
+ * @property {string} sourceAppId - App generating the mouse movement
+ */
+
+/**
+ * @typedef {Object} DesktopMouseClickPayload
+ * @property {number} x - Screen x coordinate
+ * @property {number} y - Screen y coordinate
+ * @property {string} sourceAppId - App generating the click
+ * @property {string} [button] - Mouse button ('left', 'right', 'middle')
+ */
+
+/**
+ * @typedef {Object} DesktopMouseScrollPayload
+ * @property {number} x - Screen x coordinate
+ * @property {number} y - Screen y coordinate
+ * @property {number} deltaX - Horizontal scroll delta
+ * @property {number} deltaY - Vertical scroll delta
+ * @property {string} sourceAppId - App generating the scroll
+ */
+
+/**
+ * @typedef {Object} DesktopMouseDragPayload
+ * @property {number} x - Screen x coordinate
+ * @property {number} y - Screen y coordinate
+ * @property {string} sourceAppId - App generating the drag event
+ * @property {string} dragType - Drag event type ('start', 'move', 'end')
+ */
+
+/**
+ * @typedef {Object} DesktopMouseStatusPayload
+ * @property {string} sourceAppId - App controlling desktop mouse
+ * @property {boolean} enabled - Whether desktop mouse is enabled
+ * @property {Object} [calibration] - Calibration data if available
  */
 
 /**
@@ -351,6 +403,58 @@ export function createNotificationMessage(payload) {
 }
 
 /**
+ * Create a desktop mouse move message
+ * @param {DesktopMouseMovePayload} payload - Mouse move data
+ * @returns {CustomEvent} Custom event for desktop mouse movement
+ */
+export function createDesktopMouseMoveMessage(payload) {
+    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_MOVE, {
+        detail: payload,
+        bubbles: true,
+        composed: true
+    });
+}
+
+/**
+ * Create a desktop mouse click message
+ * @param {DesktopMouseClickPayload} payload - Mouse click data
+ * @returns {CustomEvent} Custom event for desktop mouse clicks
+ */
+export function createDesktopMouseClickMessage(payload) {
+    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_CLICK, {
+        detail: payload,
+        bubbles: true,
+        composed: true
+    });
+}
+
+/**
+ * Create a desktop mouse right click message
+ * @param {DesktopMouseClickPayload} payload - Mouse right click data
+ * @returns {CustomEvent} Custom event for desktop mouse right clicks
+ */
+export function createDesktopMouseRightClickMessage(payload) {
+    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK, {
+        detail: payload,
+        bubbles: true,
+        composed: true
+    });
+}
+
+/**
+ * Create a desktop mouse scroll message
+ * @param {DesktopMouseScrollPayload} payload - Mouse scroll data
+ * @returns {CustomEvent} Custom event for desktop mouse scrolling
+ */
+export function createDesktopMouseScrollMessage(payload) {
+    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_SCROLL, {
+        detail: payload,
+        bubbles: true,
+        composed: true
+    });
+}
+
+/**
  * Validate message payload against expected schema
  * @param {string} messageType - Type of message to validate
  * @param {Object} payload - Payload to validate
@@ -400,6 +504,31 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.notificationId === 'string' && 
                    typeof payload.type === 'string' && 
                    typeof payload.sourceAppId === 'string';
+        case MESSAGES.DESKTOP_MOUSE_MOVE:
+            return typeof payload.x === 'number' && 
+                   typeof payload.y === 'number' && 
+                   typeof payload.sourceAppId === 'string';
+        case MESSAGES.DESKTOP_MOUSE_CLICK:
+        case MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK:
+        case MESSAGES.DESKTOP_MOUSE_DOUBLE_CLICK:
+            return typeof payload.x === 'number' && 
+                   typeof payload.y === 'number' && 
+                   typeof payload.sourceAppId === 'string';
+        case MESSAGES.DESKTOP_MOUSE_SCROLL:
+            return typeof payload.x === 'number' && 
+                   typeof payload.y === 'number' && 
+                   typeof payload.deltaX === 'number' && 
+                   typeof payload.deltaY === 'number' && 
+                   typeof payload.sourceAppId === 'string';
+        case MESSAGES.DESKTOP_MOUSE_DRAG_START:
+        case MESSAGES.DESKTOP_MOUSE_DRAG_END:
+            return typeof payload.x === 'number' && 
+                   typeof payload.y === 'number' && 
+                   typeof payload.sourceAppId === 'string';
+        case MESSAGES.DESKTOP_MOUSE_ENABLED:
+        case MESSAGES.DESKTOP_MOUSE_DISABLED:
+            return typeof payload.sourceAppId === 'string' && 
+                   typeof payload.enabled === 'boolean';
         default:
             return true; // Unknown message types are allowed
     }

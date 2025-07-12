@@ -15,6 +15,17 @@ export const APPS = [
         tag: "chat-component", 
         onstartup: false 
     },
+    { 
+        id: 'camera-mouse', 
+        name: 'Camera Mouse', 
+        icon: '👆', 
+        sourceUrl: '/apps/camera-mouse/camera-mouse-component.js', 
+        tag: "camera-mouse", 
+        onstartup: false,
+        width: 800,
+        height: 600,
+        category: 'accessibility'
+    },
     // { 
     //     id: 'notification', 
     //     name: 'Notification', 
