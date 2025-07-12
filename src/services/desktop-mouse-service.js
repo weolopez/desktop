@@ -1,11 +1,6 @@
-import { 
-    MESSAGES, 
-    createDesktopMouseMoveMessage, 
-    createDesktopMouseClickMessage,
-    createDesktopMouseRightClickMessage,
-    createDesktopMouseScrollMessage,
-    validateMessagePayload 
-} from '../events/message-types.js';
+// Note: MESSAGES and desktop mouse message types are now dynamically 
+// provided by camera-mouse-service.js when it initializes
+// Using string literals for now until service initialization completes
 
 /**
  * Desktop Mouse Service
@@ -29,6 +24,10 @@ export class DesktopMouseService {
         this.lastEventTime = 0;
         this.eventThrottle = 16; // ~60fps max
         
+        // Camera controller integration
+        this.cameraController = null;
+        this.cameraControlEnabled = false;
+        
         console.log('DesktopMouseService initialized');
     }
 
@@ -46,16 +45,16 @@ export class DesktopMouseService {
      * Set up event listeners for desktop mouse control messages
      */
     setupEventListeners() {
-        // Listen for desktop mouse control events
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_MOVE, this.handleMouseMove.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_CLICK, this.handleMouseClick.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK, this.handleMouseRightClick.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_DOUBLE_CLICK, this.handleMouseDoubleClick.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_SCROLL, this.handleMouseScroll.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_DRAG_START, this.handleDragStart.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_DRAG_END, this.handleDragEnd.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_ENABLED, this.handleMouseEnabled.bind(this));
-        document.addEventListener(MESSAGES.DESKTOP_MOUSE_DISABLED, this.handleMouseDisabled.bind(this));
+        // Listen for desktop mouse control events (using string literals)
+        document.addEventListener('desktop-mouse-move', this.handleMouseMove.bind(this));
+        document.addEventListener('desktop-mouse-click', this.handleMouseClick.bind(this));
+        document.addEventListener('desktop-mouse-right-click', this.handleMouseRightClick.bind(this));
+        document.addEventListener('desktop-mouse-double-click', this.handleMouseDoubleClick.bind(this));
+        document.addEventListener('desktop-mouse-scroll', this.handleMouseScroll.bind(this));
+        document.addEventListener('desktop-mouse-drag-start', this.handleDragStart.bind(this));
+        document.addEventListener('desktop-mouse-drag-end', this.handleDragEnd.bind(this));
+        document.addEventListener('desktop-mouse-enabled', this.handleMouseEnabled.bind(this));
+        document.addEventListener('desktop-mouse-disabled', this.handleMouseDisabled.bind(this));
         
         // Listen for gesture state changes for visual feedback
         document.addEventListener('gestureDetected', this.handleGestureDetected.bind(this));
@@ -75,7 +74,7 @@ export class DesktopMouseService {
         this.addDesktopCursor();
         
         // Dispatch enabled event
-        const enabledEvent = new CustomEvent(MESSAGES.DESKTOP_MOUSE_ENABLED, {
+        const enabledEvent = new CustomEvent('desktop-mouse-enabled', {
             detail: { sourceAppId: appId, enabled: true },
             bubbles: true,
             composed: true
@@ -105,7 +104,7 @@ export class DesktopMouseService {
         
         if (wasEnabled) {
             // Dispatch disabled event
-            const disabledEvent = new CustomEvent(MESSAGES.DESKTOP_MOUSE_DISABLED, {
+            const disabledEvent = new CustomEvent('desktop-mouse-disabled', {
                 detail: { sourceAppId: appId, enabled: false },
                 bubbles: true,
                 composed: true
@@ -121,7 +120,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse move event
      */
     handleMouseMove(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_MOVE)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-move')) {
             return;
         }
 
@@ -149,7 +148,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse click event
      */
     handleMouseClick(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_CLICK)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-click')) {
             return;
         }
 
@@ -162,7 +161,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse right click event
      */
     handleMouseRightClick(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-right-click')) {
             return;
         }
 
@@ -175,7 +174,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse double click event
      */
     handleMouseDoubleClick(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_DOUBLE_CLICK)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-double-click')) {
             return;
         }
 
@@ -188,7 +187,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse scroll event
      */
     handleMouseScroll(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_SCROLL)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-scroll')) {
             return;
         }
 
@@ -201,7 +200,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Drag start event
      */
     handleDragStart(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_DRAG_START)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-drag-start')) {
             return;
         }
 
@@ -214,7 +213,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Drag end event
      */
     handleDragEnd(event) {
-        if (!this.isEnabled || !this.validateEvent(event, MESSAGES.DESKTOP_MOUSE_DRAG_END)) {
+        if (!this.isEnabled || !this.validateEvent(event, 'desktop-mouse-drag-end')) {
             return;
         }
 
@@ -227,7 +226,7 @@ export class DesktopMouseService {
      * @param {CustomEvent} event - Mouse enabled event
      */
     handleMouseEnabled(event) {
-        if (!validateMessagePayload(MESSAGES.DESKTOP_MOUSE_ENABLED, event.detail)) {
+        if (!this.validateBasicPayload(event.detail)) {
             return;
         }
 
@@ -666,7 +665,7 @@ export class DesktopMouseService {
      * @returns {boolean} Whether event is valid
      */
     validateEvent(event, messageType) {
-        if (!event.detail || !validateMessagePayload(messageType, event.detail)) {
+        if (!event.detail || !this.validateBasicPayload(event.detail)) {
             console.warn(`Invalid ${messageType} event:`, event.detail);
             return false;
         }
@@ -678,6 +677,17 @@ export class DesktopMouseService {
         }
         
         return true;
+    }
+    
+    /**
+     * Basic payload validation for desktop mouse events
+     * @param {Object} payload - Payload to validate
+     * @returns {boolean} Whether payload has basic required fields
+     */
+    validateBasicPayload(payload) {
+        return payload && 
+               typeof payload === 'object' && 
+               typeof payload.sourceAppId === 'string';
     }
 
     /**
@@ -751,9 +761,64 @@ export class DesktopMouseService {
     }
 
     /**
+     * Register camera controller for desktop mouse control
+     * @param {Object} cameraService - Camera mouse service instance
+     */
+    async registerCameraController(cameraService) {
+        if (!cameraService) {
+            console.warn('Cannot register null camera controller');
+            return;
+        }
+        
+        this.cameraController = cameraService;
+        this.cameraControlEnabled = true;
+        
+        // Enable desktop mouse control from camera
+        this.enableControl('camera-mouse');
+        
+        console.log('Camera controller registered and enabled for desktop mouse control');
+        
+        // Listen for camera service events to provide additional feedback
+        if (cameraService.addEventListener) {
+            cameraService.addEventListener('gestureDetected', (event) => {
+                this.handleGestureDetected(event);
+            });
+        }
+    }
+    
+    /**
+     * Unregister camera controller
+     */
+    unregisterCameraController() {
+        if (this.cameraController) {
+            console.log('Unregistering camera controller');
+            this.cameraController = null;
+            this.cameraControlEnabled = false;
+            this.disableControl();
+        }
+    }
+    
+    /**
+     * Check if camera control is enabled
+     * @returns {boolean} Whether camera control is active
+     */
+    isCameraControlEnabled() {
+        return this.cameraControlEnabled && this.cameraController !== null;
+    }
+    
+    /**
+     * Get camera controller instance
+     * @returns {Object|null} Camera controller or null
+     */
+    getCameraController() {
+        return this.cameraController;
+    }
+
+    /**
      * Cleanup service
      */
     cleanup() {
+        this.unregisterCameraController();
         this.disableControl();
         console.log('DesktopMouseService cleaned up');
     }

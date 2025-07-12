@@ -2,7 +2,6 @@ import { WallpaperManager } from "../services/wallpaper-manager.js";
 import { ContextMenuManager } from "../services/context-menu-manager.js";
 import { WindowManager } from "../services/window-manager.js";
 import { NotificationManager } from "../services/notification-manager.js";
-import { DesktopMouseService } from "../services/desktop-mouse-service.js";
 import "../services/notification-display-component.js";
 import { AppService } from "../services/app-service.js";
 import { MESSAGES, createPublishTextMessage } from "../events/message-types.js";
@@ -25,7 +24,6 @@ class DesktopComponent extends HTMLElement {
     );
     this.windowManager = new WindowManager(this, this.appService);
     this.notificationManager = new NotificationManager(this);
-    this.desktopMouseService = new DesktopMouseService();
   }
 
   connectedCallback() {
@@ -34,7 +32,6 @@ class DesktopComponent extends HTMLElement {
     this.windowManager.setupEventListeners();
     this.windowManager.restoreWindowsState();
     this.notificationManager.init();
-    this.desktopMouseService.init(this);
     this.setupPasteDrop();
     this.setupNotificationDisplayConnection();
     // this.setupAppEventListeners();
@@ -387,6 +384,7 @@ class DesktopComponent extends HTMLElement {
     }
     this.shadowRoot.appendChild(style);
   }
+  
 }
 
 customElements.define("desktop-component", DesktopComponent);

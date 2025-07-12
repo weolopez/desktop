@@ -81,16 +81,7 @@ export const MESSAGES = {
     SETTINGS_UPDATED: 'settings-updated',
     
     // Desktop Mouse Control (Camera Mouse Integration)
-    DESKTOP_MOUSE_MOVE: 'desktop-mouse-move',
-    DESKTOP_MOUSE_CLICK: 'desktop-mouse-click',
-    DESKTOP_MOUSE_RIGHT_CLICK: 'desktop-mouse-right-click',
-    DESKTOP_MOUSE_DOUBLE_CLICK: 'desktop-mouse-double-click',
-    DESKTOP_MOUSE_SCROLL: 'desktop-mouse-scroll',
-    DESKTOP_MOUSE_DRAG_START: 'desktop-mouse-drag-start',
-    DESKTOP_MOUSE_DRAG_END: 'desktop-mouse-drag-end',
-    DESKTOP_MOUSE_ENABLED: 'desktop-mouse-enabled',
-    DESKTOP_MOUSE_DISABLED: 'desktop-mouse-disabled',
-    DESKTOP_MOUSE_CALIBRATED: 'desktop-mouse-calibrated'
+    // Note: These message types are dynamically added by camera-mouse-service.js
 };
 
 /**
@@ -170,6 +161,9 @@ export const MESSAGES = {
 
 /**
  * Desktop Mouse Control payloads
+ * Note: These type definitions are provided for reference.
+ * Actual message types and validation are handled by camera-mouse-service.js
+ * 
  * @typedef {Object} DesktopMouseMovePayload
  * @property {number} x - Screen x coordinate
  * @property {number} y - Screen y coordinate
@@ -403,56 +397,9 @@ export function createNotificationMessage(payload) {
 }
 
 /**
- * Create a desktop mouse move message
- * @param {DesktopMouseMovePayload} payload - Mouse move data
- * @returns {CustomEvent} Custom event for desktop mouse movement
+ * Note: Desktop mouse message creation functions are now provided by camera-mouse-service.js
+ * These functions are dynamically created when the camera mouse service initializes
  */
-export function createDesktopMouseMoveMessage(payload) {
-    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_MOVE, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a desktop mouse click message
- * @param {DesktopMouseClickPayload} payload - Mouse click data
- * @returns {CustomEvent} Custom event for desktop mouse clicks
- */
-export function createDesktopMouseClickMessage(payload) {
-    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_CLICK, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a desktop mouse right click message
- * @param {DesktopMouseClickPayload} payload - Mouse right click data
- * @returns {CustomEvent} Custom event for desktop mouse right clicks
- */
-export function createDesktopMouseRightClickMessage(payload) {
-    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a desktop mouse scroll message
- * @param {DesktopMouseScrollPayload} payload - Mouse scroll data
- * @returns {CustomEvent} Custom event for desktop mouse scrolling
- */
-export function createDesktopMouseScrollMessage(payload) {
-    return new CustomEvent(MESSAGES.DESKTOP_MOUSE_SCROLL, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
 
 /**
  * Validate message payload against expected schema
@@ -504,31 +451,7 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.notificationId === 'string' && 
                    typeof payload.type === 'string' && 
                    typeof payload.sourceAppId === 'string';
-        case MESSAGES.DESKTOP_MOUSE_MOVE:
-            return typeof payload.x === 'number' && 
-                   typeof payload.y === 'number' && 
-                   typeof payload.sourceAppId === 'string';
-        case MESSAGES.DESKTOP_MOUSE_CLICK:
-        case MESSAGES.DESKTOP_MOUSE_RIGHT_CLICK:
-        case MESSAGES.DESKTOP_MOUSE_DOUBLE_CLICK:
-            return typeof payload.x === 'number' && 
-                   typeof payload.y === 'number' && 
-                   typeof payload.sourceAppId === 'string';
-        case MESSAGES.DESKTOP_MOUSE_SCROLL:
-            return typeof payload.x === 'number' && 
-                   typeof payload.y === 'number' && 
-                   typeof payload.deltaX === 'number' && 
-                   typeof payload.deltaY === 'number' && 
-                   typeof payload.sourceAppId === 'string';
-        case MESSAGES.DESKTOP_MOUSE_DRAG_START:
-        case MESSAGES.DESKTOP_MOUSE_DRAG_END:
-            return typeof payload.x === 'number' && 
-                   typeof payload.y === 'number' && 
-                   typeof payload.sourceAppId === 'string';
-        case MESSAGES.DESKTOP_MOUSE_ENABLED:
-        case MESSAGES.DESKTOP_MOUSE_DISABLED:
-            return typeof payload.sourceAppId === 'string' && 
-                   typeof payload.enabled === 'boolean';
+        // Desktop mouse validation is now handled by camera-mouse-service.js
         default:
             return true; // Unknown message types are allowed
     }
