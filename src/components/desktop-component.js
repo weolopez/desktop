@@ -7,6 +7,9 @@ import { AppService } from "../services/app-service.js";
 import { MESSAGES, createPublishTextMessage } from "../events/message-types.js";
 import "../events/event-monitor.js";
 
+// Dynamic import for camera mouse service (headless operation)
+let CameraMouseService = null;
+
 // import { PreviewService } from '../services/preview-service.js';
 
 class DesktopComponent extends HTMLElement {
@@ -24,6 +27,10 @@ class DesktopComponent extends HTMLElement {
     );
     this.windowManager = new WindowManager(this, this.appService);
     this.notificationManager = new NotificationManager(this);
+    
+    // Global headless camera mouse service
+    this.cameraMouseService = null;
+    this.cameraMouseActive = false;
   }
 
   connectedCallback() {
@@ -34,6 +41,7 @@ class DesktopComponent extends HTMLElement {
     this.notificationManager.init();
     this.setupPasteDrop();
     this.setupNotificationDisplayConnection();
+    // this.setupCameraMouseIntegration();
     // this.setupAppEventListeners();
     // this.showTestNotification();
   }
@@ -173,6 +181,13 @@ class DesktopComponent extends HTMLElement {
       }, 2000);
     }
   }
+
+  // setupCameraMouseIntegration() {
+  //   // Listen for start camera mouse events
+  //   document.addEventListener(MESSAGES.START_CAMERA_MOUSE, (event) => {
+  //     this.handleStartCameraMouse(event.detail);
+  //   });
+  // }
 
   setupPasteDrop() {
     const desktopSurface = this.shadowRoot.querySelector(".desktop-surface");
@@ -383,6 +398,87 @@ class DesktopComponent extends HTMLElement {
       this.shadowRoot.appendChild(tempDiv.firstChild);
     }
     this.shadowRoot.appendChild(style);
+    return tempDiv
+  }
+
+  async handleStartCameraMouse(payload) {
+    try {
+      console.log('🎯 Desktop: Starting headless camera mouse service...', payload);
+      
+      // Dynamic import of camera mouse service
+      if (!CameraMouseService) {
+        const module = await import('/apps/camera-mouse/camera-mouse-service.js');
+        CameraMouseService = module.CameraMouseService;
+      }
+      
+      // Create service instance if not exists
+      if (!this.cameraMouseService) {
+        this.cameraMouseService = new CameraMouseService({
+          sensitivity: 2.1,
+          smoothing: 0.6,
+          cursorOffset: { x: 0.05, y: -0.08 },
+          desktopMappingArea: {
+            enabled: true,
+            x: 0.25,
+            y: 0.25,
+            width: 0.75,
+            height: 0.75
+          }
+        });
+        
+        // Set up service event listeners
+        this.cameraMouseService.addEventListener('camera-ready', () => {
+          this.showCameraMouseIndicator();
+        });
+        
+        this.cameraMouseService.addEventListener('tracking-started', () => {
+          this.cameraMouseActive = true;
+          console.log('📹 Camera Mouse: Headless tracking active');
+        });
+        
+        this.cameraMouseService.addEventListener('tracking-stopped', () => {
+          this.cameraMouseActive = false;
+          this.hideCameraMouseIndicator();
+          console.log('📹 Camera Mouse: Tracking stopped');
+        });
+      }
+      
+      // Initialize and start the service
+      await this.cameraMouseService.initialize();
+      await this.cameraMouseService.startCameraAndTracking();
+      
+    } catch (error) {
+      console.error('❌ Failed to start headless camera mouse:', error);
+    }
+  }
+
+  showCameraMouseIndicator() {
+    // Add visual indicator that camera mouse is active
+    if (!this.shadowRoot.querySelector('.camera-mouse-indicator')) {
+      const indicator = document.createElement('div');
+      indicator.className = 'camera-mouse-indicator';
+      indicator.innerHTML = '📹 Camera Mouse Active';
+      indicator.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 122, 255, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        z-index: 10000;
+        backdrop-filter: blur(10px);
+      `;
+      this.shadowRoot.appendChild(indicator);
+    }
+  }
+
+  hideCameraMouseIndicator() {
+    const indicator = this.shadowRoot.querySelector('.camera-mouse-indicator');
+    if (indicator) {
+      indicator.remove();
+    }
   }
   
 }

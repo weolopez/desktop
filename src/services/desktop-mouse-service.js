@@ -73,14 +73,6 @@ export class DesktopMouseService {
         // Add visual indicator
         this.addDesktopCursor();
         
-        // Dispatch enabled event
-        const enabledEvent = new CustomEvent('desktop-mouse-enabled', {
-            detail: { sourceAppId: appId, enabled: true },
-            bubbles: true,
-            composed: true
-        });
-        document.dispatchEvent(enabledEvent);
-        
         console.log(`Desktop mouse control enabled for app: ${appId}`);
     }
 

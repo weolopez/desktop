@@ -1,14 +1,18 @@
-import { MESSAGES, createPublishTextMessage } from '../events/message-types.js';
+import {
+  createPublishTextMessage,
+  createStartCameraMouseMessage,
+  MESSAGES,
+} from "../events/message-types.js";
 
 export class ContextMenuManager {
-    constructor(desktopComponent, wallpaperManager) {
-        this.desktopComponent = desktopComponent;
-        this.wallpaperManager = wallpaperManager;
-        this.contextMenuHtml = `
+  constructor(desktopComponent, wallpaperManager) {
+    this.desktopComponent = desktopComponent;
+    this.wallpaperManager = wallpaperManager;
+    this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
                 <div class="context-menu-item" data-action="change-wallpaper">Change Desktop Background...</div>
                 <div class="context-menu-separator"></div>
-                <div class="context-menu-item" data-action="use-stacks">Use Stacks</div>
+                <div class="context-menu-item" data-action="use-cmouse">Use CMouse</div>
                 <div class="context-menu-item" data-action="show-view-options">Show View Options</div>
                 <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="paste">Paste</div>
@@ -17,7 +21,7 @@ export class ContextMenuManager {
                 <div class="context-menu-item" data-action="open-finder-webapp">Open Finder Web App</div>
             </div>
         `;
-        this.contextMenuCss = `
+    this.contextMenuCss = `
             .context-menu {
                 position: absolute;
                 background: rgba(255, 255, 255, 0.85);
@@ -50,66 +54,95 @@ export class ContextMenuManager {
                 margin: 4px 0;
             }
         `;
-    }
+  }
 
-    init() {
-        const style = document.createElement('style');
-        style.textContent = this.contextMenuCss;
-        this.desktopComponent.appendContextMenu(this.contextMenuHtml, style);
-        this.setupEventListeners();
-    }
+  init() {
+    const style = document.createElement("style");
+    style.textContent = this.contextMenuCss;
+    this.desktopComponent.appendContextMenu(this.contextMenuHtml, style);
+    this.setupEventListeners();
+  }
 
-    setupEventListeners() {
-        this.desktopComponent.getDesktopSurface().addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            this.desktopComponent.showContextMenu(e.clientX, e.clientY);
-        });
+  setupEventListeners() {
+    const comp = this.desktopComponent.shadowRoot.getElementById("contextMenu");
+    this.desktopComponent.getDesktopSurface().addEventListener(
+      "contextmenu",
+      (e) => {
+        e.preventDefault();
+        this.desktopComponent.showContextMenu(e.clientX, e.clientY);
+      },
+    );
 
-        this.desktopComponent.addEventListener('click', (e) => {
-            const contextMenu = this.desktopComponent.shadowRoot.getElementById('contextMenu');
-            if (contextMenu && !contextMenu.contains(e.target)) {
-                this.desktopComponent.hideContextMenu();
-            }
-        });
+    this.desktopComponent.addEventListener("click", (e) => {
+      const contextMenu = this.desktopComponent.shadowRoot.getElementById(
+        "contextMenu",
+      );
+      if (contextMenu && !contextMenu.contains(e.target)) {
+        this.desktopComponent.hideContextMenu();
+      }
+    });
 
-        this.desktopComponent.addEventListener('click', (e) => {
-            if (e.target.hasAttribute('data-action')) {
-                const action = e.target.getAttribute('data-action');
-                this.handleContextMenuAction(action);
-                this.desktopComponent.hideContextMenu();
-            }
-        });
-    }
+    comp.addEventListener("click", (e) => {
+      if (e.target.hasAttribute("data-action")) {
+        const action = e.target.getAttribute("data-action");
+        this.handleContextMenuAction(action);
+        this.desktopComponent.hideContextMenu();
+      }
+    });
+  }
 
-    async handleContextMenuAction(action) {
-        switch (action) {
-            case 'change-wallpaper':
-                if (this.wallpaperManager) {
-                    this.wallpaperManager.changeWallpaper();
-                }
-                break;
-            case 'show-view-options':
-                console.log('Show view options clicked');
-                break;
-            case 'use-stacks':
-                console.log('Use stacks clicked');
-                break;
-            case 'paste':
-                try {
-                    const text = await navigator.clipboard.readText();
-                    if (text) {
-                        this.desktopComponent.dispatchEvent(createPublishTextMessage({ texts: [text] }));
-                    }
-                } catch (err) {
-                    console.error('Failed to read clipboard contents: ', err);
-                }
-                break;
-            case 'get-info':
-                console.log('Get info clicked');
-                break;
-            case 'open-finder-webapp':
-                this.desktopComponent.dispatchEvent(createPublishTextMessage({ texts: ['finder-webapp'] }));
-                break;
+  async handleContextMenuAction(action) {
+    switch (action) {
+      case "change-wallpaper":
+        if (this.wallpaperManager) {
+          this.wallpaperManager.changeWallpaper();
         }
+        break;
+      case "show-view-options":
+        console.log("Show view options clicked");
+        break;
+      case "use-cmouse":
+        this.launchCameraMouse();
+        break;
+      case "paste":
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            this.desktopComponent.dispatchEvent(
+              createPublishTextMessage({ texts: [text] }),
+            );
+          }
+        } catch (err) {
+          console.error("Failed to read clipboard contents: ", err);
+        }
+        break;
+      case "get-info":
+        console.log("Get info clicked");
+        break;
+      case "open-finder-webapp":
+        this.desktopComponent.dispatchEvent(
+          createPublishTextMessage({ texts: ["finder-webapp"] }),
+        );
+        break;
     }
+  }
+
+  launchCameraMouse() {
+    console.log("🎯 Context Menu: Starting headless camera mouse tracking");
+    // this.setupServiceEventListeners();
+    async function startCameraMouseTracking() {
+      const statusModule = await import( "/apps/camera-mouse/camera-mouse-status.js");
+      const statusTag = document.createElement("camera-mouse-status");
+      document.body.appendChild(statusTag);
+    }
+    startCameraMouseTracking().then(() => {
+      console.log("Camera Mouse Tracking started successfully");
+    }).catch((error) => {
+      console.error("Error starting Camera Mouse Tracking:", error);
+    });
+    document.dispatchEvent(createStartCameraMouseMessage({
+      source: "context-menu",
+      headless: true,
+    }));
+  }
 }

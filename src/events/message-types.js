@@ -82,6 +82,7 @@ export const MESSAGES = {
     
     // Desktop Mouse Control (Camera Mouse Integration)
     // Note: These message types are dynamically added by camera-mouse-service.js
+    START_CAMERA_MOUSE: 'start-camera-mouse'
 };
 
 /**
@@ -390,6 +391,19 @@ export function createWindowMessage(messageType, payload) {
  */
 export function createNotificationMessage(payload) {
     return new CustomEvent(MESSAGES.CREATE_NOTIFICATION, {
+        detail: payload,
+        bubbles: true,
+        composed: true
+    });
+}
+
+/**
+ * Create a start camera mouse message
+ * @param {Object} payload - Camera mouse startup data
+ * @returns {CustomEvent} Custom event for starting camera mouse
+ */
+export function createStartCameraMouseMessage(payload) {
+    return new CustomEvent(MESSAGES.START_CAMERA_MOUSE, {
         detail: payload,
         bubbles: true,
         composed: true
