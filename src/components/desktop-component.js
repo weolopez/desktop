@@ -126,11 +126,7 @@ class DesktopComponent extends HTMLElement {
                     z-index: 1000;
                 }
 
-                .desktop-content {
-                    flex: 1;
-                    position: relative;
-                    z-index: 1;
-                }
+         
 
                 .dock-container {
                     position: absolute;
@@ -188,8 +184,10 @@ class DesktopComponent extends HTMLElement {
     });
 
     // Handle paste events
-    document.addEventListener("paste", (e) => {
-      this.handlePaste(e);
+    desktopSurface.addEventListener("paste", (e) => {
+      if (e.currentTarget === e.target) {
+        this.handlePaste(e);
+      }
     });
   }
 
