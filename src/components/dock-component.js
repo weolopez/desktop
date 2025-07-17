@@ -195,6 +195,34 @@ class DockComponent extends HTMLElement {
                     background: rgba(255, 255, 255, 0.2);
                     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
                 }
+
+                @keyframes bounce {
+                    0%, 100% {
+                        transform: translateY(0) scale(1);
+                    }
+                    15% {
+                        transform: translateY(-20px) scale(1.1);
+                    }
+                    30% {
+                        transform: translateY(0) scale(1);
+                    }
+                    45% {
+                        transform: translateY(-15px) scale(1.08);
+                    }
+                    60% {
+                        transform: translateY(0) scale(1);
+                    }
+                    75% {
+                        transform: translateY(-8px) scale(1.05);
+                    }
+                    85% {
+                        transform: translateY(0) scale(1);
+                    }
+                }
+
+                .dock-icon.bounce {
+                    animation: bounce 1s ease-out;
+                }
             </style>
 
             <div class="dock-container">
@@ -303,8 +331,32 @@ class DockComponent extends HTMLElement {
         });
     }
     launchApp(app) {
+        // Dispatch the launch message first
         document.dispatchEvent(createLaunchAppMessage(app));
+        
+        // Update the running state
+        const appData = this.apps.find(a => a.id === app.id);
+        if (appData) {
+            appData.running = true;
+        }
+        
+        // Re-render to update the running state
         this.render();
+        
+        // Add bounce effect after render
+        setTimeout(() => {
+            const iconElement = this.shadowRoot.querySelector(`.dock-icon[data-app-id="${app.id}"]`);
+            if (iconElement) {
+                console.log('Adding bounce to', app.id);
+                iconElement.classList.add('bounce');
+                setTimeout(() => {
+                    iconElement.classList.remove('bounce');
+                    console.log('Removed bounce from', app.id);
+                }, 1000);
+            } else {
+                console.log('Icon element not found for', app.id);
+            }
+        }, 10);
     }
 
     restoreWindow(windowId) {
