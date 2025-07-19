@@ -17,7 +17,7 @@
     <div id="output" style="margin-top: 20px; font-family: monospace; background: #f0f0f0; padding: 10px;"></div>
     
     <script type="module">
-        import { MESSAGES, createLaunchAppMessage, createNotificationMessage } from './src/events/message-types.js';
+        import { MESSAGES, , createNotificationMessage } from './src/events/message-types.js';
         import { eventMonitor } from './src/events/event-monitor.js';
         
         const output = document.getElementById('output');
@@ -41,7 +41,7 @@
         
         // Test finder launch
         document.getElementById('testFinderLaunch').addEventListener('click', () => {
-            const launchEvent = createLaunchAppMessage({
+            const launchEvent = ({
                 id: 'finder',
                 name: 'Finder',
                 icon: '📁',

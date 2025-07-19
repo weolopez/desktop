@@ -1,3 +1,14 @@
+import eventBus from '../../src/events/event-bus.js';
+import { MESSAGES } from '../../src/events/message-types.js';
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+import { SearchAddon } from 'xterm-addon-search';
+import { SerializeAddon } from 'xterm-addon-serialize';
+import { Unicode11Addon } from 'xterm-addon-unicode11';
+import { Readline } from '../../vendor/xterm-readline/xterm-readline.js';
+import { COMMANDS } from '../../src/config.js';
+
 class TerminalWebapp extends HTMLElement {
     constructor() {
         super();
@@ -560,11 +571,8 @@ class TerminalWebapp extends HTMLElement {
             return;
         }
         
-        // Dispatch custom event to launch app
-        const event = new CustomEvent('LAUNCH_APP', {
-            detail: { id: appName }
-        });
-        document.dispatchEvent(event);
+        // Dispatch event to launch app via EventBus
+        eventBus.publish(MESSAGES.LAUNCH_APP, { id: appName });
         this.addOutput(`Launching: ${appName}`, 'terminal-success');
     }
 

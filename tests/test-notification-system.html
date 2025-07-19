@@ -215,8 +215,9 @@
     </div>
     
     <script type="module">
-        import { MESSAGES, createNotificationMessage } from './src/events/message-types.js';
-        import { eventMonitor } from './src/events/event-monitor.js';
+        import { MESSAGES } from '../src/events/message-types.js';
+        import eventBus from '../src/events/event-bus.js';
+        import { eventMonitor } from '../src/events/event-monitor.js';
         
         const logOutput = document.getElementById('logOutput');
         let notificationCounter = 1;
@@ -231,9 +232,7 @@
         
         function updateStatistics() {
             // Request statistics from the system
-            document.dispatchEvent(new CustomEvent('notification-statistics-request', {
-                detail: { requestId: 'test-ui' }
-            }));
+            eventBus.publish('notification-statistics-request', { requestId: 'test-ui' });
         }
         
         function createTestNotification(type, overrides = {}) {
@@ -246,8 +245,7 @@
                 ...overrides
             };
             
-            const event = createNotificationMessage(baseNotification);
-            document.dispatchEvent(event);
+            eventBus.publish(MESSAGES.CREATE_NOTIFICATION, baseNotification);
             log(`Created ${type} notification: "${baseNotification.title}"`, 'success');
         }
         
@@ -334,24 +332,20 @@
         
         // Management operations
         document.getElementById('clearAll').addEventListener('click', () => {
-            document.dispatchEvent(new CustomEvent('notification-clear-all'));
+            eventBus.publish('notification-clear-all');
             log('Cleared all notifications', 'warning');
         });
         
         document.getElementById('clearTestApp').addEventListener('click', () => {
-            document.dispatchEvent(new CustomEvent('notification-clear-app', {
-                detail: { appId: 'test-app' }
-            }));
+            eventBus.publish('notification-clear-app', { appId: 'test-app' });
             log('Cleared test app notifications', 'warning');
         });
         
         document.getElementById('showHistory').addEventListener('click', () => {
-            document.dispatchEvent(new CustomEvent('notification-history-request', {
-                detail: { 
-                    requestId: 'test-history',
-                    options: { limit: 10 }
-                }
-            }));
+            eventBus.publish('notification-history-request', { 
+                requestId: 'test-history',
+                options: { limit: 10 }
+            });
             log('Requested notification history', 'info');
         });
         
@@ -369,9 +363,7 @@
                 maxActiveNotifications: parseInt(document.getElementById('maxActive').value)
             };
             
-            document.dispatchEvent(new CustomEvent('notification-settings-update', {
-                detail: settings
-            }));
+            eventBus.publish('notification-settings-update', settings);
             log('Updated notification settings', 'success');
         });
         
@@ -400,48 +392,46 @@
         });
         
         document.getElementById('requestPermission').addEventListener('click', () => {
-            document.dispatchEvent(new CustomEvent('notification-permission-request', {
-                detail: { appId: 'test-app', level: 'alerts' }
-            }));
+            eventBus.publish('notification-permission-request', { appId: 'test-app', level: 'alerts' });
             log('Requested notification permission for test app', 'info');
         });
         
         // Listen for notification system events
-        document.addEventListener('notification-created', (e) => {
-            log(`✅ Notification created: ${e.detail.notificationId}`, 'success');
+        eventBus.subscribe('notification-created', (detail) => {
+            log(`✅ Notification created: ${detail.notificationId}`, 'success');
             updateStatistics();
         });
         
-        document.addEventListener('notification-error', (e) => {
-            log(`❌ Notification error: ${e.detail.error}`, 'error');
+        eventBus.subscribe('notification-error', (detail) => {
+            log(`❌ Notification error: ${detail.error}`, 'error');
         });
         
-        document.addEventListener('notification-dismissed-complete', (e) => {
-            log(`🗑️ Notification dismissed: ${e.detail.notificationId}`, 'warning');
+        eventBus.subscribe('notification-dismissed-complete', (detail) => {
+            log(`🗑️ Notification dismissed: ${detail.notificationId}`, 'warning');
             updateStatistics();
         });
         
-        document.addEventListener('notification-action', (e) => {
-            log(`👆 Notification ${e.detail.type}: ${e.detail.notificationId}${e.detail.actionId ? ` (action: ${e.detail.actionId})` : ''}`, 'info');
+        eventBus.subscribe('notification-action', (detail) => {
+            log(`👆 Notification ${detail.type}: ${detail.notificationId}${detail.actionId ? ` (action: ${detail.actionId})` : ''}`, 'info');
         });
         
-        document.addEventListener('notifications-cleared', (e) => {
-            log(`🧹 Cleared ${e.detail.count} notifications (${e.detail.type})`, 'warning');
+        eventBus.subscribe('notifications-cleared', (detail) => {
+            log(`🧹 Cleared ${detail.count} notifications (${detail.type})`, 'warning');
             updateStatistics();
         });
         
-        document.addEventListener('notification-permission-result', (e) => {
-            log(`🔐 Permission ${e.detail.granted ? 'granted' : 'denied'} for ${e.detail.appId} (${e.detail.level})`, e.detail.granted ? 'success' : 'warning');
+        eventBus.subscribe('notification-permission-result', (detail) => {
+            log(`🔐 Permission ${detail.granted ? 'granted' : 'denied'} for ${detail.appId} (${detail.level})`, detail.granted ? 'success' : 'warning');
         });
         
-        document.addEventListener('notification-history-response', (e) => {
-            if (e.detail.requestId === 'test-history') {
-                log(`📚 History received: ${e.detail.history.length} notifications`, 'info');
-                console.log('Notification History:', e.detail.history);
+        eventBus.subscribe('notification-history-response', (detail) => {
+            if (detail.requestId === 'test-history') {
+                log(`📚 History received: ${detail.history.length} notifications`, 'info');
+                console.log('Notification History:', detail.history);
             }
         });
         
-        document.addEventListener('notification-settings-updated', (e) => {
+        eventBus.subscribe('notification-settings-updated', (detail) => {
             log('⚙️ Settings updated successfully', 'success');
         });
         
@@ -453,19 +443,19 @@
             permissions: 1
         };
         
-        document.addEventListener('notification-created', () => {
+        eventBus.subscribe('notification-created', () => {
             mockStats.total++;
             mockStats.active++;
             mockStats.unread++;
             updateStatsDisplay();
         });
         
-        document.addEventListener('notification-dismissed-complete', () => {
+        eventBus.subscribe('notification-dismissed-complete', () => {
             mockStats.active = Math.max(0, mockStats.active - 1);
             updateStatsDisplay();
         });
         
-        document.addEventListener('notifications-cleared', (e) => {
+        eventBus.subscribe('notifications-cleared', () => {
             mockStats.active = 0;
             updateStatsDisplay();
         });

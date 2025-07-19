@@ -13,12 +13,12 @@
     <button id="showHistory">Show Event History</button>
     
     <script type="module">
-        import { MESSAGES, createLaunchAppMessage, createPublishTextMessage } from './src/events/message-types.js';
+        import { MESSAGES, , createPublishTextMessage } from './src/events/message-types.js';
         import { eventMonitor } from './src/events/event-monitor.js';
         
         // Test launch app
         document.getElementById('testLaunchApp').addEventListener('click', () => {
-            const event = createLaunchAppMessage({
+            const event = ({
                 id: 'test-app',
                 name: 'Test App',
                 icon: '🧪',

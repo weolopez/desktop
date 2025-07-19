@@ -1,4 +1,5 @@
-import { createPublishTextMessage, MESSAGES } from "../events/message-types.js";
+import eventBus from "../events/event-bus.js";
+import { MESSAGES } from "../events/message-types.js";
 
 export class ContextMenuManager {
   constructor(desktopComponent, wallpaperManager) {
@@ -104,9 +105,7 @@ export class ContextMenuManager {
         try {
           const text = await navigator.clipboard.readText();
           if (text) {
-            this.desktopComponent.dispatchEvent(
-              createPublishTextMessage({ texts: [text] }),
-            );
+            eventBus.publish(MESSAGES.TEXT_MESSAGE_PUBLISH, { texts: [text] });
           }
         } catch (err) {
           console.error("Failed to read clipboard contents: ", err);
@@ -116,9 +115,7 @@ export class ContextMenuManager {
         console.log("Get info clicked");
         break;
       case "open-finder-webapp":
-        this.desktopComponent.dispatchEvent(
-          createPublishTextMessage({ texts: ["finder-webapp"] }),
-        );
+        eventBus.publish(MESSAGES.TEXT_MESSAGE_PUBLISH, { texts: ["finder-webapp"] });
         break;
     }
   }

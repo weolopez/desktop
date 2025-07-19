@@ -1,10 +1,11 @@
 import { WallpaperManager } from "../services/wallpaper-manager.js";
 import { ContextMenuManager } from "../services/context-menu-manager.js";
 import { WindowManager } from "../services/window-manager.js";
-import { NotificationManager } from "../services/notification-manager.js";
+import { NotificationService } from "../services/notification-service.js"; // Updated from NotificationManager
 import "../services/notification-display-component.js";
 import { AppService } from "../services/app-service.js";
-import { MESSAGES, createPublishTextMessage } from "../events/message-types.js";
+import { MESSAGES } from "../events/message-types.js"; // Removed createPublishTextMessage
+import eventBus from "../events/event-bus.js"; // Added EventBus import
 import "../events/event-monitor.js";
 
 // import { PreviewService } from '../services/preview-service.js';
@@ -27,7 +28,7 @@ class DesktopComponent extends HTMLElement {
       this.wallpaperManager,
     );
     this.windowManager = new WindowManager(this, this.appService);
-    this.notificationManager = new NotificationManager(this);
+    this.notificationService = new NotificationService(this); // Updated to NotificationService
 
     // Initialize attributes from localStorage if not set
     this._initializeAttributes();
@@ -96,45 +97,39 @@ class DesktopComponent extends HTMLElement {
     this.contextMenuManager.init();
     this.windowManager.setupEventListeners();
     this.windowManager.restoreWindowsState();
-    this.notificationManager.init();
+    this.notificationService.init(); // Updated to NotificationService
     this.setupPasteDrop();
     this.setupNotificationDisplayConnection();
     // this.setupAppEventListeners();
     // this.showTestNotification();
   }
 
-  // showTestNotification() {
-  //   setTimeout(() => {
-  //     document.dispatchEvent(
-  //       new CustomEvent("create-notification", {
-  //         detail: {
-  //           sourceAppId: "system",
-  //           title: "Welcome to your Desktop!",
-  //           body: "The notification system is now active.",
-  //           icon: "🎉",
-  //         },
-  //       }),
-  //     );
-  //   }, 2000);
-  // }
+  showTestNotification() {
+    setTimeout(() => {
+        eventBus.publish(MESSAGES.CREATE_NOTIFICATION, {
+            sourceAppId: "system",
+            title: "Welcome to your Desktop!",
+            body: "The notification system is now active.",
+            icon: "🎉",
+        });
+    }, 2000);
+  }
 
-  // setupAppEventListeners() {
-  //   this.addEventListener("app-launched", () => {
-  //     console.log("App launched event received");
-  //   });
+  setupAppEventListeners() {
+    eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
+      console.log("App launched event received");
+    });
 
-  //   this.addEventListener("window-closed", () => {
-  //     setTimeout(() => {
-  //       console.log("Window closed event received");
-  //     }, 100);
-  //   });
+    eventBus.subscribe(MESSAGES.WINDOW_CLOSED, () => {
+      setTimeout(() => {
+        console.log("Window closed event received");
+      }, 100);
+    });
 
-  //   this.addEventListener("launch-finder-webapp", (e) => {
-  //     document.dispatchEvent(
-  //       new CustomEvent("PUBLISH_TEXT", { detail: { texts: [e.detail.url] } }),
-  //     );
-  //   });
-  // }
+    eventBus.subscribe(MESSAGES.LAUNCH_FINDER_WEBAPP, (e) => {
+        eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [e.detail.url] });
+    });
+  }
 
   render() {
     this.shadowRoot.innerHTML = `
@@ -265,11 +260,11 @@ class DesktopComponent extends HTMLElement {
     // Connect the notification manager to the display component
     const notificationDisplay = this.shadowRoot.getElementById("notification-display");
     if (notificationDisplay) {
-      this.notificationManager.setDisplayComponent(notificationDisplay);
+      this.notificationService.setDisplayComponent(notificationDisplay);
       
       // Create a welcome notification to show the system is working
       setTimeout(() => {
-        this.notificationManager.createTestNotification('system');
+        this.notificationService.createTestNotification('system');
       }, 2000);
     }
   }
@@ -303,7 +298,7 @@ class DesktopComponent extends HTMLElement {
     //handle text if available
     if (e.dataTransfer.getData("text/plain")) {
       const text = e.dataTransfer.getData("text/plain");
-      document.dispatchEvent(createPublishTextMessage({ texts: [text] }));
+      eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });
     }
     e.preventDefault();
     e.stopPropagation();
@@ -325,7 +320,7 @@ class DesktopComponent extends HTMLElement {
       .forEach((item) => {
         item.getAsString((text) => {
           if (text && text.trim().length > 0) {
-            document.dispatchEvent(createPublishTextMessage({ texts: [text] }));
+            eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });
           }
         });
       });
@@ -423,13 +418,7 @@ class DesktopComponent extends HTMLElement {
     windowEl.appendChild(content);
     this.addWindow(windowEl);
 
-    // this.dispatchEvent(
-    //     new CustomEvent("app-launched", {
-    //         detail: { appName },
-    //         bubbles: true,
-    //         composed: true,
-    //     }),
-    // );
+    eventBus.publish(MESSAGES.APP_LAUNCHED, { name });
   }
   addContent(div) {
     // appName: title,

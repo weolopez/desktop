@@ -1,5 +1,6 @@
 import { APPS } from '../config.js';
-import { MESSAGES, createLaunchAppMessage } from '../events/message-types.js';
+import { MESSAGES } from '../events/message-types.js';
+import eventBus from '../events/event-bus.js';
 class DockComponent extends HTMLElement {
     constructor() {
         super();
@@ -332,8 +333,8 @@ class DockComponent extends HTMLElement {
     }
     launchApp(app) {
         // Dispatch the launch message first
-        document.dispatchEvent(createLaunchAppMessage(app));
-        
+        eventBus.publish(MESSAGES.LAUNCH_APP, app);
+
         // Update the running state
         const appData = this.apps.find(a => a.id === app.id);
         if (appData) {
@@ -363,12 +364,8 @@ class DockComponent extends HTMLElement {
         // Remove from minimized windows
         this.minimizedWindows = this.minimizedWindows.filter(w => w.id !== windowId);
         
-        // Dispatch custom event to restore window
-        this.dispatchEvent(new CustomEvent(MESSAGES.WINDOW_RESTORE, {
-            detail: { windowId },
-            bubbles: true,
-            composed: true
-        }));
+        // Dispatch event to restore window via EventBus
+        eventBus.publish(MESSAGES.WINDOW_RESTORE, { windowId });
         
         this.render();
     }

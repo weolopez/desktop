@@ -1,5 +1,5 @@
 import { APPS, APP_URL_MAP } from '../config.js';
-import { MESSAGES, createLaunchAppMessage, createPublishTextMessage, validateMessagePayload } from '../events/message-types.js';
+import { MESSAGES, validateMessagePayload } from '../events/message-types.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 

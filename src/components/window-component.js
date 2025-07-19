@@ -1,5 +1,5 @@
-import { MESSAGES, createWindowMessage } from '../events/message-types.js';
-
+import eventBus from "../events/event-bus.js";
+import { MESSAGES } from "../events/message-types.js";
 class WindowComponent extends HTMLElement {
     constructor() {
         super();
@@ -69,12 +69,12 @@ class WindowComponent extends HTMLElement {
         if (this.isMinimized) {
             console.log('🪟 WindowComponent - Applying minimized state');
             this.style.display = 'none';
-            this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_MINIMIZE, {
+            eventBus.publish(MESSAGES.WINDOW_MINIMIZE, {
                 windowId: this.windowId,
                 appName: this.appName,
                 appIcon: this.appIcon,
                 appTag: this.appTag
-            }));
+            });
         }
         
         console.log('🪟 WindowComponent connectedCallback - Final DOM state:', {
@@ -495,10 +495,10 @@ class WindowComponent extends HTMLElement {
     }
 
     close() {
-        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_CLOSED, {
+        eventBus.publish(MESSAGES.WINDOW_CLOSED, {
             windowId: this.windowId,
             appName: this.appName
-        }));
+        });
         this.remove();
     }
 
@@ -506,12 +506,12 @@ class WindowComponent extends HTMLElement {
         const window = this.shadowRoot.querySelector('.window');
         window.classList.add('minimizing');
         
-        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_MINIMIZE, {
-            windowId: this.windowId, 
-            appName: this.appName, 
+        eventBus.publish(MESSAGES.WINDOW_MINIMIZE, {
+            windowId: this.windowId,
+            appName: this.appName,
             appIcon: this.appIcon,
             appTag: this.appTag
-        }));
+        });
         
         setTimeout(() => {
             this.style.display = 'none';
@@ -563,10 +563,10 @@ class WindowComponent extends HTMLElement {
         window.classList.add('focused');
         
         // Notify other windows to unfocus
-        this.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_FOCUS, {
+        eventBus.publish(MESSAGES.WINDOW_FOCUS, {
             windowId: this.windowId,
             appName: this.appName
-        }));
+        });
     }
 
     unfocus() {

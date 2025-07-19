@@ -293,62 +293,6 @@ export const MESSAGES = {
  * @property {string} [requestId] - Request identifier
  */
 
-/**
- * Helper functions for creating typed messages
- */
-
-/**
- * Create a launch app message
- * @param {LaunchAppPayload} payload - App launch data
- * @returns {CustomEvent} Custom event for launching an app
- */
-export function createLaunchAppMessage(payload) {
-    return new CustomEvent(MESSAGES.LAUNCH_APP, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a publish text message
- * @param {PublishTextPayload} payload - Text publishing data
- * @returns {CustomEvent} Custom event for publishing text
- */
-export function createPublishTextMessage(payload) {
-    return new CustomEvent(MESSAGES.PUBLISH_TEXT, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a window event message
- * @param {string} messageType - Type of window event
- * @param {WindowEventPayload} payload - Window event data
- * @returns {CustomEvent} Custom event for window management
- */
-export function createWindowMessage(messageType, payload) {
-    return new CustomEvent(messageType, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
-
-/**
- * Create a notification message
- * @param {NotificationPayload} payload - Notification data
- * @returns {CustomEvent} Custom event for creating notifications
- */
-export function createNotificationMessage(payload) {
-    return new CustomEvent(MESSAGES.CREATE_NOTIFICATION, {
-        detail: payload,
-        bubbles: true,
-        composed: true
-    });
-}
 
 /**
  * Validate message payload against expected schema
@@ -365,7 +309,7 @@ export function validateMessagePayload(messageType, payload) {
     // Basic validation - can be extended with more specific checks
     switch (messageType) {
         case MESSAGES.LAUNCH_APP:
-            return typeof payload.id === 'string' && typeof payload.name === 'string';
+            return typeof payload.id === 'string' ;
         case MESSAGES.PUBLISH_TEXT:
             return payload.texts && (typeof payload.texts === 'string' || Array.isArray(payload.texts));
         case MESSAGES.WINDOW_CLOSED:

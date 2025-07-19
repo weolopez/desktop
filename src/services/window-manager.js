@@ -1,4 +1,5 @@
-import { MESSAGES, createWindowMessage } from '../events/message-types.js';
+import eventBus from "../events/event-bus.js";
+import { MESSAGES } from "../events/message-types.js";
 
 export class WindowManager {
     constructor(desktopComponent, appService) {
@@ -85,10 +86,10 @@ export class WindowManager {
         });
         
         // Dispatch focus event
-        document.dispatchEvent(createWindowMessage(MESSAGES.WINDOW_FOCUSED, {
+        eventBus.publish(MESSAGES.WINDOW_FOCUSED, {
             windowId,
             appName
-        }));
+        });
     }
 
     saveWindowsState() {

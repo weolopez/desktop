@@ -1,14 +1,16 @@
 /**
- * Core Notification Service
- * 
- * Handles notification business logic, state management, and persistence.
- * This is the central service for all notification operations in the desktop environment.
+ * Notification Service
+ *
+ * Unified notification service that handles both business logic and event coordination.
+ * This service manages notification state, persistence, event handling, and UI integration.
+ * Replaces the previous NotificationService + NotificationManager architecture.
  */
 
 import { MESSAGES, validateMessagePayload } from '../events/message-types.js';
+import eventBus from '../events/event-bus.js';
 
 export class NotificationService {
-    constructor() {
+    constructor(desktopComponent = null) {
         this.notifications = new Map(); // Active notifications
         this.history = []; // All notifications (for history/center)
         this.permissions = new Map(); // App permissions
@@ -21,6 +23,12 @@ export class NotificationService {
         };
         
         this.nextId = 1;
+        
+        // Event handling and UI integration (from NotificationManager)
+        this.desktopComponent = desktopComponent;
+        this.displayComponent = null; // Will be set when display component is ready
+        this.dismissTimers = new Map(); // Auto-dismiss timers
+        this.isInitialized = false;
         
         // Load persisted data
         this.loadPersistedData();
@@ -439,7 +447,417 @@ export class NotificationService {
             active: activeCount,
             unread: unreadCount,
             permissions: this.permissions.size,
-            byApp: appStats
+            byApp: appStats,
+            activeTimers: this.dismissTimers.size,
+            displayComponentConnected: !!this.displayComponent
         };
+    }
+
+    // ============================================================================
+    // EVENT HANDLING AND UI INTEGRATION (from NotificationManager)
+    // ============================================================================
+
+    /**
+     * Initialize the notification service with event listeners
+     */
+    init() {
+        if (this.isInitialized) {
+            console.warn('NotificationService already initialized');
+            return;
+        }
+
+        this.setupEventListeners();
+        this.requestDefaultPermissions();
+        this.isInitialized = true;
+        
+        console.log('🔔 NotificationService initialized');
+    }
+
+    /**
+     * Set the display component reference
+     * @param {NotificationDisplayComponent} displayComponent - The UI component
+     */
+    setDisplayComponent(displayComponent) {
+        this.displayComponent = displayComponent;
+        console.log('🖥️ Notification display component connected');
+    }
+
+    /**
+     * Setup event listeners for notification-related events using EventBus
+     */
+    setupEventListeners() {
+        // Listen for notification creation requests
+        eventBus.subscribe(MESSAGES.CREATE_NOTIFICATION, (payload) => {
+            this.handleCreateNotification(payload);
+        });
+
+        // Listen for notification interactions
+        eventBus.subscribe(MESSAGES.NOTIFICATION_CLICKED, (payload) => {
+            this.handleNotificationClickEvent(payload);
+        });
+
+        eventBus.subscribe(MESSAGES.NOTIFICATION_DISMISSED, (payload) => {
+            this.handleNotificationDismiss(payload);
+        });
+
+        // Listen for permission requests
+        eventBus.subscribe('notification-permission-request', (payload) => {
+            this.handlePermissionRequest(payload);
+        });
+
+        // Listen for bulk operations
+        eventBus.subscribe('notification-clear-all', () => {
+            this.handleClearAll();
+        });
+
+        eventBus.subscribe('notification-clear-app', (payload) => {
+            this.handleClearApp(payload);
+        });
+
+        // Listen for settings updates
+        eventBus.subscribe('notification-settings-update', (payload) => {
+            this.handleSettingsUpdate(payload);
+        });
+
+        // Listen for history requests
+        eventBus.subscribe('notification-history-request', (payload) => {
+            this.handleHistoryRequest(payload);
+        });
+
+        // Listen for app launch events to auto-grant permissions
+        eventBus.subscribe(MESSAGES.LAUNCH_APP, (payload) => {
+            this.handleAppLaunch(payload);
+        });
+    }
+
+    /**
+     * Handle notification creation request
+     * @param {NotificationPayload} payload - Notification data
+     */
+    handleCreateNotification(payload) {
+        try {
+            // Validate the payload
+            if (!validateMessagePayload(MESSAGES.CREATE_NOTIFICATION, payload)) {
+                console.error('Invalid notification payload:', payload);
+                return;
+            }
+
+            // Create the notification
+            const notificationId = this.createNotification(payload);
+            
+            if (!notificationId) {
+                // Permission denied or notifications disabled
+                return;
+            }
+
+            // Get the created notification
+            const notification = this.getActiveNotifications()
+                .find(n => n.id === notificationId);
+
+            if (notification && this.displayComponent) {
+                // Show in UI
+                this.displayComponent.showNotification(notification);
+
+                // Set up auto-dismiss timer if not persistent
+                if (!notification.persistent && notification.duration > 0) {
+                    this.setDismissTimer(notificationId, notification.duration);
+                }
+            }
+
+            // Dispatch success event
+            this.dispatchNotificationEvent('notification-created', {
+                notificationId,
+                sourceAppId: payload.sourceAppId
+            });
+
+        } catch (error) {
+            console.error('Failed to create notification:', error);
+            
+            // Dispatch error event
+            this.dispatchNotificationEvent('notification-error', {
+                error: error.message,
+                sourceAppId: payload.sourceAppId
+            });
+        }
+    }
+
+    /**
+     * Handle notification click
+     * @param {NotificationClickedPayload} payload - Click event data
+     */
+    handleNotificationClickEvent(payload) {
+        const { notificationId, actionId, type } = payload;
+        
+        // Update notification state
+        this.handleNotificationClick(notificationId, actionId);
+        
+        // Clear dismiss timer
+        this.clearDismissTimer(notificationId);
+        
+        // Get notification details for event
+        const notification = this.getNotificationHistory({ limit: 1000 })
+            .find(n => n.id === notificationId);
+
+        if (notification) {
+            // Dispatch click event with notification context
+            this.dispatchNotificationEvent('notification-action', {
+                notificationId,
+                actionId,
+                type,
+                sourceAppId: notification.sourceAppId,
+                category: notification.category
+            });
+
+            // If this was an action click, notify the source app
+            if (actionId && notification.sourceAppId) {
+                this.dispatchNotificationEvent('notification-action-triggered', {
+                    notificationId,
+                    actionId,
+                    sourceAppId: notification.sourceAppId
+                });
+            }
+        }
+
+        // Auto-dismiss after click (unless it was an action that should keep it open)
+        if (type === 'notification' || (type === 'action' && actionId !== 'keep-open')) {
+            if (this.displayComponent) {
+                this.displayComponent.dismissNotification(notificationId);
+            }
+        }
+    }
+
+    /**
+     * Handle notification dismissal
+     * @param {NotificationDismissedPayload} payload - Dismiss event data
+     */
+    handleNotificationDismiss(payload) {
+        const { notificationId } = payload;
+        
+        // Update notification state
+        this.dismissNotification(notificationId, 'user');
+        
+        // Clear dismiss timer
+        this.clearDismissTimer(notificationId);
+        
+        // Get notification details for event
+        const notification = this.getNotificationHistory({ limit: 1000 })
+            .find(n => n.id === notificationId);
+
+        if (notification) {
+            // Dispatch dismiss event
+            this.dispatchNotificationEvent('notification-dismissed-complete', {
+                notificationId,
+                sourceAppId: notification.sourceAppId
+            });
+        }
+    }
+
+    /**
+     * Handle permission request
+     * @param {Object} payload - Permission request data
+     */
+    handlePermissionRequest(payload) {
+        const { appId, level = 'default' } = payload;
+        
+        try {
+            const granted = this.requestPermission(appId, level);
+            
+            // Dispatch permission result
+            this.dispatchNotificationEvent('notification-permission-result', {
+                appId,
+                level,
+                granted
+            });
+            
+        } catch (error) {
+            console.error('Failed to handle permission request:', error);
+            
+            this.dispatchNotificationEvent('notification-permission-result', {
+                appId,
+                level,
+                granted: false,
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Handle clear all notifications
+     */
+    handleClearAll() {
+        const clearedCount = this.clearAllNotifications();
+        
+        // Clear all UI notifications
+        if (this.displayComponent) {
+            this.displayComponent.clearAllNotifications();
+        }
+        
+        // Clear all timers
+        this.dismissTimers.clear();
+        
+        // Dispatch cleared event
+        this.dispatchNotificationEvent('notifications-cleared', {
+            count: clearedCount,
+            type: 'all'
+        });
+    }
+
+    /**
+     * Handle clear app notifications
+     * @param {Object} payload - Clear request data
+     */
+    handleClearApp(payload) {
+        const { appId } = payload;
+        const clearedCount = this.clearAppNotifications(appId);
+        
+        // Clear app notifications from UI
+        if (this.displayComponent) {
+            this.displayComponent.clearAppNotifications(appId);
+        }
+        
+        // Clear related timers
+        for (const [notificationId, timer] of this.dismissTimers.entries()) {
+            const notification = this.getActiveNotifications()
+                .find(n => n.id === notificationId);
+            if (notification?.sourceAppId === appId) {
+                clearTimeout(timer);
+                this.dismissTimers.delete(notificationId);
+            }
+        }
+        
+        // Dispatch cleared event
+        this.dispatchNotificationEvent('notifications-cleared', {
+            count: clearedCount,
+            type: 'app',
+            appId
+        });
+    }
+
+    /**
+     * Handle settings update
+     * @param {Object} payload - Settings data
+     */
+    handleSettingsUpdate(payload) {
+        this.updateSettings(payload);
+        
+        // If notifications were disabled, clear all active notifications
+        if (payload.enableNotifications === false) {
+            this.handleClearAll();
+        }
+        
+        // Dispatch settings updated event
+        this.dispatchNotificationEvent('notification-settings-updated', {
+            settings: this.getSettings()
+        });
+    }
+
+    /**
+     * Handle history request
+     * @param {Object} payload - History request data
+     */
+    handleHistoryRequest(payload) {
+        const history = this.getNotificationHistory(payload.options || {});
+        
+        // Dispatch history response
+        this.dispatchNotificationEvent('notification-history-response', {
+            history,
+            requestId: payload.requestId
+        });
+    }
+
+    /**
+     * Handle app launch - auto-grant notification permission
+     * @param {LaunchAppPayload} payload - App launch data
+     */
+    handleAppLaunch(payload) {
+        const { id: appId } = payload;
+        
+        // Auto-grant basic notification permission to launched apps
+        if (appId && !this.hasPermission(appId)) {
+            this.requestPermission(appId, 'default');
+            console.log(`🔔 Auto-granted notification permission to ${appId}`);
+        }
+    }
+
+    /**
+     * Request default permissions for system components
+     */
+    requestDefaultPermissions() {
+        // Grant permissions to system components
+        const systemComponents = ['system', 'desktop', 'finder', 'window-manager'];
+        
+        systemComponents.forEach(componentId => {
+            this.requestPermission(componentId, 'alerts');
+        });
+    }
+
+    /**
+     * Set auto-dismiss timer for a notification
+     * @param {string} notificationId - Notification ID
+     * @param {number} duration - Duration in milliseconds
+     */
+    setDismissTimer(notificationId, duration) {
+        // Clear existing timer if any
+        this.clearDismissTimer(notificationId);
+        
+        const timer = setTimeout(() => {
+            // Auto-dismiss the notification
+            this.dismissNotification(notificationId, 'timeout');
+            
+            // Remove from UI
+            if (this.displayComponent) {
+                this.displayComponent.dismissNotification(notificationId);
+            }
+            
+            // Clean up timer
+            this.dismissTimers.delete(notificationId);
+            
+            console.log(`⏰ Auto-dismissed notification: ${notificationId}`);
+            
+        }, duration);
+        
+        this.dismissTimers.set(notificationId, timer);
+    }
+
+    /**
+     * Clear dismiss timer for a notification
+     * @param {string} notificationId - Notification ID
+     */
+    clearDismissTimer(notificationId) {
+        const timer = this.dismissTimers.get(notificationId);
+        if (timer) {
+            clearTimeout(timer);
+            this.dismissTimers.delete(notificationId);
+        }
+    }
+
+    /**
+     * Dispatch a notification-related event using EventBus
+     * @param {string} eventType - Event type
+     * @param {Object} detail - Event detail data
+     */
+    dispatchNotificationEvent(eventType, detail) {
+        eventBus.publish(eventType, detail);
+    }
+
+    /**
+     * Create a test notification (for debugging)
+     * @param {string} sourceAppId - Source app identifier
+     */
+    createTestNotification(sourceAppId = 'system') {
+        const testNotification = {
+            sourceAppId,
+            title: 'Test Notification',
+            body: 'This is a test notification from the integrated notification system!',
+            icon: '🧪',
+            category: 'test',
+            actions: [
+                { actionId: 'test-action', label: 'Test Action' },
+                { actionId: 'dismiss', label: 'Dismiss' }
+            ]
+        };
+        
+        // Use EventBus to dispatch create notification event
+        eventBus.publish(MESSAGES.CREATE_NOTIFICATION, testNotification);
     }
 }

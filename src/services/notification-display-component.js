@@ -6,6 +6,7 @@
  */
 
 import { MESSAGES } from '../events/message-types.js';
+import eventBus from '../events/event-bus.js';
 
 class NotificationDisplayComponent extends HTMLElement {
     constructor() {
@@ -478,17 +479,12 @@ class NotificationDisplayComponent extends HTMLElement {
     }
 
     /**
-     * Dispatch a notification event
+     * Dispatch a notification event using EventBus
      * @param {string} eventType - Event type
      * @param {Object} detail - Event detail
      */
     dispatchNotificationEvent(eventType, detail) {
-        const event = new CustomEvent(eventType, {
-            detail,
-            bubbles: true,
-            composed: true
-        });
-        document.dispatchEvent(event);
+        eventBus.publish(eventType, detail);
     }
 
     /**
