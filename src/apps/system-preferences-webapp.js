@@ -598,7 +598,8 @@ class SystemPreferencesWebapp extends HTMLElement {
                         parallel: true,
                         waitFor: "critical",
                         components: [
-                            { name: "ContextMenuManager", dependencies: ["WallpaperManager"], required: true, priority: 2, enabled: true }
+                            { name: "ContextMenuManager", dependencies: ["WallpaperManager"], required: true, priority: 2, enabled: true },
+                            { name: "DockComponent", required: true, priority: 2, enabled: true, isWebComponent: true }
                         ]
                     },
                     {

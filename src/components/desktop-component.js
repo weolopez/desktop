@@ -285,8 +285,8 @@ class DesktopComponent extends HTMLElement {
                     <slot></slot>
                 </div>
                 
-                <div class="dock-container">
-                    <dock-component></dock-component>
+                <div class="dock-container" id="dock-container">
+                    <!-- dock-component will be inserted here by StartupManager -->
                 </div>
             </div>
             <!-- notification-display-component is now loaded dynamically by StartupManager -->
@@ -479,6 +479,9 @@ class DesktopComponent extends HTMLElement {
     const dockComponent = this.shadowRoot.querySelector('dock-component');
     if (dockComponent) {
       dockComponent.setAttribute('position', position);
+    } else if (this.startupManager) {
+      // If dock not loaded yet, it will get the position when it loads
+      console.log(`📍 Dock position will be set to "${position}" when dock loads`);
     }
   }
 

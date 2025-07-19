@@ -297,6 +297,11 @@ export class StartupManager {
   }
 
   async instantiateComponent(config, moduleResult, desktopComponent) {
+    // Handle web components differently from service classes
+    if (config.isWebComponent) {
+      return this.instantiateWebComponent(config, moduleResult, desktopComponent);
+    }
+
     const ComponentClass = moduleResult.default || 
                            moduleResult[config.name] || 
                            Object.values(moduleResult)[0];
@@ -328,6 +333,40 @@ export class StartupManager {
     } else {
       return new ComponentClass(desktopComponent);
     }
+  }
+
+  async instantiateWebComponent(config, moduleResult, desktopComponent) {
+    console.log(`🧩 Setting up web component: ${config.name}`);
+    
+    // Web component modules register themselves when imported
+    // We just need to create and insert the DOM element
+    
+    if (config.name === 'DockComponent') {
+      // Wait for the custom element to be defined
+      await customElements.whenDefined('dock-component');
+      
+      // Create the dock component element
+      const dockElement = document.createElement('dock-component');
+      
+      // Apply current dock position if set
+      const currentDockPosition = desktopComponent.getAttribute('dock-position') || 'bottom';
+      dockElement.setAttribute('position', currentDockPosition);
+      console.log(`📍 Setting dock position to: ${currentDockPosition}`);
+      
+      // Insert it into the dock container
+      const dockContainer = desktopComponent.shadowRoot.getElementById('dock-container');
+      if (dockContainer) {
+        dockContainer.appendChild(dockElement);
+        console.log(`✅ DockComponent inserted into dock-container`);
+      } else {
+        console.error(`❌ dock-container not found in desktop template`);
+      }
+      
+      return dockElement;
+    }
+    
+    // Default web component handling for future components
+    return null;
   }
 
   async loadNotificationDisplayComponent(notificationService, desktopComponent) {
