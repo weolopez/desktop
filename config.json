@@ -9,20 +9,23 @@
             "name": "WallpaperManager",
             "path": "./wallpaper-manager.js",
             "required": true,
-            "priority": 1
+            "priority": 1,
+            "enabled": true
           },
           {
             "name": "WindowManager", 
             "path": "./window-manager.js",
             "required": true,
             "priority": 1,
-            "dependencies": ["AppService"]
+            "dependencies": ["AppService"],
+            "enabled": true
           },
           {
             "name": "AppService",
             "path": "./app-service.js",
             "required": true,
-            "priority": 1
+            "priority": 1,
+            "enabled": true
           }
         ]
       },
@@ -36,7 +39,8 @@
             "path": "./context-menu-manager.js",
             "required": true,
             "priority": 2,
-            "dependencies": ["WallpaperManager"]
+            "dependencies": ["WallpaperManager"],
+            "enabled": true
           }
         ]
       },

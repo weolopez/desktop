@@ -12,13 +12,27 @@ export class StartupManager {
   }
 
   async init() {
+    // First check for localStorage override (highest priority)
+    try {
+      const localConfig = localStorage.getItem('startup-config-override');
+      if (localConfig) {
+        this.config = JSON.parse(localConfig);
+        console.log('📦 Startup config loaded from localStorage:', this.config.startup.phases.length, 'phases');
+        return;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to load config from localStorage:', error);
+    }
+
+    // Fall back to config.json
     try {
       const response = await fetch('./config.json');
       this.config = await response.json();
-      console.log('📊 Startup config loaded:', this.config.startup.phases.length, 'phases');
+      console.log('📄 Startup config loaded from config.json:', this.config.startup.phases.length, 'phases');
     } catch (error) {
       console.warn('⚠️ Failed to load config.json, using defaults:', error);
       this.config = this.getDefaultConfig();
+      console.log('⚙️ Using default startup config:', this.config.startup.phases.length, 'phases');
     }
   }
 
@@ -64,7 +78,9 @@ export class StartupManager {
     console.log(`🚀 Starting ${phases.length} phase startup sequence`);
     
     for (const phase of phases) {
-      console.log(`📦 Phase "${phase.name}" - ${phase.components.length} components`);
+      const enabledCount = phase.components.filter(c => c.enabled !== false).length;
+      const totalCount = phase.components.length;
+      console.log(`📦 Phase "${phase.name}" - ${enabledCount}/${totalCount} components enabled`);
       
       if (phase.waitFor) {
         await this.waitForPhase(phase.waitFor);
@@ -88,7 +104,16 @@ export class StartupManager {
 
   async loadPhaseParallel(phase, desktopComponent) {
     const { maxConcurrentLoads = 3 } = this.config.startup.performance;
-    const components = [...phase.components].sort((a, b) => a.priority - b.priority);
+    // Filter enabled components only
+    const components = [...phase.components]
+      .filter(component => component.enabled !== false)
+      .sort((a, b) => a.priority - b.priority);
+    
+    if (components.length === 0) {
+      console.log(`⏭️ Phase "${phase.name}" - all components disabled, skipping`);
+      this.loadingPhases.set(phase.name, 'completed');
+      return;
+    }
     
     const loadPromises = [];
     for (let i = 0; i < Math.min(components.length, maxConcurrentLoads); i++) {
@@ -100,29 +125,89 @@ export class StartupManager {
   }
 
   async loadPhaseSequential(phase, desktopComponent) {
-    for (const component of phase.components.sort((a, b) => a.priority - b.priority)) {
+    // Filter enabled components only
+    const enabledComponents = phase.components
+      .filter(component => component.enabled !== false)
+      .sort((a, b) => a.priority - b.priority);
+    
+    if (enabledComponents.length === 0) {
+      console.log(`⏭️ Phase "${phase.name}" - all components disabled, skipping`);
+      this.loadingPhases.set(phase.name, 'completed');
+      return;
+    }
+    
+    for (const component of enabledComponents) {
       await this.loadComponent(component, desktopComponent);
     }
     this.loadingPhases.set(phase.name, 'completed');
   }
 
   async loadComponentsFromQueue(queue, desktopComponent) {
+    const pendingComponents = [];
+    
     while (queue.length > 0) {
       const component = queue.shift();
-      if (component && await this.checkDependencies(component)) {
-        await this.loadComponent(component, desktopComponent);
+      if (component && component.enabled !== false) {
+        if (await this.checkDependencies(component)) {
+          await this.loadComponent(component, desktopComponent);
+          // After loading a component, check if any pending components can now be loaded
+          for (let i = pendingComponents.length - 1; i >= 0; i--) {
+            const pendingComponent = pendingComponents[i];
+            if (await this.checkDependencies(pendingComponent)) {
+              await this.loadComponent(pendingComponent, desktopComponent);
+              pendingComponents.splice(i, 1); // Remove from pending list
+            }
+          }
+        } else {
+          // Dependencies not met, add to pending list
+          pendingComponents.push(component);
+          console.log(`⏳ ${component.name} waiting for dependencies: ${component.dependencies.join(', ')}`);
+        }
       }
+    }
+    
+    // Process any remaining pending components (retry logic)
+    let retryCount = 0;
+    const maxRetries = 5;
+    while (pendingComponents.length > 0 && retryCount < maxRetries) {
+      const remainingComponents = [...pendingComponents];
+      pendingComponents.length = 0; // Clear the array
+      
+      for (const component of remainingComponents) {
+        if (await this.checkDependencies(component)) {
+          await this.loadComponent(component, desktopComponent);
+        } else {
+          pendingComponents.push(component); // Still pending
+        }
+      }
+      retryCount++;
+    }
+    
+    // Log any components that couldn't be loaded due to unmet dependencies
+    if (pendingComponents.length > 0) {
+      console.warn('⚠️ Some components could not be loaded due to unmet dependencies:');
+      pendingComponents.forEach(comp => {
+        console.warn(`  - ${comp.name} requires: ${comp.dependencies.join(', ')}`);
+      });
     }
   }
 
   async checkDependencies(component) {
     if (!component.dependencies) return true;
     
+    const unmetDependencies = [];
     for (const depName of component.dependencies) {
       if (!this.loadedComponents.has(depName)) {
-        return false;
+        unmetDependencies.push(depName);
       }
     }
+    
+    if (unmetDependencies.length > 0) {
+      console.log(`🔗 ${component.name} missing dependencies: ${unmetDependencies.join(', ')}`);
+      return false;
+    }
+    
+    console.log(`✅ ${component.name} dependencies satisfied: ${component.dependencies.join(', ')}`);
     return true;
   }
 
@@ -167,6 +252,12 @@ export class StartupManager {
       return this.loadedComponents.get(component.name);
     }
 
+    // Check if component is disabled
+    if (component.enabled === false) {
+      console.log(`⏭️ ${component.name} disabled, skipping`);
+      return null;
+    }
+
     const startTime = performance.now();
     
     try {
@@ -185,7 +276,7 @@ export class StartupManager {
       this.loadedComponents.set(component.name, instance);
       
       const loadTime = performance.now() - startTime;
-      console.log(`✅ ${component.name} loaded in ${loadTime.toFixed(2)}ms`);
+      console.log(`✅ ${component.name} loaded in ${loadTime.toFixed(2)}ms (${this.loadedComponents.size} total loaded)`);
       
       return instance;
     } catch (error) {
