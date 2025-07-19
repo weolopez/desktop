@@ -18,7 +18,6 @@ This is a virtual desktop environment web application that recreates a macOS-lik
 - **`index.html`:** Entry point containing only the `<desktop-component>` element
 - **`script.js`:** Initializes the desktop by importing the main component
 - **`style.css`:** Global styles (minimal - most styling is component-scoped)
-- **`/wc/`:** All core web components for the desktop system
 - **`/apps/`:** Web components for individual applications (named `*-webapp.js`)
 - **`/assets/`:** Static resources (icons, wallpapers)
 
@@ -37,19 +36,17 @@ All UI elements are custom web components using Shadow DOM:
 - **Desktop Component:** Main container managing windows, menu bar, dock, and icons
 - **Window Component:** Draggable/resizable windows with title bars and controls
 - **Dock Component:** Pinned edge container for application launchers
-- **Icon Component:** Generic component for desktop and launcher icons
 - **Menu Bar Component:** Global menu bar that changes based on active application
 
 ## Development Guidelines
 
 ### Component Creation
-- Place core components in `/wc/` directory
 - Name application components as `<name>-webapp.js` in `/apps/` directory
 - Use Shadow DOM for style encapsulation
 - Follow the existing pattern: extend HTMLElement, attachShadow, define in connectedCallback
 
 ### File System Conventions
-- Virtual file system will be in-memory only
+- Virtual file system files will bebased on URLs, 
 - Desktop icons represent files/folders in the virtual filesystem
 - Support drag and drop between desktop and application windows
 
@@ -59,7 +56,6 @@ The desktop should support:
 - Dock positioning (bottom, left, right edges)
 - Context menus on right-click
 - Desktop wallpaper customization
-- Application launcher (full-screen Launchpad-style view)
 - Deep linking for shareable desktop states
 
 ### Browser Compatibility

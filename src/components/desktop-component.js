@@ -10,6 +10,10 @@ import "../events/event-monitor.js";
 // import { PreviewService } from '../services/preview-service.js';
 
 class DesktopComponent extends HTMLElement {
+  static get observedAttributes() {
+    return ['wallpaper', 'dock-position', 'grid-snap', 'show-desktop-icons', 'accent-color', 'notification-sounds'];
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -24,6 +28,67 @@ class DesktopComponent extends HTMLElement {
     );
     this.windowManager = new WindowManager(this, this.appService);
     this.notificationManager = new NotificationManager(this);
+
+    // Initialize attributes from localStorage if not set
+    this._initializeAttributes();
+  }
+
+  _initializeAttributes() {
+    if (!this.hasAttribute('wallpaper')) {
+      const savedWallpaper = localStorage.getItem('desktop-wallpaper') || 'gradient';
+      this.setAttribute('wallpaper', savedWallpaper);
+    }
+    if (!this.hasAttribute('dock-position')) {
+      const savedDockPosition = localStorage.getItem('dock-position') || 'bottom';
+      this.setAttribute('dock-position', savedDockPosition);
+    }
+    if (!this.hasAttribute('grid-snap')) {
+      const savedGridSnap = localStorage.getItem('grid-snap') || 'true';
+      this.setAttribute('grid-snap', savedGridSnap);
+    }
+    if (!this.hasAttribute('show-desktop-icons')) {
+      const savedShowIcons = localStorage.getItem('show-desktop-icons') || 'true';
+      this.setAttribute('show-desktop-icons', savedShowIcons);
+    }
+    if (!this.hasAttribute('accent-color')) {
+      const savedAccentColor = localStorage.getItem('accent-color') || '#007AFF';
+      this.setAttribute('accent-color', savedAccentColor);
+    }
+    if (!this.hasAttribute('notification-sounds')) {
+      const savedNotificationSounds = localStorage.getItem('notification-sounds') || 'true';
+      this.setAttribute('notification-sounds', savedNotificationSounds);
+    }
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue) return;
+    
+    switch (name) {
+      case 'wallpaper':
+        this._updateWallpaper(newValue);
+        localStorage.setItem('desktop-wallpaper', newValue);
+        break;
+      case 'dock-position':
+        this._updateDockPosition(newValue);
+        localStorage.setItem('dock-position', newValue);
+        break;
+      case 'grid-snap':
+        this._updateGridSnap(newValue === 'true');
+        localStorage.setItem('grid-snap', newValue);
+        break;
+      case 'show-desktop-icons':
+        this._updateDesktopIcons(newValue === 'true');
+        localStorage.setItem('show-desktop-icons', newValue);
+        break;
+      case 'accent-color':
+        this._updateAccentColor(newValue);
+        localStorage.setItem('accent-color', newValue);
+        break;
+      case 'notification-sounds':
+        this._updateNotificationSounds(newValue === 'true');
+        localStorage.setItem('notification-sounds', newValue);
+        break;
+    }
   }
 
   connectedCallback() {
@@ -81,6 +146,13 @@ class DesktopComponent extends HTMLElement {
                     overflow: hidden;
                     position: relative;
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    
+                    /* CSS Custom Properties for reactive theming */
+                    --desktop-wallpaper: var(--wallpaper-gradient);
+                    --dock-position: bottom;
+                    --accent-color: #007AFF;
+                    --grid-snap-size: 20px;
+                    --desktop-icons-visible: block;
                 }
 
                 .desktop-background {
@@ -90,26 +162,46 @@ class DesktopComponent extends HTMLElement {
                     width: 100%;
                     height: 100%;
                     z-index: -1;
+                    background: var(--desktop-wallpaper);
                 }
 
-                .wallpaper-gradient {
-                    background: linear-gradient(135deg,
-                        #667eea 0%,
-                        #764ba2 100%);
+                :host([wallpaper="gradient"]) {
+                    --desktop-wallpaper: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 }
 
-                .wallpaper-monterey {
-                    background: linear-gradient(135deg,
-                        #1e3c72 0%,
-                        #2a5298 50%,
-                        #764ba2 100%);
+                :host([wallpaper="monterey"]) {
+                    --desktop-wallpaper: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%);
                 }
 
-                .wallpaper-big-sur {
-                    background: linear-gradient(180deg,
-                        #ff9a9e 0%,
-                        #fecfef 50%,
-                        #fecfef 100%);
+                :host([wallpaper="big-sur"]) {
+                    --desktop-wallpaper: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+                }
+
+                :host([dock-position="bottom"]) .dock-container {
+                    bottom: 8px;
+                    left: 50%;
+                    top: unset;
+                    right: unset;
+                    transform: translateX(-50%);
+                    flex-direction: row;
+                }
+
+                :host([dock-position="left"]) .dock-container {
+                    left: 8px;
+                    top: 50%;
+                    bottom: unset;
+                    right: unset;
+                    transform: translateY(-50%);
+                    flex-direction: column;
+                }
+
+                :host([dock-position="right"]) .dock-container {
+                    right: 8px;
+                    top: 50%;
+                    bottom: unset;
+                    left: unset;
+                    transform: translateY(-50%);
+                    flex-direction: column;
                 }
 
                 .desktop-surface {
@@ -126,14 +218,25 @@ class DesktopComponent extends HTMLElement {
                     z-index: 1000;
                 }
 
-         
+                .desktop-content {
+                    flex: 1;
+                    position: relative;
+                }
 
                 .dock-container {
                     position: absolute;
-                    bottom: 8px;
-                    left: 50%;
-                    transform: translateX(-50%);
                     z-index: 999;
+                }
+
+                :host([show-desktop-icons="false"]) .desktop-icons {
+                    display: none;
+                }
+
+                :host([grid-snap="true"]) .desktop-content {
+                    background-image: 
+                        linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
+                    background-size: var(--grid-snap-size) var(--grid-snap-size);
                 }
             </style>
             
@@ -154,7 +257,8 @@ class DesktopComponent extends HTMLElement {
             </div>
             <notification-display-component id="notification-display"></notification-display-component>
         `;
-    this.updateWallpaperClass(this.wallpaperManager.wallpaper);
+    // Apply current attribute values to CSS custom properties
+    this._updateAccentColor(this.getAttribute('accent-color') || '#007AFF');
   }
 
   setupNotificationDisplayConnection() {
@@ -343,11 +447,36 @@ class DesktopComponent extends HTMLElement {
     return this.shadowRoot.querySelector(".desktop-surface");
   }
 
-  updateWallpaperClass(wallpaper) {
-    const background = this.shadowRoot.querySelector(".desktop-background");
-    if (background) {
-      background.className = `desktop-background wallpaper-${wallpaper}`;
+  // Attribute handler methods
+  _updateWallpaper(wallpaper) {
+    // Wallpaper is now handled by CSS attribute selectors
+    // No additional JavaScript needed
+  }
+
+  _updateDockPosition(position) {
+    // Dock position is now handled by CSS attribute selectors
+    // Notify dock component if needed
+    const dockComponent = this.shadowRoot.querySelector('dock-component');
+    if (dockComponent) {
+      dockComponent.setAttribute('position', position);
     }
+  }
+
+  _updateGridSnap(enabled) {
+    this.style.setProperty('--grid-snap-size', enabled ? '20px' : '0px');
+  }
+
+  _updateDesktopIcons(visible) {
+    // Desktop icons visibility handled by CSS attribute selectors
+  }
+
+  _updateAccentColor(color) {
+    this.style.setProperty('--accent-color', color);
+  }
+
+  _updateNotificationSounds(enabled) {
+    // Store for notification manager to use
+    this._notificationSoundsEnabled = enabled;
   }
 
   showContextMenu(x, y) {

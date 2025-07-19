@@ -15,6 +15,38 @@ export const APPS = [
         tag: "chat-component", 
         onstartup: false 
     },
+    { 
+        id: 'system-preferences', 
+        name: 'System Preferences', 
+        icon: '⚙️', 
+        sourceUrl: '../apps/system-preferences-webapp.js', 
+        tag: "system-preferences-webapp", 
+        onstartup: false 
+    },
+    { 
+        id: 'terminal', 
+        name: 'Terminal', 
+        icon: '⚫', 
+        sourceUrl: '../apps/terminal-webapp.js', 
+        tag: "terminal-webapp", 
+        onstartup: false 
+    },
+    { 
+        id: 'textedit', 
+        name: 'TextEdit', 
+        icon: '📝', 
+        sourceUrl: '../apps/textedit-webapp.js', 
+        tag: "textedit-webapp", 
+        onstartup: false 
+    },
+    { 
+        id: 'safari', 
+        name: 'Safari', 
+        icon: '🧭', 
+        sourceUrl: '../apps/safari-webapp.js', 
+        tag: "safari-webapp", 
+        onstartup: false 
+    }
     // { 
     //     id: 'notification', 
     //     name: 'Notification', 
