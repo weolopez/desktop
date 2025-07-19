@@ -24,14 +24,13 @@ export class NotificationService {
         
         this.nextId = 1;
         
-        // Event handling and UI integration (from NotificationManager)
-        this.desktopComponent = desktopComponent;
         this.displayComponent = null; // Will be set when display component is ready
         this.dismissTimers = new Map(); // Auto-dismiss timers
         this.isInitialized = false;
         
         // Load persisted data
         this.loadPersistedData();
+        this.init()
     }
 
     /**
@@ -480,6 +479,11 @@ export class NotificationService {
     setDisplayComponent(displayComponent) {
         this.displayComponent = displayComponent;
         console.log('🖥️ Notification display component connected');
+        
+        // Create a welcome notification to show the system is working
+        setTimeout(() => {
+            this.createTestNotification('system');
+        }, 2000);
     }
 
     /**

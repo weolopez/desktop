@@ -12,12 +12,19 @@ This is a virtual desktop environment web application that recreates a macOS-lik
 
 **Testing:** Open `index.html` in a modern web browser (Chrome, Firefox, Safari, Edge) to test changes.
 
+**Startup System:** The desktop uses a configurable startup manager (`config.json`) that loads components in phases:
+- Critical services load first (AppService, WallpaperManager, WindowManager)
+- UI components load after dependencies are met
+- Optional services load in background for optimal performance
+
 ## Architecture
 
 ### Core Structure
 - **`index.html`:** Entry point containing only the `<desktop-component>` element
 - **`script.js`:** Initializes the desktop by importing the main component
 - **`style.css`:** Global styles (minimal - most styling is component-scoped)
+- **`config.json`:** Startup configuration for component loading phases and dependencies
+- **`/src/services/startup-manager.js`:** Orchestrates configurable component loading
 - **`/apps/`:** Web components for individual applications (named `*-webapp.js`)
 - **`/assets/`:** Static resources (icons, wallpapers)
 
@@ -32,11 +39,31 @@ All UI elements are custom web components using Shadow DOM:
 - **localStorage:** User preferences (wallpaper, dock position, icon positions)
 - **sessionStorage:** Current session state (window positions, z-index order)
 
-### Planned Component Architecture
-- **Desktop Component:** Main container managing windows, menu bar, dock, and icons
+### Component Architecture
+- **Desktop Component:** Main container managing windows, menu bar, dock, and icons via StartupManager
+- **StartupManager:** Configurable system bootstrap with phased loading and dependency resolution
 - **Window Component:** Draggable/resizable windows with title bars and controls
 - **Dock Component:** Pinned edge container for application launchers
 - **Menu Bar Component:** Global menu bar that changes based on active application
+
+### Startup Configuration
+The `config.json` file defines component loading phases:
+```json
+{
+  "startup": {
+    "phases": [
+      {
+        "name": "critical",
+        "parallel": true,
+        "components": [
+          { "name": "AppService", "required": true, "priority": 1 },
+          { "name": "WindowManager", "dependencies": ["AppService"], "priority": 1 }
+        ]
+      }
+    ]
+  }
+}
+```
 
 ## Development Guidelines
 

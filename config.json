@@ -1,0 +1,86 @@
+{
+  "startup": {
+    "phases": [
+      {
+        "name": "critical",
+        "parallel": true,
+        "components": [
+          {
+            "name": "WallpaperManager",
+            "path": "./wallpaper-manager.js",
+            "required": true,
+            "priority": 1
+          },
+          {
+            "name": "WindowManager", 
+            "path": "./window-manager.js",
+            "required": true,
+            "priority": 1,
+            "dependencies": ["AppService"]
+          },
+          {
+            "name": "AppService",
+            "path": "./app-service.js",
+            "required": true,
+            "priority": 1
+          }
+        ]
+      },
+      {
+        "name": "ui",
+        "parallel": true,
+        "waitFor": "critical",
+        "components": [
+          {
+            "name": "ContextMenuManager",
+            "path": "./context-menu-manager.js",
+            "required": true,
+            "priority": 2,
+            "dependencies": ["WallpaperManager"]
+          }
+        ]
+      },
+      {
+        "name": "optional",
+        "parallel": true,
+        "waitFor": "ui",
+        "defer": true,
+        "components": [
+          {
+            "name": "NotificationService",
+            "path": "./notification-service.js",
+            "required": false,
+            "priority": 3,
+            "enabled": true,
+            "fallbackGraceful": true,
+            "includeDisplayComponent": true
+          },
+          {
+            "name": "EventMonitor", 
+            "path": "../events/event-monitor.js",
+            "required": false,
+            "priority": 3,
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "performance": {
+      "enableLazyLoading": true,
+      "maxConcurrentLoads": 3,
+      "timeoutMs": 5000,
+      "retryAttempts": 2
+    },
+    "features": {
+      "notifications": {
+        "enabled": true,
+        "soundsEnabled": true,
+        "maxRetentionMs": 300000
+      },
+      "eventMonitoring": {
+        "enabled": true,
+        "debugMode": false
+      }
+    }
+  }
+}

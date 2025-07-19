@@ -1,11 +1,6 @@
-import { WallpaperManager } from "../services/wallpaper-manager.js";
-import { ContextMenuManager } from "../services/context-menu-manager.js";
-import { WindowManager } from "../services/window-manager.js";
-import { NotificationService } from "../services/notification-service.js"; // Updated from NotificationManager
-import "../services/notification-display-component.js";
-import { AppService } from "../services/app-service.js";
-import { MESSAGES } from "../events/message-types.js"; // Removed createPublishTextMessage
-import eventBus from "../events/event-bus.js"; // Added EventBus import
+import { StartupManager } from "../services/startup-manager.js";
+import { MESSAGES } from "../events/message-types.js";
+import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 
 // import { PreviewService } from '../services/preview-service.js';
@@ -19,16 +14,14 @@ class DesktopComponent extends HTMLElement {
     super();
     this.attachShadow({ mode: "open" });
 
-    this.appService = new AppService();
-    this.appService.init(this);
-
-    this.wallpaperManager = new WallpaperManager(this);
-    this.contextMenuManager = new ContextMenuManager(
-      this,
-      this.wallpaperManager,
-    );
-    this.windowManager = new WindowManager(this, this.appService);
-    this.notificationService = new NotificationService(this); // Updated to NotificationService
+    // Initialize startup manager for configurable component loading
+    this.startupManager = new StartupManager();
+    
+    // Legacy service references will be populated after startup
+    this.appService = null;
+    this.wallpaperManager = null;
+    this.contextMenuManager = null;
+    this.windowManager = null;
 
     // Initialize attributes from localStorage if not set
     this._initializeAttributes();
@@ -92,16 +85,62 @@ class DesktopComponent extends HTMLElement {
     }
   }
 
-  connectedCallback() {
+  async connectedCallback() {
     this.render();
-    this.contextMenuManager.init();
-    this.windowManager.setupEventListeners();
-    this.windowManager.restoreWindowsState();
-    this.notificationService.init(); // Updated to NotificationService
+    
+    // Initialize and run startup sequence
+    await this.startupManager.init();
+    await this.startupManager.startupSequence(this);
+    
+    // Populate legacy service references for backwards compatibility
+    this._populateLegacyReferences();
+    
+    // Initialize services that were successfully loaded
+    this._initializeLoadedServices();
+    
+    // Log startup metrics for debugging
+    this._logStartupMetrics();
+    
     this.setupPasteDrop();
-    this.setupNotificationDisplayConnection();
+    // Notification display setup is now handled by StartupManager
     // this.setupAppEventListeners();
     // this.showTestNotification();
+  }
+
+  _populateLegacyReferences() {
+    this.appService = this.startupManager.getComponent('AppService');
+    this.wallpaperManager = this.startupManager.getComponent('WallpaperManager');
+    this.contextMenuManager = this.startupManager.getComponent('ContextMenuManager');
+    this.windowManager = this.startupManager.getComponent('WindowManager');
+  }
+
+  _initializeLoadedServices() {
+    // AppService.init() is now called during instantiation in StartupManager
+    
+    if (this.contextMenuManager) {
+      this.contextMenuManager.init();
+    }
+    
+    if (this.windowManager) {
+      this.windowManager.setupEventListeners();
+      this.windowManager.restoreWindowsState();
+    }
+    
+  }
+
+  _logStartupMetrics() {
+    const metrics = this.startupManager.getStartupMetrics();
+    console.log('🎯 Desktop Startup Metrics:', {
+      totalTime: `${metrics.totalTime.toFixed(2)}ms`,
+      componentsLoaded: metrics.componentsLoaded,
+      phasesCompleted: metrics.phasesCompleted,
+      servicesStatus: {
+        appService: !!this.appService,
+        wallpaperManager: !!this.wallpaperManager,
+        contextMenuManager: !!this.contextMenuManager,
+        windowManager: !!this.windowManager,
+      }
+    });
   }
 
   showTestNotification() {
@@ -250,24 +289,12 @@ class DesktopComponent extends HTMLElement {
                     <dock-component></dock-component>
                 </div>
             </div>
-            <notification-display-component id="notification-display"></notification-display-component>
+            <!-- notification-display-component is now loaded dynamically by StartupManager -->
         `;
     // Apply current attribute values to CSS custom properties
     this._updateAccentColor(this.getAttribute('accent-color') || '#007AFF');
   }
 
-  setupNotificationDisplayConnection() {
-    // Connect the notification manager to the display component
-    const notificationDisplay = this.shadowRoot.getElementById("notification-display");
-    if (notificationDisplay) {
-      this.notificationService.setDisplayComponent(notificationDisplay);
-      
-      // Create a welcome notification to show the system is working
-      setTimeout(() => {
-        this.notificationService.createTestNotification('system');
-      }, 2000);
-    }
-  }
 
   setupPasteDrop() {
     const desktopSurface = this.shadowRoot.querySelector(".desktop-surface");
@@ -292,7 +319,7 @@ class DesktopComponent extends HTMLElement {
 
   handleFileDrop(e) {
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
+    if (files.length > 0 && this.appService) {
       this.appService.handleFiles(files);
     }
     //handle text if available
@@ -307,11 +334,13 @@ class DesktopComponent extends HTMLElement {
   handlePaste(e) {
     const items = Array.from(e.clipboardData.items);
     //emit an event to the app service to handle the pasted items
-    this.appService.handleFiles(
-      items.filter((item) => item.kind === "file").map((item) =>
-        item.getAsFile()
-      ),
-    );
+    if (this.appService) {
+      this.appService.handleFiles(
+        items.filter((item) => item.kind === "file").map((item) =>
+          item.getAsFile()
+        ),
+      );
+    }
     // Handle pasted string items (e.g., plain text, URLs)
     items
       .filter((item) => item.kind === "string")
@@ -374,7 +403,9 @@ class DesktopComponent extends HTMLElement {
     } catch (error) {
       console.error("Failed to import text as module:", error);
       // Optionally, you can display the text in a window or handle it differently
-      this.appService.displayPlainTextInWindow(processedContent, "Pasted Text");
+      if (this.appService) {
+        this.appService.displayPlainTextInWindow(processedContent, "Pasted Text");
+      }
     }
   }
 

@@ -1,13 +1,13 @@
-import eventBus from '../../src/events/event-bus.js';
-import { MESSAGES } from '../../src/events/message-types.js';
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import { WebLinksAddon } from 'xterm-addon-web-links';
-import { SearchAddon } from 'xterm-addon-search';
-import { SerializeAddon } from 'xterm-addon-serialize';
-import { Unicode11Addon } from 'xterm-addon-unicode11';
-import { Readline } from '../../vendor/xterm-readline/xterm-readline.js';
-import { COMMANDS } from '../../src/config.js';
+// import eventBus from '../../src/events/event-bus.js';
+// import { MESSAGES } from '../../src/events/message-types.js';
+// import { Terminal } from 'xterm';
+// import { FitAddon } from 'xterm-addon-fit';
+// import { WebLinksAddon } from 'xterm-addon-web-links';
+// import { SearchAddon } from 'xterm-addon-search';
+// import { SerializeAddon } from 'xterm-addon-serialize';
+// import { Unicode11Addon } from 'xterm-addon-unicode11';
+// import { Readline } from '../../vendor/xterm-readline/xterm-readline.js';
+// import { COMMANDS } from '../../src/config.js';
 
 class TerminalWebapp extends HTMLElement {
     constructor() {
