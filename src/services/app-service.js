@@ -12,6 +12,10 @@ export class AppService {
         this.desktopComponent = desktopComponent;
         document.addEventListener(MESSAGES.PUBLISH_TEXT, this.handlePublishTextEvent.bind(this));
         document.addEventListener(MESSAGES.LAUNCH_APP, this.handleLaunchAppEvent.bind(this));
+        
+        // Listen for finder file events (following the same pattern as PUBLISH_TEXT)
+        document.addEventListener(MESSAGES.FINDER_FILE_CONTENT, this.handleFileContentEvent.bind(this));
+        document.addEventListener(MESSAGES.FINDER_FILE_REFERENCE, this.handleFileReferenceEvent.bind(this));
     }
     handleLaunchAppEvent(event) {
         if (!validateMessagePayload(MESSAGES.LAUNCH_APP, event.detail)) {
@@ -38,6 +42,34 @@ export class AppService {
         for (const text of textArray) {
             this._processSingleText(text, icon);
         }
+    }
+
+    handleFileContentEvent(event) {
+        if (!validateMessagePayload(MESSAGES.FINDER_FILE_CONTENT, event.detail)) {
+            console.warn('Invalid FINDER_FILE_CONTENT event payload:', event.detail);
+            return;
+        }
+        
+        console.log("=== FILE CONTENT EVENT ===");
+        console.log("File:", event.detail.name);
+        console.log("MIME Type:", event.detail.mimeType);
+        console.log("Category:", event.detail.category);
+        
+        this._processFileContent(event.detail);
+    }
+
+    handleFileReferenceEvent(event) {
+        if (!validateMessagePayload(MESSAGES.FINDER_FILE_REFERENCE, event.detail)) {
+            console.warn('Invalid FINDER_FILE_REFERENCE event payload:', event.detail);
+            return;
+        }
+        
+        console.log("=== FILE REFERENCE EVENT ===");
+        console.log("File:", event.detail.name);
+        console.log("MIME Type:", event.detail.mimeType);
+        console.log("Reason:", event.detail.reason);
+        
+        this._processFileReference(event.detail);
     }
 
     async _processSingleText(text, icon = "📄") {
@@ -239,6 +271,63 @@ export class AppService {
         }
     }
 
+    // File processing methods (following the pattern of _processSingleText)
+    _processFileContent(fileData) {
+        const { extension, mimeType, category, content } = fileData;
+        
+        console.log("Processing file content:", {
+            extension,
+            mimeType,
+            category,
+            contentLength: content ? content.length : 0
+        });
+        
+        if (this._isTextFile(extension, mimeType)) {
+            this._processSingleText(content, "📄");
+        } else if (this._isImageFile(extension, mimeType)) {
+            console.log("Image file detected - would open in image viewer (not implemented yet)");
+            // Future: this._openInImageViewer(fileData);
+        } else {
+            console.log("Unknown file type - using default handling");
+            this._openWithDefaultApp(fileData);
+        }
+    }
+
+    _processFileReference(fileData) {
+        const { extension, mimeType, reason, name } = fileData;
+        
+        console.log("Processing file reference:", {
+            name,
+            extension,
+            mimeType,
+            reason
+        });
+        
+        // For now, just log the reference - could show notification or create placeholder
+        console.log(`File "${name}" cannot be opened directly: ${reason}`);
+        
+        // Future: Show notification or create file info dialog
+    }
+
+    // File type detection helpers
+    _isTextFile(extension, mimeType) {
+        const textExtensions = ['.md', '.txt', '.js', '.html', '.css', '.json', '.xml', '.yaml', '.yml', '.log'];
+        const textMimeTypes = ['text/', 'application/json', 'application/javascript', 'application/xml'];
+        
+        return textExtensions.includes(extension.toLowerCase()) ||
+               textMimeTypes.some(type => mimeType.startsWith(type));
+    }
+
+    _isImageFile(extension, mimeType) {
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'];
+        return imageExtensions.includes(extension.toLowerCase()) || mimeType.startsWith('image/');
+    }
+
+    _openWithDefaultApp(fileData) {
+        console.log("Opening with default app (TextEdit fallback):", fileData.name);
+        // For now, fallback to TextEdit for unknown file types
+        this._openInTextEdit(fileData);
+    }
 
     getTagNameFromSource(source) {
         const match = source.match(WEB_COMPONENT_TAG_REGEX);

@@ -68,6 +68,10 @@ export const MESSAGES = {
     FINDER_ITEMS_MOVED: 'finder-items-moved',
     FINDER_FILE_OPENED: 'finder-file-opened',
     
+    // Finder file content events
+    FINDER_FILE_CONTENT: 'finder-file-content',
+    FINDER_FILE_REFERENCE: 'finder-file-reference',
+    
     // File system
     FILE_DROPPED: 'file-dropped',
     FILE_PASTED: 'file-pasted',
@@ -201,6 +205,35 @@ export const MESSAGES = {
  */
 
 /**
+ * @typedef {Object} FinderFileContentPayload
+ * @property {string} path - File path
+ * @property {string} name - File name
+ * @property {string} mimeType - File MIME type
+ * @property {string} extension - File extension
+ * @property {string} category - File category (text, image, etc.)
+ * @property {number} size - File size in bytes
+ * @property {string} encoding - Content encoding (utf8, base64)
+ * @property {string} content - File content
+ * @property {boolean} isBinary - Whether file is binary
+ * @property {Object} metadata - Additional file metadata
+ * @property {string} [gitStatus] - Git status of the file
+ */
+
+/**
+ * @typedef {Object} FinderFileReferencePayload
+ * @property {string} path - File path
+ * @property {string} name - File name
+ * @property {string} mimeType - File MIME type
+ * @property {string} extension - File extension
+ * @property {string} category - File category (text, image, etc.)
+ * @property {number} size - File size in bytes
+ * @property {string} reason - Reason for reference (binary_file_detected, file_too_large, etc.)
+ * @property {string} [error] - Error message if applicable
+ * @property {Object} metadata - Additional file metadata
+ * @property {string} [gitStatus] - Git status of the file
+ */
+
+/**
  * @typedef {Object} NotificationClickedPayload
  * @property {string} notificationId - Notification identifier
  * @property {string} [actionId] - Action identifier if action was clicked
@@ -326,6 +359,15 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.mode === 'string';
         case MESSAGES.FINDER_FILE_OPENED:
             return typeof payload.path === 'string' && typeof payload.name === 'string';
+        case MESSAGES.FINDER_FILE_CONTENT:
+            return typeof payload.path === 'string' && 
+                   typeof payload.name === 'string' && 
+                   typeof payload.mimeType === 'string' &&
+                   typeof payload.content === 'string';
+        case MESSAGES.FINDER_FILE_REFERENCE:
+            return typeof payload.path === 'string' && 
+                   typeof payload.name === 'string' && 
+                   typeof payload.mimeType === 'string';
         case MESSAGES.NOTIFICATION_CLICKED:
             return typeof payload.notificationId === 'string' && typeof payload.type === 'string';
         case MESSAGES.NOTIFICATION_DISMISSED:
@@ -385,6 +427,8 @@ export function getMessageDescription(messageType) {
         [MESSAGES.FINDER_VIEW_MODE_CHANGED]: 'Finder view mode was changed',
         [MESSAGES.FINDER_SELECTION_CHANGED]: 'Finder selection was changed',
         [MESSAGES.FINDER_FILE_OPENED]: 'File was opened in Finder',
+        [MESSAGES.FINDER_FILE_CONTENT]: 'File content is available for processing',
+        [MESSAGES.FINDER_FILE_REFERENCE]: 'File reference is available (binary or large file)',
         [MESSAGES.WALLPAPER_CHANGED]: 'Desktop wallpaper was changed',
         [MESSAGES.SETTINGS_UPDATED]: 'System settings were updated'
     };
