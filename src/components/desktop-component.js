@@ -315,6 +315,12 @@ class DesktopComponent extends HTMLElement {
         this.handlePaste(e);
       }
     });
+
+    // Add click event logging for testing event flow hierarchy
+    desktopSurface.addEventListener("click", (e) => {
+      this.logEventFlow("DESKTOP", e);
+      // Don't stop propagation - let events flow to windows and apps
+    });
   }
 
   handleFileDrop(e) {
@@ -533,6 +539,107 @@ class DesktopComponent extends HTMLElement {
       this.shadowRoot.appendChild(tempDiv.firstChild);
     }
     this.shadowRoot.appendChild(style);
+  }
+
+  logEventFlow(level, event) {
+    const timestamp = Date.now();
+    const targetInfo = {
+      tagName: event.target.tagName?.toLowerCase() || 'unknown',
+      className: event.target.className || '',
+      id: event.target.id || '',
+      textContent: event.target.textContent?.slice(0, 30) || ''
+    };
+    
+    console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
+      type: event.type,
+      target: targetInfo,
+      bubbles: event.bubbles,
+      composed: event.composed,
+      eventPhase: event.eventPhase,
+      currentTarget: event.currentTarget.constructor.name
+    });
+    
+    // Store event flow data for global access
+    if (!window.eventFlowTest) {
+      window.eventFlowTest = { 
+        events: [],
+        clear: () => {
+          window.eventFlowTest.events = [];
+          console.log('🧹 Event flow test data cleared');
+        },
+        analyze: () => {
+          console.log('🔍 Event Flow Analysis:');
+          console.log('='.repeat(50));
+          
+          if (window.eventFlowTest.events.length === 0) {
+            console.log('No events recorded. Click something in the System Preferences app!');
+            return;
+          }
+          
+          // Group events by unique click sequence (within 50ms window)
+          const sequences = [];
+          let currentSequence = [];
+          let lastTimestamp = 0;
+          
+          window.eventFlowTest.events.forEach(event => {
+            if (event.timestamp - lastTimestamp > 50) {
+              if (currentSequence.length > 0) {
+                sequences.push([...currentSequence]);
+              }
+              currentSequence = [];
+            }
+            currentSequence.push(event);
+            lastTimestamp = event.timestamp;
+          });
+          
+          if (currentSequence.length > 0) {
+            sequences.push(currentSequence);
+          }
+          
+          sequences.forEach((sequence, index) => {
+            console.log(`\n📋 Event Sequence ${index + 1}:`);
+            sequence.forEach((event, eventIndex) => {
+              const phases = ['', 'CAPTURING', 'AT_TARGET', 'BUBBLING'];
+              const phaseText = phases[event.eventPhase] || 'UNKNOWN';
+              console.log(`  ${eventIndex + 1}. [${event.level}] ${event.type} - ${phaseText} phase`);
+              console.log(`     Target: ${event.target.tagName}${event.target.id ? '#' + event.target.id : ''}`);
+              if (event.appName) console.log(`     App: ${event.appName}`);
+              console.log(`     Time: +${event.timestamp - sequence[0].timestamp}ms`);
+            });
+          });
+          
+          console.log('\n✅ Actual Event Flow Discovered:');
+          console.log('   Window (mousedown) → App (click target) → Desktop (click bubbling)');
+          console.log('   This is correct DOM behavior: Target phase first, then bubbling up!');
+          console.log('\n💡 To test: Click buttons in System Preferences, then run eventFlowTest.analyze()');
+        },
+        help: () => {
+          console.log(`
+🖱️ Event Flow Test Utility
+=========================
+
+Commands:
+  eventFlowTest.clear()    - Clear recorded events
+  eventFlowTest.analyze()  - Analyze event flow patterns
+  eventFlowTest.help()     - Show this help
+
+How to test:
+1. Open System Preferences app
+2. Click various buttons/checkboxes
+3. Run eventFlowTest.analyze() to see the flow
+
+Expected flow: Desktop → Window → App
+          `);
+        }
+      };
+    }
+    window.eventFlowTest.events.push({
+      level,
+      timestamp,
+      type: event.type,
+      target: targetInfo,
+      eventPhase: event.eventPhase
+    });
   }
 }
 

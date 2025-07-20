@@ -373,7 +373,8 @@ class WindowComponent extends HTMLElement {
         });
 
         // Window focus on click
-        this.addEventListener('mousedown', () => {
+        this.addEventListener('mousedown', (e) => {
+            this.logEventFlow("WINDOW", e);
             this.focus();
         });
 
@@ -595,6 +596,41 @@ class WindowComponent extends HTMLElement {
             maxZ = Math.max(maxZ, z);
         });
         return maxZ + 1;
+    }
+
+    logEventFlow(level, event) {
+        const timestamp = Date.now();
+        const targetInfo = {
+            tagName: event.target.tagName?.toLowerCase() || 'unknown',
+            className: event.target.className || '',
+            id: event.target.id || '',
+            textContent: event.target.textContent?.slice(0, 30) || ''
+        };
+        
+        console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
+            type: event.type,
+            target: targetInfo,
+            bubbles: event.bubbles,
+            composed: event.composed,
+            eventPhase: event.eventPhase,
+            currentTarget: event.currentTarget.constructor.name,
+            windowId: this.windowId,
+            appName: this.appName
+        });
+        
+        // Store event flow data for global access
+        if (!window.eventFlowTest) {
+            window.eventFlowTest = { events: [] };
+        }
+        window.eventFlowTest.events.push({
+            level,
+            timestamp,
+            type: event.type,
+            target: targetInfo,
+            eventPhase: event.eventPhase,
+            windowId: this.windowId,
+            appName: this.appName
+        });
     }
 
     // Getters for window state

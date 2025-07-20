@@ -387,6 +387,7 @@ class SystemPreferencesWebapp extends HTMLElement {
         // Sidebar navigation
         this.shadowRoot.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', (e) => {
+                this.logEventFlow("APP", e);
                 this.switchPanel(e.target.closest('.sidebar-item').dataset.panel);
             });
         });
@@ -394,6 +395,7 @@ class SystemPreferencesWebapp extends HTMLElement {
         // Wallpaper selection
         this.shadowRoot.querySelectorAll('.wallpaper-option').forEach(option => {
             option.addEventListener('click', (e) => {
+                this.logEventFlow("APP", e);
                 const wallpaper = e.target.dataset.wallpaper;
                 this.updateWallpaper(wallpaper);
             });
@@ -401,22 +403,27 @@ class SystemPreferencesWebapp extends HTMLElement {
 
         // Form controls
         this.shadowRoot.getElementById('dock-position').addEventListener('change', (e) => {
+            this.logEventFlow("APP", e);
             this.updateDockPosition(e.target.value);
         });
 
         this.shadowRoot.getElementById('grid-snap').addEventListener('change', (e) => {
+            this.logEventFlow("APP", e);
             this.updateGridSnap(e.target.checked);
         });
 
         this.shadowRoot.getElementById('show-desktop-icons').addEventListener('change', (e) => {
+            this.logEventFlow("APP", e);
             this.updateDesktopIcons(e.target.checked);
         });
 
         this.shadowRoot.getElementById('accent-color').addEventListener('change', (e) => {
+            this.logEventFlow("APP", e);
             this.updateAccentColor(e.target.value);
         });
 
         this.shadowRoot.getElementById('notification-sounds').addEventListener('change', (e) => {
+            this.logEventFlow("APP", e);
             this.updateNotificationSounds(e.target.checked);
         });
 
@@ -821,6 +828,39 @@ class SystemPreferencesWebapp extends HTMLElement {
             this.shadowRoot.getElementById('components-loaded').textContent = metrics.componentsLoaded;
             this.shadowRoot.getElementById('phases-completed').textContent = metrics.phasesCompleted.join(', ');
         }
+    }
+
+    logEventFlow(level, event) {
+        const timestamp = Date.now();
+        const targetInfo = {
+            tagName: event.target.tagName?.toLowerCase() || 'unknown',
+            className: event.target.className || '',
+            id: event.target.id || '',
+            textContent: event.target.textContent?.slice(0, 30) || ''
+        };
+        
+        console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
+            type: event.type,
+            target: targetInfo,
+            bubbles: event.bubbles,
+            composed: event.composed,
+            eventPhase: event.eventPhase,
+            currentTarget: event.currentTarget.constructor.name,
+            appName: 'System Preferences'
+        });
+        
+        // Store event flow data for global access
+        if (!window.eventFlowTest) {
+            window.eventFlowTest = { events: [] };
+        }
+        window.eventFlowTest.events.push({
+            level,
+            timestamp,
+            type: event.type,
+            target: targetInfo,
+            eventPhase: event.eventPhase,
+            appName: 'System Preferences'
+        });
     }
 }
 
