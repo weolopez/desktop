@@ -1,3 +1,4 @@
+import { loggingService, LOG_LEVELS } from '../services/logging-service.js';
 class SystemPreferencesWebapp extends HTMLElement {
     constructor() {
         super();
@@ -241,6 +242,10 @@ class SystemPreferencesWebapp extends HTMLElement {
                         <span class="icon">⚙️</span>
                         System
                     </button>
+                    <button class="sidebar-item" data-panel="logging">
+                        <span class="icon">🪵</span>
+                        Logging
+                    </button>
                 </div>
 
                 <div class="content">
@@ -377,6 +382,28 @@ class SystemPreferencesWebapp extends HTMLElement {
                                 </div>
                             </div>
                         </div>
+
+                    <div class="panel" id="logging-panel">
+                        <h2>Logging Dashboard</h2>
+                        <div class="form-group">
+                            <label for="log-level-filter">Minimum Log Level:</label>
+                            <select id="log-level-filter">
+                                <option value="debug">Debug</option>
+                                <option value="info">Info</option>
+                                <option value="warn">Warn</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="log-console-output" checked>
+                                Show Console Output
+                            </label>
+                        </div>
+                        <button id="clear-logs-btn" class="secondary-button">Clear Logs</button>
+                        <div id="log-entries" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background: #f0f0f0; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+                            <!-- Log entries will be appended here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -471,6 +498,8 @@ class SystemPreferencesWebapp extends HTMLElement {
 
         // Load current values
         this.loadCurrentSettings();
+        this.loadLoggingSettings();
+        this.setupLoggingEventListeners();
     }
 
     switchPanel(panelName) {
@@ -491,6 +520,8 @@ class SystemPreferencesWebapp extends HTMLElement {
             // Force reload from localStorage to get the most current state
             this.currentConfig = null;
             this.loadSystemSettings();
+        } else if (panelName === 'logging') {
+            this.updateLoggingDashboard();
         }
     }
 

@@ -8,6 +8,7 @@
 
 import { MESSAGES, validateMessagePayload } from '../events/message-types.js';
 import eventBus from '../events/event-bus.js';
+import { loggingService } from './logging-service.js';
 
 export class NotificationService {
     constructor(desktopComponent = null) {
@@ -52,7 +53,7 @@ export class NotificationService {
 
         // Check if notifications are enabled
         if (!this.settings.enableNotifications) {
-            console.log('Notifications are disabled');
+            loggingService.debug('NotificationService', 'Notifications are disabled');
             return null;
         }
 
@@ -88,7 +89,7 @@ export class NotificationService {
         // Persist changes
         this.persistData();
         
-        console.log(`📱 Created notification: ${notification.title} (${id})`);
+        loggingService.info('NotificationService', 'Created notification', { id, title: notification.title, sourceAppId: notification.sourceAppId });
         
         return id;
     }
@@ -148,7 +149,7 @@ export class NotificationService {
         
         this.persistData();
         
-        console.log(`🗑️ Dismissed notification: ${id} (${reason})`);
+        loggingService.info('NotificationService', 'Dismissed notification', { id, reason });
         return true;
     }
 
@@ -185,7 +186,7 @@ export class NotificationService {
         
         this.persistData();
         
-        console.log(`👆 Notification clicked: ${id}${actionId ? ` (action: ${actionId})` : ''}`);
+        loggingService.userAction('notification_clicked', 'NotificationService', { id, actionId });
         return true;
     }
 
@@ -204,7 +205,7 @@ export class NotificationService {
             }
         }
         
-        console.log(`🧹 Cleared ${clearedCount} notifications for app: ${appId}`);
+        loggingService.info('NotificationService', 'Cleared notifications for app', { appId, clearedCount });
         return clearedCount;
     }
 
@@ -218,7 +219,7 @@ export class NotificationService {
             this.dismissNotification(id, 'cleared');
         }
         
-        console.log(`🧹 Cleared all ${count} active notifications`);
+        loggingService.info('NotificationService', 'Cleared all active notifications', { count });
         return count;
     }
 
@@ -289,7 +290,7 @@ export class NotificationService {
         
         this.persistData();
         
-        console.log(`✅ Granted ${level} notification permission to app: ${appId}`);
+        loggingService.info('NotificationService', 'Granted notification permission', { appId, level });
         return true;
     }
 
@@ -311,7 +312,7 @@ export class NotificationService {
         Object.assign(this.settings, newSettings);
         this.persistData();
         
-        console.log('⚙️ Updated notification settings:', newSettings);
+        loggingService.info('NotificationService', 'Updated notification settings', { settings: newSettings });
     }
 
     /**
@@ -469,7 +470,7 @@ export class NotificationService {
         this.requestDefaultPermissions();
         this.isInitialized = true;
         
-        console.log('🔔 NotificationService initialized');
+        loggingService.lifecycle('NotificationService', 'initialized');
     }
 
     /**
@@ -478,7 +479,7 @@ export class NotificationService {
      */
     setDisplayComponent(displayComponent) {
         this.displayComponent = displayComponent;
-        console.log('🖥️ Notification display component connected');
+        loggingService.lifecycle('NotificationDisplayComponent', 'connected');
         
         // Create a welcome notification to show the system is working
         setTimeout(() => {
@@ -779,7 +780,7 @@ export class NotificationService {
         // Auto-grant basic notification permission to launched apps
         if (appId && !this.hasPermission(appId)) {
             this.requestPermission(appId, 'default');
-            console.log(`🔔 Auto-granted notification permission to ${appId}`);
+            loggingService.info('NotificationService', 'Auto-granted notification permission', { appId });
         }
     }
 
@@ -816,7 +817,7 @@ export class NotificationService {
             // Clean up timer
             this.dismissTimers.delete(notificationId);
             
-            console.log(`⏰ Auto-dismissed notification: ${notificationId}`);
+            loggingService.info('NotificationService', 'Auto-dismissed notification', { notificationId });;
             
         }, duration);
         

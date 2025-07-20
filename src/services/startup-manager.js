@@ -2,6 +2,9 @@
  * StartupManager - Orchestrates configurable component loading with dependency management
  * Provides phased, prioritized loading with graceful fallbacks for optional components
  */
+
+import { loggingService } from './logging-service.js';
+
 export class StartupManager {
   constructor() {
     this.config = null;
@@ -17,22 +20,22 @@ export class StartupManager {
       const localConfig = localStorage.getItem('startup-config-override');
       if (localConfig) {
         this.config = JSON.parse(localConfig);
-        console.log('📦 Startup config loaded from localStorage:', this.config.startup.phases.length, 'phases');
+        loggingService.startupProgress('init', 'ConfigLoader', 'completed', null, { source: 'localStorage', phases: this.config.startup.phases.length });
         return;
       }
     } catch (error) {
-      console.warn('⚠️ Failed to load config from localStorage:', error);
+      loggingService.warn('StartupManager', 'Failed to load config from localStorage', { error: error.message });
     }
 
     // Fall back to config.json
     try {
       const response = await fetch('./config.json');
       this.config = await response.json();
-      console.log('📄 Startup config loaded from config.json:', this.config.startup.phases.length, 'phases');
+      loggingService.startupProgress('init', 'ConfigLoader', 'completed', null, { source: 'config.json', phases: this.config.startup.phases.length });
     } catch (error) {
-      console.warn('⚠️ Failed to load config.json, using defaults:', error);
+      loggingService.warn('StartupManager', 'Failed to load config.json, using defaults', { error: error.message });
       this.config = this.getDefaultConfig();
-      console.log('⚙️ Using default startup config:', this.config.startup.phases.length, 'phases');
+      loggingService.startupProgress('init', 'ConfigLoader', 'completed', null, { source: 'defaults', phases: this.config.startup.phases.length });
     }
   }
 
@@ -75,12 +78,12 @@ export class StartupManager {
   async startupSequence(desktopComponent) {
     const phases = this.config.startup.phases;
     
-    console.log(`🚀 Starting ${phases.length} phase startup sequence`);
+    loggingService.startupProgress('startup', 'StartupManager', 'started', null, { phases: phases.length });
     
     for (const phase of phases) {
       const enabledCount = phase.components.filter(c => c.enabled !== false).length;
       const totalCount = phase.components.length;
-      console.log(`📦 Phase "${phase.name}" - ${enabledCount}/${totalCount} components enabled`);
+      loggingService.startupProgress(phase.name, 'PhaseManager', 'started', null, { enabled: enabledCount, total: totalCount });
       
       if (phase.waitFor) {
         await this.waitForPhase(phase.waitFor);
@@ -99,7 +102,7 @@ export class StartupManager {
     }
 
     const totalTime = performance.now() - this.startTime;
-    console.log(`✅ Startup complete in ${totalTime.toFixed(2)}ms`);
+    loggingService.startupProgress('startup', 'StartupManager', 'completed', totalTime, { totalComponents: this.loadedComponents.size });
   }
 
   async loadPhaseParallel(phase, desktopComponent) {
@@ -110,7 +113,7 @@ export class StartupManager {
       .sort((a, b) => a.priority - b.priority);
     
     if (components.length === 0) {
-      console.log(`⏭️ Phase "${phase.name}" - all components disabled, skipping`);
+      loggingService.startupProgress(phase.name, 'PhaseManager', 'skipped', null, { reason: 'all_components_disabled' });
       this.loadingPhases.set(phase.name, 'completed');
       return;
     }
@@ -131,7 +134,7 @@ export class StartupManager {
       .sort((a, b) => a.priority - b.priority);
     
     if (enabledComponents.length === 0) {
-      console.log(`⏭️ Phase "${phase.name}" - all components disabled, skipping`);
+      loggingService.startupProgress(phase.name, 'PhaseManager', 'skipped', null, { reason: 'all_components_disabled' });
       this.loadingPhases.set(phase.name, 'completed');
       return;
     }
@@ -161,7 +164,7 @@ export class StartupManager {
         } else {
           // Dependencies not met, add to pending list
           pendingComponents.push(component);
-          console.log(`⏳ ${component.name} waiting for dependencies: ${component.dependencies.join(', ')}`);
+          loggingService.debug('StartupManager', `${component.name} waiting for dependencies`, { dependencies: component.dependencies });
         }
       }
     }
@@ -203,11 +206,11 @@ export class StartupManager {
     }
     
     if (unmetDependencies.length > 0) {
-      console.log(`🔗 ${component.name} missing dependencies: ${unmetDependencies.join(', ')}`);
+      loggingService.warn('StartupManager', `${component.name} missing dependencies`, { unmetDependencies });
       return false;
     }
     
-    console.log(`✅ ${component.name} dependencies satisfied: ${component.dependencies.join(', ')}`);
+    loggingService.debug('StartupManager', `${component.name} dependencies satisfied`, { dependencies: component.dependencies });
     return true;
   }
 
@@ -226,10 +229,10 @@ export class StartupManager {
   }
 
   deferPhase(phase, desktopComponent) {
-    console.log(`⏰ Deferring phase "${phase.name}" for lazy loading`);
+    loggingService.startupProgress(phase.name, 'PhaseManager', 'deferred', null, { reason: 'lazy_loading' });
     
     setTimeout(() => {
-      console.log(`🔄 Loading deferred phase "${phase.name}"`);
+      loggingService.startupProgress(phase.name, 'PhaseManager', 'started', null, { type: 'deferred' });
       this.loadPhaseParallel(phase, desktopComponent);
     }, 2000);
   }
@@ -254,16 +257,16 @@ export class StartupManager {
 
     // Check if component is disabled
     if (component.enabled === false) {
-      console.log(`⏭️ ${component.name} disabled, skipping`);
+      loggingService.debug('StartupManager', `${component.name} disabled, skipping`);
       return null;
     }
 
     const startTime = performance.now();
     
     try {
-      console.log(`⏳ Loading ${component.name}...`);
-      console.log(`🔍 DIAGNOSTIC: Attempting to import from path: "${component.path}"`);
-      console.log(`🔍 DIAGNOSTIC: Resolved URL will be: ${new URL(component.path, window.location.href).href}`);
+      loggingService.startupProgress('loading', component.name, 'started');
+      loggingService.debug('StartupManager', 'Attempting to import component', { component: component.name, path: component.path });
+      loggingService.debug('StartupManager', 'Resolved component URL', { component: component.name, resolvedUrl: new URL(component.path, window.location.href).href });
       
       const loadPromise = import(component.path);
       const timeoutPromise = new Promise((_, reject) => 
@@ -276,7 +279,7 @@ export class StartupManager {
       this.loadedComponents.set(component.name, instance);
       
       const loadTime = performance.now() - startTime;
-      console.log(`✅ ${component.name} loaded in ${loadTime.toFixed(2)}ms (${this.loadedComponents.size} total loaded)`);
+      loggingService.startupProgress('loading', component.name, 'completed', loadTime, { totalLoaded: this.loadedComponents.size });
       
       return instance;
     } catch (error) {
@@ -321,6 +324,9 @@ export class StartupManager {
       const instance = new ComponentClass();
       instance.init(desktopComponent);
       return instance;
+    } else if (config.name === 'LoggingService') {
+      // LoggingService is a singleton - return the exported instance
+      return ComponentClass; // This is actually the singleton instance
     } else if (config.name === 'NotificationService') {
       const instance = new ComponentClass(desktopComponent);
       
@@ -336,7 +342,7 @@ export class StartupManager {
   }
 
   async instantiateWebComponent(config, moduleResult, desktopComponent) {
-    console.log(`🧩 Setting up web component: ${config.name}`);
+    loggingService.lifecycle(config.name, 'setup_webcomponent');
     
     // Web component modules register themselves when imported
     // We just need to create and insert the DOM element
@@ -351,13 +357,13 @@ export class StartupManager {
       // Apply current dock position if set
       const currentDockPosition = desktopComponent.getAttribute('dock-position') || 'bottom';
       dockElement.setAttribute('position', currentDockPosition);
-      console.log(`📍 Setting dock position to: ${currentDockPosition}`);
+      loggingService.debug('DockComponent', 'Setting dock position', { position: currentDockPosition });
       
       // Insert it into the dock container
       const dockContainer = desktopComponent.shadowRoot.getElementById('dock-container');
       if (dockContainer) {
         dockContainer.appendChild(dockElement);
-        console.log(`✅ DockComponent inserted into dock-container`);
+        loggingService.lifecycle('DockComponent', 'inserted_into_container');
       } else {
         console.error(`❌ dock-container not found in desktop template`);
       }
@@ -371,7 +377,7 @@ export class StartupManager {
 
   async loadNotificationDisplayComponent(notificationService, desktopComponent) {
     try {
-      console.log('⏳ Loading notification display component...');
+      loggingService.startupProgress('loading', 'NotificationDisplayComponent', 'started');
       
       // Dynamically import the notification display component
       await import('./notification-display-component.js');
@@ -390,14 +396,14 @@ export class StartupManager {
       // Connect the notification service to the display component
       notificationService.setDisplayComponent(notificationDisplay);
       
-      console.log('✅ Notification display component loaded and connected');
+      loggingService.lifecycle('NotificationDisplayComponent', 'loaded_and_connected');
     } catch (error) {
       console.warn('⚠️ Failed to load notification display component:', error);
     }
   }
 
   createGracefulFallback(component) {
-    console.log(`🛡️ Creating graceful fallback for ${component.name}`);
+    loggingService.warn('StartupManager', `Creating graceful fallback for ${component.name}`, { component: component.name });
     
     return new Proxy({}, {
       get(target, prop) {

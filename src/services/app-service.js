@@ -1,5 +1,6 @@
 import { APPS, APP_URL_MAP } from '../config.js';
 import { MESSAGES, validateMessagePayload } from '../events/message-types.js';
+import { loggingService } from './logging-service.js';
 
 const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
 
@@ -19,7 +20,7 @@ export class AppService {
     }
     handleLaunchAppEvent(event) {
         if (!validateMessagePayload(MESSAGES.LAUNCH_APP, event.detail)) {
-            console.warn('Invalid LAUNCH_APP event payload:', event.detail);
+            loggingService.warn('AppService', 'Invalid LAUNCH_APP event payload', { payload: event.detail });
             return;
         }
         
@@ -30,14 +31,13 @@ export class AppService {
     
     handlePublishTextEvent(event) {
         if (!validateMessagePayload(MESSAGES.PUBLISH_TEXT, event.detail)) {
-            console.warn('Invalid PUBLISH_TEXT event payload:', event.detail);
+            loggingService.warn('AppService', 'Invalid PUBLISH_TEXT event payload', { payload: event.detail });
             return;
         }
         
         const { texts, icon } = event.detail;
         const textArray = Array.isArray(texts) ? texts : [texts];
-        console.log("=== APP SERVICE TEXT HANDLING (via PUBLISH_TEXT event) ===");
-        console.log("Number of texts to process:", textArray.length);
+        loggingService.info('AppService', 'Processing PUBLISH_TEXT event', { textCount: textArray.length });
 
         for (const text of textArray) {
             this._processSingleText(text, icon);
@@ -46,28 +46,30 @@ export class AppService {
 
     handleFileContentEvent(event) {
         if (!validateMessagePayload(MESSAGES.FINDER_FILE_CONTENT, event.detail)) {
-            console.warn('Invalid FINDER_FILE_CONTENT event payload:', event.detail);
+            loggingService.warn('AppService', 'Invalid FINDER_FILE_CONTENT event payload', { payload: event.detail });
             return;
         }
         
-        console.log("=== FILE CONTENT EVENT ===");
-        console.log("File:", event.detail.name);
-        console.log("MIME Type:", event.detail.mimeType);
-        console.log("Category:", event.detail.category);
+        loggingService.fileOperation('process', event.detail.path, 'started', event.detail.size, {
+            name: event.detail.name,
+            mimeType: event.detail.mimeType,
+            category: event.detail.category
+        });
         
         this._processFileContent(event.detail);
     }
 
     handleFileReferenceEvent(event) {
         if (!validateMessagePayload(MESSAGES.FINDER_FILE_REFERENCE, event.detail)) {
-            console.warn('Invalid FINDER_FILE_REFERENCE event payload:', event.detail);
+            loggingService.warn('AppService', 'Invalid FINDER_FILE_REFERENCE event payload', { payload: event.detail });
             return;
         }
         
-        console.log("=== FILE REFERENCE EVENT ===");
-        console.log("File:", event.detail.name);
-        console.log("MIME Type:", event.detail.mimeType);
-        console.log("Reason:", event.detail.reason);
+        loggingService.fileOperation('reference', event.detail.path, 'started', event.detail.size, {
+            name: event.detail.name,
+            mimeType: event.detail.mimeType,
+            reason: event.detail.reason
+        });
         
         this._processFileReference(event.detail);
     }

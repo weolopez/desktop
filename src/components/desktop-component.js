@@ -2,6 +2,7 @@ import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
+import { loggingService } from "../services/logging-service.js";
 
 // import { PreviewService } from '../services/preview-service.js';
 
@@ -130,8 +131,7 @@ class DesktopComponent extends HTMLElement {
 
   _logStartupMetrics() {
     const metrics = this.startupManager.getStartupMetrics();
-    console.log('🎯 Desktop Startup Metrics:', {
-      totalTime: `${metrics.totalTime.toFixed(2)}ms`,
+    loggingService.performance('desktop_startup', metrics.totalTime, 'ms', 'DesktopComponent', {
       componentsLoaded: metrics.componentsLoaded,
       phasesCompleted: metrics.phasesCompleted,
       servicesStatus: {
@@ -156,12 +156,12 @@ class DesktopComponent extends HTMLElement {
 
   setupAppEventListeners() {
     eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
-      console.log("App launched event received");
+      loggingService.userAction('app_launched', 'EventBus');
     });
 
     eventBus.subscribe(MESSAGES.WINDOW_CLOSED, () => {
       setTimeout(() => {
-        console.log("Window closed event received");
+        loggingService.userAction('window_closed', 'EventBus');
       }, 100);
     });
 
@@ -390,14 +390,14 @@ class DesktopComponent extends HTMLElement {
         baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
       } 
       if (text.includes("from './")) {
-        console.log("Converting relative imports to absolute URLs...");
-        console.log("Base URL for imports:", baseUrl);
+        loggingService.debug('DesktopComponent', 'Converting relative imports to absolute URLs');
+        loggingService.debug('DesktopComponent', 'Base URL for imports', { baseUrl });
 
         processedContent = text.replace(
           /from\s+['"`]\.\/([^'"`]+)['"`]/g,
           (match, relativePath) => {
             const absoluteUrl = baseUrl + relativePath;
-            console.log(`Converting: ${match} -> from '${absoluteUrl}'`);
+            loggingService.debug('DesktopComponent', 'Converting import URL', { original: match, absolute: absoluteUrl });
             return `from '${absoluteUrl}'`;
           },
         );
@@ -487,7 +487,7 @@ class DesktopComponent extends HTMLElement {
       dockComponent.setAttribute('position', position);
     } else if (this.startupManager) {
       // If dock not loaded yet, it will get the position when it loads
-      console.log(`📍 Dock position will be set to "${position}" when dock loads`);
+      loggingService.debug('DesktopComponent', 'Dock position will be set when dock loads', { position });
     }
   }
 
@@ -550,8 +550,9 @@ class DesktopComponent extends HTMLElement {
       textContent: event.target.textContent?.slice(0, 30) || ''
     };
     
-    console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
-      type: event.type,
+    loggingService.userAction(`event_flow_${level}`, 'DesktopComponent', {
+      timestamp,
+      eventType: event.type,
       target: targetInfo,
       bubbles: event.bubbles,
       composed: event.composed,
@@ -565,14 +566,13 @@ class DesktopComponent extends HTMLElement {
         events: [],
         clear: () => {
           window.eventFlowTest.events = [];
-          console.log('🧹 Event flow test data cleared');
+          loggingService.debug('EventFlowTest', 'Event flow test data cleared');
         },
         analyze: () => {
-          console.log('🔍 Event Flow Analysis:');
-          console.log('='.repeat(50));
+          loggingService.info('EventFlowTest', 'Starting event flow analysis');
           
           if (window.eventFlowTest.events.length === 0) {
-            console.log('No events recorded. Click something in the System Preferences app!');
+            loggingService.info('EventFlowTest', 'No events recorded. Click something in the System Preferences app!');
             return;
           }
           

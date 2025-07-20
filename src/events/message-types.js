@@ -82,7 +82,18 @@ export const MESSAGES = {
     
     // Settings
     WALLPAPER_CHANGED: 'wallpaper-changed',
-    SETTINGS_UPDATED: 'settings-updated'
+    SETTINGS_UPDATED: 'settings-updated',
+    
+    // Logging system events
+    SYSTEM_LOG_DEBUG: 'system-log-debug',
+    SYSTEM_LOG_INFO: 'system-log-info', 
+    SYSTEM_LOG_WARN: 'system-log-warn',
+    SYSTEM_LOG_ERROR: 'system-log-error',
+    COMPONENT_LIFECYCLE_LOG: 'component-lifecycle-log',
+    USER_ACTION_LOG: 'user-action-log',
+    PERFORMANCE_LOG: 'performance-log',
+    STARTUP_PROGRESS_LOG: 'startup-progress-log',
+    FILE_OPERATION_LOG: 'file-operation-log'
 };
 
 /**
@@ -326,6 +337,62 @@ export const MESSAGES = {
  * @property {string} [requestId] - Request identifier
  */
 
+/**
+ * Logging system event payloads
+ * @typedef {Object} SystemLogPayload
+ * @property {string} level - Log level (debug, info, warn, error)
+ * @property {string} message - Log message
+ * @property {string} source - Source component/service
+ * @property {Object} [metadata] - Additional log metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
+/**
+ * @typedef {Object} ComponentLifecycleLogPayload
+ * @property {string} component - Component name
+ * @property {string} action - Lifecycle action (created, mounted, destroyed, etc.)
+ * @property {Object} [metadata] - Additional component metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
+/**
+ * @typedef {Object} UserActionLogPayload
+ * @property {string} action - User action type (click, drag, input, etc.)
+ * @property {string} target - Target element or component
+ * @property {Object} [metadata] - Additional action metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
+/**
+ * @typedef {Object} PerformanceLogPayload
+ * @property {string} metric - Performance metric name
+ * @property {number} value - Metric value
+ * @property {string} unit - Metric unit (ms, bytes, etc.)
+ * @property {string} source - Source component/operation
+ * @property {Object} [metadata] - Additional performance metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
+/**
+ * @typedef {Object} StartupProgressLogPayload
+ * @property {string} phase - Startup phase name
+ * @property {string} component - Component being loaded
+ * @property {string} status - Status (started, completed, failed)
+ * @property {number} [duration] - Time taken in ms
+ * @property {Object} [metadata] - Additional startup metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
+/**
+ * @typedef {Object} FileOperationLogPayload
+ * @property {string} operation - File operation type (read, write, delete, etc.)
+ * @property {string} path - File path
+ * @property {string} status - Operation status (started, completed, failed)
+ * @property {number} [size] - File size in bytes
+ * @property {Object} [metadata] - Additional file operation metadata
+ * @property {number} timestamp - Log timestamp
+ */
+
 
 /**
  * Validate message payload against expected schema
@@ -386,6 +453,23 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.notificationId === 'string' && 
                    typeof payload.type === 'string' && 
                    typeof payload.sourceAppId === 'string';
+        case MESSAGES.SYSTEM_LOG_DEBUG:
+        case MESSAGES.SYSTEM_LOG_INFO:
+        case MESSAGES.SYSTEM_LOG_WARN:
+        case MESSAGES.SYSTEM_LOG_ERROR:
+            return typeof payload.level === 'string' && 
+                   typeof payload.message === 'string' && 
+                   typeof payload.source === 'string';
+        case MESSAGES.COMPONENT_LIFECYCLE_LOG:
+            return typeof payload.component === 'string' && typeof payload.action === 'string';
+        case MESSAGES.USER_ACTION_LOG:
+            return typeof payload.action === 'string' && typeof payload.target === 'string';
+        case MESSAGES.PERFORMANCE_LOG:
+            return typeof payload.metric === 'string' && typeof payload.value === 'number';
+        case MESSAGES.STARTUP_PROGRESS_LOG:
+            return typeof payload.phase === 'string' && typeof payload.component === 'string';
+        case MESSAGES.FILE_OPERATION_LOG:
+            return typeof payload.operation === 'string' && typeof payload.path === 'string';
         default:
             return true; // Unknown message types are allowed
     }
@@ -430,7 +514,16 @@ export function getMessageDescription(messageType) {
         [MESSAGES.FINDER_FILE_CONTENT]: 'File content is available for processing',
         [MESSAGES.FINDER_FILE_REFERENCE]: 'File reference is available (binary or large file)',
         [MESSAGES.WALLPAPER_CHANGED]: 'Desktop wallpaper was changed',
-        [MESSAGES.SETTINGS_UPDATED]: 'System settings were updated'
+        [MESSAGES.SETTINGS_UPDATED]: 'System settings were updated',
+        [MESSAGES.SYSTEM_LOG_DEBUG]: 'Debug log message',
+        [MESSAGES.SYSTEM_LOG_INFO]: 'Info log message',
+        [MESSAGES.SYSTEM_LOG_WARN]: 'Warning log message',
+        [MESSAGES.SYSTEM_LOG_ERROR]: 'Error log message',
+        [MESSAGES.COMPONENT_LIFECYCLE_LOG]: 'Component lifecycle event',
+        [MESSAGES.USER_ACTION_LOG]: 'User interaction event',
+        [MESSAGES.PERFORMANCE_LOG]: 'Performance metric measurement',
+        [MESSAGES.STARTUP_PROGRESS_LOG]: 'System startup progress event',
+        [MESSAGES.FILE_OPERATION_LOG]: 'File system operation event'
     };
     
     return descriptions[messageType] || 'Unknown message type';

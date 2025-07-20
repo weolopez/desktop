@@ -26,6 +26,13 @@
             "required": true,
             "priority": 1,
             "enabled": true
+          },
+          {
+            "name": "LoggingService",
+            "path": "./logging-service.js",
+            "required": true,
+            "priority": 1,
+            "enabled": true
           }
         ]
       },
