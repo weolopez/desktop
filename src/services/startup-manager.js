@@ -26,7 +26,7 @@ export class StartupManager {
 
     // Fall back to config.json
     try {
-      const response = await fetch('./config.json');
+      const response = await fetch('/desktop/config.json');
       this.config = await response.json();
       console.log('📄 Startup config loaded from config.json:', this.config.startup.phases.length, 'phases');
     } catch (error) {

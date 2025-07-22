@@ -16,6 +16,22 @@ export const APPS = [
         onstartup: false 
     },
     { 
+        id: 'user-management', 
+        name: 'User Management', 
+        icon: '👨‍⚕️', 
+        sourceUrl: '/admin/user-management/user-management-dashboard.js', 
+        tag: "user-management-dashboard", 
+        onstartup: false 
+    },
+    { 
+        id: 'generate-tdd', 
+        name: 'Generate TDD', 
+        icon: '📝', 
+        sourceUrl: '/application_architect/generate-tdd/generate-tdd.js', 
+        tag: "generate-tdd", 
+        onstartup: false 
+    },
+    { 
         id: 'system-preferences', 
         name: 'System Preferences', 
         icon: '⚙️', 

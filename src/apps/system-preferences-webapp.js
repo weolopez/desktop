@@ -575,7 +575,7 @@ class SystemPreferencesWebapp extends HTMLElement {
         
         // Fall back to config.json
         try {
-            const response = await fetch('./config.json');
+            const response = await fetch('/desktop/config.json');
             this.currentConfig = await response.json();
             console.log('📄 Startup configuration loaded from config.json');
             return this.currentConfig;
