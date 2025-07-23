@@ -24,6 +24,14 @@ export const APPS = [
         onstartup: false 
     },
     { 
+        id: 'ask-genai', 
+        name: 'Ask GenAI', 
+        icon: '🔮', 
+        sourceUrl: '/operator/domain/ask-genai.js', 
+        tag: "ask-genai", 
+        onstartup: false 
+    },
+    { 
         id: 'generate-tdd', 
         name: 'Generate TDD', 
         icon: '📝', 

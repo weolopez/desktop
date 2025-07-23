@@ -45,8 +45,8 @@ class WindowComponent extends HTMLElement {
             this.savedWidth = parseInt(this.getAttribute('saved-width'));
             this.savedHeight = parseInt(this.getAttribute('saved-height'));
         }
-        this.minWidth = 400;
-        this.minHeight = 300;
+        this.minWidth = 100;
+        this.minHeight = 100;
         
         // Dragging state
         this.isDragging = false;
@@ -104,8 +104,8 @@ class WindowComponent extends HTMLElement {
                                 0 0 0 1px rgba(255, 255, 255, 0.1);
                     overflow: hidden;
                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    min-width: 400px;
-                    min-height: 300px;
+                    min-width: 100px;
+                    min-height: 100px;
                 }
 
                 .window.focused {
