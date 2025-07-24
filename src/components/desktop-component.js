@@ -297,7 +297,7 @@ class DesktopComponent extends HTMLElement {
 
 
   setupPasteDrop() {
-    const desktopSurface = this.shadowRoot.querySelector(".desktop-surface");
+    const desktopSurface = document.querySelector("body");
 
     desktopSurface.addEventListener("dragover", (e) => {
       e.preventDefault();
@@ -311,7 +311,7 @@ class DesktopComponent extends HTMLElement {
 
     // Handle paste events
     desktopSurface.addEventListener("paste", (e) => {
-      if (e.currentTarget === e.target) {
+      if ('DESKTOP-COMPONENT' === e.target.tagName) {
         this.handlePaste(e);
       }
     });
@@ -359,10 +359,6 @@ class DesktopComponent extends HTMLElement {
           }
         });
       });
-
-    // Prevent default paste behavior
-    e.preventDefault();
-    e.stopPropagation();
   }
 
   // processImageFile(file) {
