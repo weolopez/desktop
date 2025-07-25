@@ -453,13 +453,30 @@ class DesktopComponent extends HTMLElement {
 
     eventBus.publish(MESSAGES.APP_LAUNCHED, { name });
   }
-  addContent(div) {
-    // appName: title,
-    // appIcon: "📄",
-    // width: 500,
-    // height: 300,
-    // content: contentDiv,
-    alert("addContent is deprecated, use addApp instead", div);
+  addContent(config) {
+    const {
+        appName = 'Content Viewer',
+        appIcon = '📄',
+        width = 600,
+        height = 400,
+        content,
+    } = config;
+
+    const windowEl = document.createElement("window-component");
+    windowEl.appName = appName;
+    windowEl.appIcon = appIcon;
+    windowEl.width = width;
+    windowEl.height = height;
+    windowEl.x = 150 + (Math.random() * 200);
+    windowEl.y = 150 + (Math.random() * 100);
+
+    if (typeof content === 'string') {
+        windowEl.innerHTML = content;
+    } else if (content instanceof HTMLElement) {
+        windowEl.appendChild(content);
+    }
+
+    this.addWindow(windowEl);
   }
   getWindows() {
     return this.shadowRoot.querySelectorAll("window-component");

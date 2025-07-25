@@ -119,6 +119,9 @@ export class WindowManager {
                         const text = localStorage.getItem(`web-component-${state.appTag}`);
                         if (text) {
                             console.log('🔄 WindowManager - Found saved text for tag:', state.appTag);
+                        } else {
+                            console.warn('🔄 WindowManager - No saved text found for tag:', state.appTag);
+                            continue
                         }
                         await this.desktopComponent.importText(text, state.sourceUrl);
                     } else {
