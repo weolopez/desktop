@@ -45,10 +45,10 @@ export class NotificationService {
         }
 
         // Check permissions
-        if (!this.hasPermission(payload.sourceAppId)) {
-            console.warn(`App ${payload.sourceAppId} does not have notification permission`);
-            return null;
-        }
+        // if (!this.hasPermission(payload.sourceAppId)) {
+        //     console.warn(`App ${payload.sourceAppId} does not have notification permission`);
+        //     return null;
+        // }
 
         // Check if notifications are enabled
         if (!this.settings.enableNotifications) {

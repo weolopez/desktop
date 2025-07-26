@@ -178,6 +178,16 @@ export class WebLLMService {
     this.workerComponent.addEventListener('llm-init-complete', (event) => {
       this.currentModel = event.detail.modelId;
       this.updateServiceStatus();
+
+      // Trigger notification
+      eventBus.publish(MESSAGES.CREATE_NOTIFICATION, {
+        sourceAppId: 'webllm-service',
+        title: 'Model Initialization Complete',
+        body: `The model ${event.detail.modelId} has been successfully initialized.`,
+        icon: '🤖',
+        category: 'system',
+        duration: 5000
+      });
     });
     
     // Handle errors

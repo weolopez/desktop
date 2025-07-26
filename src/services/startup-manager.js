@@ -302,8 +302,8 @@ export class StartupManager {
       return this.instantiateWebComponent(config, moduleResult, desktopComponent);
     }
 
-    const ComponentClass = moduleResult.default || 
-                           moduleResult[config.name] || 
+    const ComponentClass = moduleResult.default ||
+                           moduleResult[config.name] ||
                            Object.values(moduleResult)[0];
 
     if (!ComponentClass) {
@@ -329,6 +329,10 @@ export class StartupManager {
         this.loadNotificationDisplayComponent(instance, desktopComponent);
       }
       
+      return instance;
+    } else if (config.name === 'WebLLMService') {
+      const instance = new ComponentClass(config.config);
+      await instance.initialize();
       return instance;
     } else {
       return new ComponentClass(desktopComponent);
