@@ -82,7 +82,32 @@ export const MESSAGES = {
     
     // Settings
     WALLPAPER_CHANGED: 'wallpaper-changed',
-    SETTINGS_UPDATED: 'settings-updated'
+    SETTINGS_UPDATED: 'settings-updated',
+    
+    // WebLLM Subsystem - Initialization events
+    WEBLLM_INIT_START: 'webllm-init-start',
+    WEBLLM_INIT_PROGRESS: 'webllm-init-progress', 
+    WEBLLM_INIT_COMPLETE: 'webllm-init-complete',
+    WEBLLM_INIT_ERROR: 'webllm-init-error',
+    WEBLLM_WORKER_TERMINATED: 'webllm-worker-terminated',
+    
+    // WebLLM Subsystem - Generation events
+    WEBLLM_GENERATION_START: 'webllm-generation-start',
+    WEBLLM_RESPONSE_CHUNK: 'webllm-response-chunk',
+    WEBLLM_RESPONSE_COMPLETE: 'webllm-response-complete',
+    WEBLLM_GENERATION_ERROR: 'webllm-generation-error',
+    
+    // WebLLM Subsystem - Management events
+    WEBLLM_MODEL_CHANGED: 'webllm-model-changed',
+    WEBLLM_STATUS_CHANGED: 'webllm-status-changed',
+    WEBLLM_WARNING: 'webllm-warning',
+    
+    // WebLLM Subsystem - Service communication
+    WEBLLM_SERVICE_READY: 'webllm-service-ready',
+    WEBLLM_SERVICE_UNAVAILABLE: 'webllm-service-unavailable',
+    WEBLLM_GENERATE_REQUEST: 'webllm-generate-request',
+    WEBLLM_INITIALIZE_REQUEST: 'webllm-initialize-request',
+    WEBLLM_TERMINATE_REQUEST: 'webllm-terminate-request'
 };
 
 /**
@@ -326,6 +351,116 @@ export const MESSAGES = {
  * @property {string} [requestId] - Request identifier
  */
 
+/**
+ * WebLLM Subsystem Event Payloads
+ */
+
+/**
+ * @typedef {Object} WebLLMInitStartPayload
+ * @property {string} modelId - Model identifier being initialized
+ */
+
+/**
+ * @typedef {Object} WebLLMInitProgressPayload
+ * @property {string} text - Progress description text
+ * @property {number} progress - Progress value (0.0 to 1.0)
+ * @property {string} [phase] - Current initialization phase
+ */
+
+/**
+ * @typedef {Object} WebLLMInitCompletePayload
+ * @property {string} modelId - Model identifier that was loaded
+ * @property {Array} [knowledgeFiles] - Array of loaded knowledge files
+ * @property {boolean} success - Whether initialization was successful
+ */
+
+/**
+ * @typedef {Object} WebLLMInitErrorPayload
+ * @property {string} error - Error message
+ * @property {string} [modelId] - Model identifier that failed to load
+ * @property {string} [phase] - Phase where error occurred
+ */
+
+/**
+ * @typedef {Object} WebLLMGenerationStartPayload
+ * @property {Array} messages - Array of message objects sent to model
+ * @property {string} [conversationId] - Conversation identifier
+ */
+
+/**
+ * @typedef {Object} WebLLMResponseChunkPayload
+ * @property {string} text - Accumulated response text so far
+ * @property {string} [delta] - Just the new chunk added
+ * @property {string} [conversationId] - Conversation identifier
+ */
+
+/**
+ * @typedef {Object} WebLLMResponseCompletePayload
+ * @property {Object} message - Complete message object
+ * @property {string} message.role - Message role (assistant)
+ * @property {string} message.content - Complete message content
+ * @property {string} [conversationId] - Conversation identifier
+ */
+
+/**
+ * @typedef {Object} WebLLMGenerationErrorPayload
+ * @property {string} error - Error message
+ * @property {Array} [messages] - Messages that caused the error
+ * @property {string} [conversationId] - Conversation identifier
+ */
+
+/**
+ * @typedef {Object} WebLLMModelChangedPayload
+ * @property {string} oldModelId - Previous model identifier
+ * @property {string} newModelId - New model identifier
+ * @property {string} reason - Reason for model change
+ */
+
+/**
+ * @typedef {Object} WebLLMStatusChangedPayload
+ * @property {boolean} isInitialized - Whether model is initialized
+ * @property {boolean} isProcessing - Whether currently processing
+ * @property {string} currentModel - Current model identifier
+ * @property {boolean} hasWorker - Whether worker is available
+ * @property {string} status - Human-readable status description
+ */
+
+/**
+ * @typedef {Object} WebLLMWarningPayload
+ * @property {string} warning - Warning message
+ * @property {string} [context] - Context where warning occurred
+ */
+
+/**
+ * @typedef {Object} WebLLMServiceReadyPayload
+ * @property {string} serviceVersion - Version of WebLLM service
+ * @property {Array} supportedModels - Array of supported model objects
+ * @property {Object} capabilities - Service capabilities
+ */
+
+/**
+ * @typedef {Object} WebLLMGenerateRequestPayload
+ * @property {Array} messages - Array of message objects
+ * @property {string} [conversationId] - Conversation identifier
+ * @property {Object} [options] - Generation options
+ * @property {number} [options.temperature] - Temperature setting
+ * @property {number} [options.maxTokens] - Maximum tokens to generate
+ * @property {boolean} [options.stream] - Whether to stream response
+ */
+
+/**
+ * @typedef {Object} WebLLMInitializeRequestPayload
+ * @property {string} modelId - Model identifier to initialize
+ * @property {Object} [config] - Initialization configuration
+ * @property {boolean} [force] - Whether to force reinitialization
+ */
+
+/**
+ * @typedef {Object} WebLLMTerminateRequestPayload
+ * @property {string} [reason] - Reason for termination
+ * @property {boolean} [cleanup] - Whether to perform cleanup
+ */
+
 
 /**
  * Validate message payload against expected schema
@@ -386,6 +521,29 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.notificationId === 'string' && 
                    typeof payload.type === 'string' && 
                    typeof payload.sourceAppId === 'string';
+        case MESSAGES.WEBLLM_INIT_START:
+            return typeof payload.modelId === 'string';
+        case MESSAGES.WEBLLM_INIT_PROGRESS:
+            return typeof payload.text === 'string' && typeof payload.progress === 'number';
+        case MESSAGES.WEBLLM_INIT_COMPLETE:
+            return typeof payload.modelId === 'string' && typeof payload.success === 'boolean';
+        case MESSAGES.WEBLLM_INIT_ERROR:
+        case MESSAGES.WEBLLM_GENERATION_ERROR:
+            return typeof payload.error === 'string';
+        case MESSAGES.WEBLLM_GENERATION_START:
+            return Array.isArray(payload.messages);
+        case MESSAGES.WEBLLM_RESPONSE_CHUNK:
+            return typeof payload.text === 'string';
+        case MESSAGES.WEBLLM_RESPONSE_COMPLETE:
+            return payload.message && typeof payload.message.content === 'string';
+        case MESSAGES.WEBLLM_MODEL_CHANGED:
+            return typeof payload.oldModelId === 'string' && typeof payload.newModelId === 'string';
+        case MESSAGES.WEBLLM_STATUS_CHANGED:
+            return typeof payload.isInitialized === 'boolean' && typeof payload.status === 'string';
+        case MESSAGES.WEBLLM_GENERATE_REQUEST:
+            return Array.isArray(payload.messages);
+        case MESSAGES.WEBLLM_INITIALIZE_REQUEST:
+            return typeof payload.modelId === 'string';
         default:
             return true; // Unknown message types are allowed
     }
@@ -430,7 +588,24 @@ export function getMessageDescription(messageType) {
         [MESSAGES.FINDER_FILE_CONTENT]: 'File content is available for processing',
         [MESSAGES.FINDER_FILE_REFERENCE]: 'File reference is available (binary or large file)',
         [MESSAGES.WALLPAPER_CHANGED]: 'Desktop wallpaper was changed',
-        [MESSAGES.SETTINGS_UPDATED]: 'System settings were updated'
+        [MESSAGES.SETTINGS_UPDATED]: 'System settings were updated',
+        [MESSAGES.WEBLLM_INIT_START]: 'WebLLM model initialization started',
+        [MESSAGES.WEBLLM_INIT_PROGRESS]: 'WebLLM model initialization progress update',
+        [MESSAGES.WEBLLM_INIT_COMPLETE]: 'WebLLM model initialization completed',
+        [MESSAGES.WEBLLM_INIT_ERROR]: 'WebLLM model initialization failed',
+        [MESSAGES.WEBLLM_WORKER_TERMINATED]: 'WebLLM worker was terminated',
+        [MESSAGES.WEBLLM_GENERATION_START]: 'WebLLM response generation started',
+        [MESSAGES.WEBLLM_RESPONSE_CHUNK]: 'WebLLM response chunk received',
+        [MESSAGES.WEBLLM_RESPONSE_COMPLETE]: 'WebLLM response generation completed',
+        [MESSAGES.WEBLLM_GENERATION_ERROR]: 'WebLLM response generation failed',
+        [MESSAGES.WEBLLM_MODEL_CHANGED]: 'WebLLM model was changed',
+        [MESSAGES.WEBLLM_STATUS_CHANGED]: 'WebLLM service status changed',
+        [MESSAGES.WEBLLM_WARNING]: 'WebLLM service warning',
+        [MESSAGES.WEBLLM_SERVICE_READY]: 'WebLLM service is ready for use',
+        [MESSAGES.WEBLLM_SERVICE_UNAVAILABLE]: 'WebLLM service is unavailable',
+        [MESSAGES.WEBLLM_GENERATE_REQUEST]: 'Request WebLLM to generate response',
+        [MESSAGES.WEBLLM_INITIALIZE_REQUEST]: 'Request WebLLM to initialize model',
+        [MESSAGES.WEBLLM_TERMINATE_REQUEST]: 'Request WebLLM to terminate worker'
     };
     
     return descriptions[messageType] || 'Unknown message type';

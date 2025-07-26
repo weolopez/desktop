@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebLLM Desktop Integration Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 20px;
+      background: #f5f5f7;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e5e7;
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #007AFF;
+    }
+    
+    .test-section h3 {
+      margin: 0 0 15px 0;
+      color: #1d1d1f;
+    }
+    
+    .test-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      background: #007AFF;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #0056b3;
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+    }
+    
+    .status.success {
+      background: #d1edff;
+      color: #0066cc;
+      border: 1px solid #007AFF;
+    }
+    
+    .status.error {
+      background: #ffe6e6;
+      color: #cc0000;
+      border: 1px solid #ff4444;
+    }
+    
+    .status.info {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+    }
+    
+    .log-container {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      background: #1e1e1e;
+      color: #ffffff;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    
+    .log-entry {
+      margin-bottom: 5px;
+      padding: 2px 0;
+    }
+    
+    .log-entry.event {
+      color: #00d4aa;
+    }
+    
+    .log-entry.error {
+      color: #ff6b6b;
+    }
+    
+    .log-entry.warning {
+      color: #ffd93d;
+    }
+    
+    .log-entry.service {
+      color: #74b9ff;
+    }
+    
+    .service-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    
+    .status-card {
+      background: white;
+      border: 1px solid #e5e5e7;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    
+    .status-card h4 {
+      margin: 0 0 10px 0;
+      color: #1d1d1f;
+      font-size: 14px;
+    }
+    
+    .status-value {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    .chat-test {
+      margin-top: 20px;
+    }
+    
+    .chat-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .chat-response {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      white-space: pre-wrap;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 WebLLM Desktop Integration Test</h1>
+      <p>Testing the integration of WebLLM subsystem with the desktop environment</p>
+    </div>
+
+    <div class="test-section">
+      <h3>🔌 Service Initialization</h3>
+      <div class="test-controls">
+        <button onclick="initializeService()">Initialize WebLLM Service</button>
+        <button onclick="checkServiceStatus()">Check Service Status</button>
+        <button onclick="getServiceHealth()">Get Health Info</button>
+      </div>
+      <div class="service-status" id="serviceStatus"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>🧠 Model Management</h3>
+      <div class="test-controls">
+        <button onclick="initializeModel('Qwen2.5-0.5B-Instruct-q0f16-MLC')">Load Qwen 0.5B</button>
+        <button onclick="initializeModel('DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC')">Load DeepSeek 7B</button>
+        <button onclick="getSupportedModels()">Get Supported Models</button>
+        <button onclick="terminateWorker()">Terminate Worker</button>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>💬 Text Generation</h3>
+      <div class="chat-test">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Enter your message..." value="Hello! Tell me a short joke.">
+        <div class="test-controls">
+          <button onclick="generateResponse()">Generate Response</button>
+          <button onclick="generateStreamingResponse()">Generate Streaming</button>
+          <button onclick="clearChatResponse()">Clear Response</button>
+        </div>
+        <div class="chat-response" id="chatResponse" style="display: none;"></div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>📋 Event Log</h3>
+      <div class="test-controls">
+        <button onclick="clearEventLog()">Clear Log</button>
+        <button onclick="toggleEventLogging()">Toggle Logging</button>
+      </div>
+      <div class="log-container" id="eventLog"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import desktop environment modules
+    import { eventBus } from './src/events/event-bus.js';
+    import { MESSAGES } from './src/events/message-types.js';
+    import { WebLLMService } from './src/services/webllm-service.js';
+
+    let webllmService = null;
+    let eventLog = [];
+    let loggingEnabled = true;
+    let conversationId = `test-${Date.now()}`;
+
+    // Utility functions
+    function logEvent(message, type = 'info', data = null) {
+      if (!loggingEnabled) return;
+      
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = {
+        timestamp,
+        message,
+        type,
+        data
+      };
+      
+      eventLog.push(entry);
+      updateEventLogDisplay();
+    }
+
+    function updateEventLogDisplay() {
+      const logContainer = document.getElementById('eventLog');
+      const entries = eventLog.slice(-100); // Keep last 100 entries
+      
+      logContainer.innerHTML = entries.map(entry => {
+        const dataStr = entry.data ? ` | ${JSON.stringify(entry.data)}` : '';
+        return `<div class="log-entry ${entry.type}">[${entry.timestamp}] ${entry.message}${dataStr}</div>`;
+      }).join('');
+      
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function updateStatus(message, type = 'info') {
+      const existing = document.querySelector('.current-status');
+      if (existing) existing.remove();
+      
+      const statusDiv = document.createElement('div');
+      statusDiv.className = `status ${type} current-status`;
+      statusDiv.textContent = message;
+      
+      document.querySelector('.container').appendChild(statusDiv);
+      
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+        if (statusDiv.parentNode) {
+          statusDiv.parentNode.removeChild(statusDiv);
+        }
+      }, 5000);
+    }
+
+    function updateServiceStatusDisplay(status) {
+      const container = document.getElementById('serviceStatus');
+      
+      const fields = [
+        { key: 'isServiceReady', label: 'Service Ready' },
+        { key: 'isInitialized', label: 'Model Initialized' },
+        { key: 'isProcessing', label: 'Processing' },
+        { key: 'currentModel', label: 'Current Model' },
+        { key: 'activeConversations', label: 'Active Chats' },
+        { key: 'status', label: 'Status' }
+      ];
+      
+      container.innerHTML = fields.map(field => `
+        <div class="status-card">
+          <h4>${field.label}</h4>
+          <div class="status-value">${status[field.key] ?? 'N/A'}</div>
+        </div>
+      `).join('');
+    }
+
+    // Service initialization
+    window.initializeService = async function() {
+      try {
+        logEvent('Initializing WebLLM service...', 'service');
+        updateStatus('Initializing WebLLM service...', 'info');
+        
+        const config = {
+          workerPath: '../chat-component/chat-worker.js',
+          defaultModel: 'Qwen2.5-0.5B-Instruct-q0f16-MLC',
+          autoInitialize: false,
+          serviceVersion: '1.0.0'
+        };
+        
+        webllmService = new WebLLMService(config);
+        await webllmService.initialize();
+        
+        logEvent('WebLLM service initialized successfully', 'service');
+        updateStatus('WebLLM service ready!', 'success');
+        
+      } catch (error) {
+        logEvent(`Service initialization failed: ${error.message}`, 'error');
+        updateStatus(`Initialization failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.checkServiceStatus = function() {
+      if (!webllmService) {
+        updateStatus('Service not initialized', 'error');
+        return;
+      }
+      
+      const status = webllmService.getServiceStatus();
+      updateServiceStatusDisplay(status);
+      logEvent('Service status checked', 'service', status);
+    };
+
+    window.getServiceHealth = function() {
+      if (!webllmService) {
+        updateStatus('Service not initialized', 'error');
+        return;
+      }
+      
+      const health = webllmService.getHealthInfo();
+      logEvent('Service health info retrieved', 'service', health);
+      console.log('Service Health:', health);
+    };
+
+    // Model management
+    window.initializeModel = async function(modelId) {
+      try {
+        logEvent(`Requesting model initialization: ${modelId}`, 'service');
+        updateStatus(`Loading model: ${modelId}...`, 'info');
+        
+        eventBus.publish(MESSAGES.WEBLLM_INITIALIZE_REQUEST, {
+          modelId,
+          force: false
+        });
+        
+      } catch (error) {
+        logEvent(`Model initialization failed: ${error.message}`, 'error');
+        updateStatus(`Model loading failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.getSupportedModels = function() {
+      if (!webllmService) {
+        updateStatus('Service not initialized', 'error');
+        return;
+      }
+      
+      const models = webllmService.getSupportedModels();
+      logEvent('Supported models retrieved', 'service', models);
+      console.log('Supported Models:', models);
+    };
+
+    window.terminateWorker = function() {
+      logEvent('Requesting worker termination', 'service');
+      
+      eventBus.publish(MESSAGES.WEBLLM_TERMINATE_REQUEST, {
+        reason: 'Manual termination from test page',
+        cleanup: true
+      });
+    };
+
+    // Text generation
+    window.generateResponse = async function() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      
+      if (!message) {
+        updateStatus('Please enter a message', 'error');
+        return;
+      }
+      
+      try {
+        logEvent(`Generating response for: "${message}"`, 'service');
+        updateStatus('Generating response...', 'info');
+        
+        const messages = [
+          { role: 'user', content: message }
+        ];
+        
+        eventBus.publish(MESSAGES.WEBLLM_GENERATE_REQUEST, {
+          messages,
+          conversationId,
+          options: {
+            temperature: 0.7,
+            maxTokens: 512,
+            stream: false
+          }
+        });
+        
+      } catch (error) {
+        logEvent(`Generation failed: ${error.message}`, 'error');
+        updateStatus(`Generation failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.generateStreamingResponse = async function() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      
+      if (!message) {
+        updateStatus('Please enter a message', 'error');
+        return;
+      }
+      
+      try {
+        logEvent(`Starting streaming response for: "${message}"`, 'service');
+        updateStatus('Starting streaming generation...', 'info');
+        
+        // Clear previous response
+        const responseDiv = document.getElementById('chatResponse');
+        responseDiv.style.display = 'block';
+        responseDiv.textContent = '';
+        
+        const messages = [
+          { role: 'user', content: message }
+        ];
+        
+        eventBus.publish(MESSAGES.WEBLLM_GENERATE_REQUEST, {
+          messages,
+          conversationId: conversationId + '-streaming',
+          options: {
+            temperature: 0.7,
+            maxTokens: 512,
+            stream: true
+          }
+        });
+        
+      } catch (error) {
+        logEvent(`Streaming generation failed: ${error.message}`, 'error');
+        updateStatus(`Streaming failed: ${error.message}`, 'error');
+      }
+    };
+
+    window.clearChatResponse = function() {
+      const responseDiv = document.getElementById('chatResponse');
+      responseDiv.style.display = 'none';
+      responseDiv.textContent = '';
+    };
+
+    // Event log management
+    window.clearEventLog = function() {
+      eventLog = [];
+      updateEventLogDisplay();
+    };
+
+    window.toggleEventLogging = function() {
+      loggingEnabled = !loggingEnabled;
+      updateStatus(`Event logging ${loggingEnabled ? 'enabled' : 'disabled'}`, 'info');
+    };
+
+    // Set up event listeners for WebLLM events
+    function setupWebLLMEventListeners() {
+      // Service events
+      eventBus.subscribe(MESSAGES.WEBLLM_SERVICE_READY, (data) => {
+        logEvent('WebLLM service ready', 'service', data);
+        updateStatus('WebLLM service is ready', 'success');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_SERVICE_UNAVAILABLE, (data) => {
+        logEvent('WebLLM service unavailable', 'error', data);
+        updateStatus('WebLLM service unavailable', 'error');
+      });
+
+      // Initialization events
+      eventBus.subscribe(MESSAGES.WEBLLM_INIT_START, (data) => {
+        logEvent(`Model initialization started: ${data.modelId}`, 'event');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_INIT_PROGRESS, (data) => {
+        logEvent(`Loading progress: ${data.text} (${Math.round(data.progress * 100)}%)`, 'event');
+        updateStatus(`${data.text} (${Math.round(data.progress * 100)}%)`, 'info');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_INIT_COMPLETE, (data) => {
+        logEvent(`Model loaded successfully: ${data.modelId}`, 'event');
+        updateStatus(`Model loaded: ${data.modelId}`, 'success');
+        checkServiceStatus();
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_INIT_ERROR, (data) => {
+        logEvent(`Model initialization failed: ${data.error}`, 'error');
+        updateStatus(`Model loading failed: ${data.error}`, 'error');
+      });
+
+      // Generation events
+      eventBus.subscribe(MESSAGES.WEBLLM_GENERATION_START, (data) => {
+        logEvent('Response generation started', 'event');
+        updateStatus('Generating response...', 'info');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_RESPONSE_CHUNK, (data) => {
+        const responseDiv = document.getElementById('chatResponse');
+        responseDiv.style.display = 'block';
+        responseDiv.textContent = data.text;
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_RESPONSE_COMPLETE, (data) => {
+        logEvent('Response generation completed', 'event');
+        updateStatus('Response completed', 'success');
+        
+        const responseDiv = document.getElementById('chatResponse');
+        responseDiv.style.display = 'block';
+        responseDiv.textContent = data.message.content;
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_GENERATION_ERROR, (data) => {
+        logEvent(`Generation error: ${data.error}`, 'error');
+        updateStatus(`Generation error: ${data.error}`, 'error');
+      });
+
+      // Status events
+      eventBus.subscribe(MESSAGES.WEBLLM_STATUS_CHANGED, (data) => {
+        logEvent('Service status changed', 'service', data);
+        updateServiceStatusDisplay(data);
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_MODEL_CHANGED, (data) => {
+        logEvent(`Model changed from ${data.oldModelId} to ${data.newModelId}`, 'event');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_WARNING, (data) => {
+        logEvent(`Warning: ${data.warning}`, 'warning');
+      });
+
+      eventBus.subscribe(MESSAGES.WEBLLM_WORKER_TERMINATED, (data) => {
+        logEvent('Worker terminated', 'event');
+        updateStatus('Worker terminated', 'info');
+        checkServiceStatus();
+      });
+    }
+
+    // Initialize event listeners and welcome message
+    setupWebLLMEventListeners();
+    logEvent('WebLLM Desktop Integration Test initialized', 'service');
+    updateStatus('Test environment ready. Click "Initialize WebLLM Service" to begin.', 'info');
+
+    // Auto-check service status every 10 seconds
+    setInterval(() => {
+      if (webllmService) {
+        checkServiceStatus();
+      }
+    }, 10000);
+  </script>
+</body>
+</html>
