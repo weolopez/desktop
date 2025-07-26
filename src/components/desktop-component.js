@@ -7,7 +7,14 @@ import "../events/event-monitor.js";
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
-    return ['wallpaper', 'dock-position', 'grid-snap', 'show-desktop-icons', 'accent-color', 'notification-sounds'];
+    return [
+      "wallpaper",
+      "dock-position",
+      "grid-snap",
+      "show-desktop-icons",
+      "accent-color",
+      "notification-sounds",
+    ];
   }
 
   constructor() {
@@ -16,7 +23,7 @@ class DesktopComponent extends HTMLElement {
 
     // Initialize startup manager for configurable component loading
     this.startupManager = new StartupManager();
-    
+
     // Legacy service references will be populated after startup
     this.appService = null;
     this.wallpaperManager = null;
@@ -28,109 +35,117 @@ class DesktopComponent extends HTMLElement {
   }
 
   _initializeAttributes() {
-    if (!this.hasAttribute('wallpaper')) {
-      const savedWallpaper = localStorage.getItem('desktop-wallpaper') || 'gradient';
-      this.setAttribute('wallpaper', savedWallpaper);
+    if (!this.hasAttribute("wallpaper")) {
+      const savedWallpaper = localStorage.getItem("desktop-wallpaper") ||
+        "gradient";
+      this.setAttribute("wallpaper", savedWallpaper);
     }
-    if (!this.hasAttribute('dock-position')) {
-      const savedDockPosition = localStorage.getItem('dock-position') || 'bottom';
-      this.setAttribute('dock-position', savedDockPosition);
+    if (!this.hasAttribute("dock-position")) {
+      const savedDockPosition = localStorage.getItem("dock-position") ||
+        "bottom";
+      this.setAttribute("dock-position", savedDockPosition);
     }
-    if (!this.hasAttribute('grid-snap')) {
-      const savedGridSnap = localStorage.getItem('grid-snap') || 'true';
-      this.setAttribute('grid-snap', savedGridSnap);
+    if (!this.hasAttribute("grid-snap")) {
+      const savedGridSnap = localStorage.getItem("grid-snap") || "true";
+      this.setAttribute("grid-snap", savedGridSnap);
     }
-    if (!this.hasAttribute('show-desktop-icons')) {
-      const savedShowIcons = localStorage.getItem('show-desktop-icons') || 'true';
-      this.setAttribute('show-desktop-icons', savedShowIcons);
+    if (!this.hasAttribute("show-desktop-icons")) {
+      const savedShowIcons = localStorage.getItem("show-desktop-icons") ||
+        "true";
+      this.setAttribute("show-desktop-icons", savedShowIcons);
     }
-    if (!this.hasAttribute('accent-color')) {
-      const savedAccentColor = localStorage.getItem('accent-color') || '#007AFF';
-      this.setAttribute('accent-color', savedAccentColor);
+    if (!this.hasAttribute("accent-color")) {
+      const savedAccentColor = localStorage.getItem("accent-color") ||
+        "#007AFF";
+      this.setAttribute("accent-color", savedAccentColor);
     }
-    if (!this.hasAttribute('notification-sounds')) {
-      const savedNotificationSounds = localStorage.getItem('notification-sounds') || 'true';
-      this.setAttribute('notification-sounds', savedNotificationSounds);
+    if (!this.hasAttribute("notification-sounds")) {
+      const savedNotificationSounds =
+        localStorage.getItem("notification-sounds") || "true";
+      this.setAttribute("notification-sounds", savedNotificationSounds);
     }
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
-    
+
     switch (name) {
-      case 'wallpaper':
+      case "wallpaper":
         this._updateWallpaper(newValue);
-        localStorage.setItem('desktop-wallpaper', newValue);
+        localStorage.setItem("desktop-wallpaper", newValue);
         break;
-      case 'dock-position':
+      case "dock-position":
         this._updateDockPosition(newValue);
-        localStorage.setItem('dock-position', newValue);
+        localStorage.setItem("dock-position", newValue);
         break;
-      case 'grid-snap':
-        this._updateGridSnap(newValue === 'true');
-        localStorage.setItem('grid-snap', newValue);
+      case "grid-snap":
+        this._updateGridSnap(newValue === "true");
+        localStorage.setItem("grid-snap", newValue);
         break;
-      case 'show-desktop-icons':
-        this._updateDesktopIcons(newValue === 'true');
-        localStorage.setItem('show-desktop-icons', newValue);
+      case "show-desktop-icons":
+        this._updateDesktopIcons(newValue === "true");
+        localStorage.setItem("show-desktop-icons", newValue);
         break;
-      case 'accent-color':
+      case "accent-color":
         this._updateAccentColor(newValue);
-        localStorage.setItem('accent-color', newValue);
+        localStorage.setItem("accent-color", newValue);
         break;
-      case 'notification-sounds':
-        this._updateNotificationSounds(newValue === 'true');
-        localStorage.setItem('notification-sounds', newValue);
+      case "notification-sounds":
+        this._updateNotificationSounds(newValue === "true");
+        localStorage.setItem("notification-sounds", newValue);
         break;
     }
   }
 
   async connectedCallback() {
     this.render();
-    
+
     // Initialize and run startup sequence
     await this.startupManager.init();
     await this.startupManager.startupSequence(this);
-    
+
     // Populate legacy service references for backwards compatibility
     this._populateLegacyReferences();
-    
+
     // Initialize services that were successfully loaded
     this._initializeLoadedServices();
-    
+
     // Log startup metrics for debugging
     this._logStartupMetrics();
-    
+
     this.setupPasteDrop();
     // Notification display setup is now handled by StartupManager
-    // this.setupAppEventListeners();
+    this.setupAppEventListeners();
     // this.showTestNotification();
   }
 
   _populateLegacyReferences() {
-    this.appService = this.startupManager.getComponent('AppService');
-    this.wallpaperManager = this.startupManager.getComponent('WallpaperManager');
-    this.contextMenuManager = this.startupManager.getComponent('ContextMenuManager');
-    this.windowManager = this.startupManager.getComponent('WindowManager');
+    this.appService = this.startupManager.getComponent("AppService");
+    this.wallpaperManager = this.startupManager.getComponent(
+      "WallpaperManager",
+    );
+    this.contextMenuManager = this.startupManager.getComponent(
+      "ContextMenuManager",
+    );
+    this.windowManager = this.startupManager.getComponent("WindowManager");
   }
 
   _initializeLoadedServices() {
     // AppService.init() is now called during instantiation in StartupManager
-    
+
     if (this.contextMenuManager) {
       this.contextMenuManager.init();
     }
-    
+
     if (this.windowManager) {
       this.windowManager.setupEventListeners();
       this.windowManager.restoreWindowsState();
     }
-    
   }
 
   _logStartupMetrics() {
     const metrics = this.startupManager.getStartupMetrics();
-    console.log('🎯 Desktop Startup Metrics:', {
+    console.log("🎯 Desktop Startup Metrics:", {
       totalTime: `${metrics.totalTime.toFixed(2)}ms`,
       componentsLoaded: metrics.componentsLoaded,
       phasesCompleted: metrics.phasesCompleted,
@@ -139,35 +154,50 @@ class DesktopComponent extends HTMLElement {
         wallpaperManager: !!this.wallpaperManager,
         contextMenuManager: !!this.contextMenuManager,
         windowManager: !!this.windowManager,
-      }
+      },
     });
   }
 
   showTestNotification() {
     setTimeout(() => {
-        eventBus.publish(MESSAGES.CREATE_NOTIFICATION, {
-            sourceAppId: "system",
-            title: "Welcome to your Desktop!",
-            body: "The notification system is now active.",
-            icon: "🎉",
-        });
+      eventBus.publish(MESSAGES.CREATE_NOTIFICATION, {
+        sourceAppId: "system",
+        title: "Welcome to your Desktop!",
+        body: "The notification system is now active.",
+        icon: "🎉",
+      });
     }, 2000);
   }
 
   setupAppEventListeners() {
-    eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
-      console.log("App launched event received");
+    eventBus.subscribe(MESSAGES.LAUNCH_APP, this.addApp.bind(this));
+    // new CustomEvent('COMPONENT_REGISTERED' ` detail: { mimeType, success: true, tagName }
+    document.addEventListener('COMPONENT_REGISTERED', (e) => {
+      // if e.detail.error alert it
+      if (e.detail.error) {
+        alert(`Error registering component: ${e.detail.error}`);
+        return;
+      }
+      this.addApp({
+        name: e.detail.name || e.detail.tagName || "Dynamic Component",
+        icon: e.detail.icon || "📦",
+        tag: e.detail.tagName,
+        sourceUrl: e.detail.url || e.detail.sourceUrl || "",
+      });
     });
+    // eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
+    //   console.log("App launched event received");
+    // });
 
-    eventBus.subscribe(MESSAGES.WINDOW_CLOSED, () => {
-      setTimeout(() => {
-        console.log("Window closed event received");
-      }, 100);
-    });
+    // eventBus.subscribe(MESSAGES.WINDOW_CLOSED, () => {
+    //   setTimeout(() => {
+    //     console.log("Window closed event received");
+    //   }, 100);
+    // });
 
-    eventBus.subscribe(MESSAGES.LAUNCH_FINDER_WEBAPP, (e) => {
-        eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [e.detail.url] });
-    });
+    // eventBus.subscribe(MESSAGES.LAUNCH_FINDER_WEBAPP, (e) => {
+    //     eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [e.detail.url] });
+    // });
   }
 
   render() {
@@ -292,9 +322,8 @@ class DesktopComponent extends HTMLElement {
             <!-- notification-display-component is now loaded dynamically by StartupManager -->
         `;
     // Apply current attribute values to CSS custom properties
-    this._updateAccentColor(this.getAttribute('accent-color') || '#007AFF');
+    this._updateAccentColor(this.getAttribute("accent-color") || "#007AFF");
   }
-
 
   setupPasteDrop() {
     const desktopSurface = document.querySelector("body");
@@ -311,7 +340,7 @@ class DesktopComponent extends HTMLElement {
 
     // Handle paste events
     desktopSurface.addEventListener("paste", (e) => {
-      if ('DESKTOP-COMPONENT' === e.target.tagName) {
+      if ("DESKTOP-COMPONENT" === e.target.tagName) {
         this.handlePaste(e);
       }
     });
@@ -322,6 +351,16 @@ class DesktopComponent extends HTMLElement {
       // Don't stop propagation - let events flow to windows and apps
     });
   }
+  // 'apps/finder/finder-webapp.js' is a valid URL too
+  _isValidUrl(text) {
+    try {
+      //if ends with .js, treat as URL
+      new URL(text);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 
   handleFileDrop(e) {
     const files = Array.from(e.dataTransfer.files);
@@ -331,7 +370,7 @@ class DesktopComponent extends HTMLElement {
     //handle text if available
     if (e.dataTransfer.getData("text/plain")) {
       const text = e.dataTransfer.getData("text/plain");
-      eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });
+      this._handleSingleText(text);
     }
     e.preventDefault();
     e.stopPropagation();
@@ -339,28 +378,39 @@ class DesktopComponent extends HTMLElement {
 
   handlePaste(e) {
     const items = Array.from(e.clipboardData.items);
-    //emit an event to the app service to handle the pasted items
-    if (this.appService) {
-      this.appService.handleFiles(
-        items.filter((item) => item.kind === "file").map((item) =>
-          item.getAsFile()
-        ),
-      );
-    }
-    // Handle pasted string items (e.g., plain text, URLs)
     items
       .filter((item) => item.kind === "string")
       //also filter type : "text/plain"
       .filter((item) => item.type === "text/plain")
       .forEach((item) => {
         item.getAsString((text) => {
-          if (text && text.trim().length > 0) {
-            eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });
-          }
+          this._handleSingleText(text);
         });
       });
   }
 
+  async _handleSingleText(text) {
+    if (text && text.trim().length > 0) {
+      if (text.endsWith(".js")) {
+        let sourceUrl = text;
+        if (!/^https?:\/\//i.test(sourceUrl)) {
+          sourceUrl = window.location.origin + "/" + sourceUrl;
+        }
+        const detail = { url: sourceUrl, mimeType: "application/javascript" };
+        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
+      } else if (this._isValidUrl(text)) {
+        eventBus.publish(MESSAGES.PUBLISH_URL, { url: text });
+      } else {
+        const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
+        // check if text has a web component tag
+        if (WEB_COMPONENT_TAG_REGEX.test(text)) {
+          const detail = { code: text, mimeType: "application/javascript" };
+          document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
+        }
+        else eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });
+      }
+    }
+  }
   // processImageFile(file) {
   //     const reader = new FileReader();
   //     reader.onload = (e) => {
@@ -384,7 +434,7 @@ class DesktopComponent extends HTMLElement {
       let baseUrl = window.location.origin + "/";
       if (sourceUrl && text.includes("from './")) {
         baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
-      } 
+      }
       if (text.includes("from './")) {
         console.log("Converting relative imports to absolute URLs...");
         console.log("Base URL for imports:", baseUrl);
@@ -398,7 +448,9 @@ class DesktopComponent extends HTMLElement {
           },
         );
       }
-      const blob = new Blob([processedContent], { type: "application/javascript" });
+      const blob = new Blob([processedContent], {
+        type: "application/javascript",
+      });
       const url = URL.createObjectURL(blob);
       this.importUrl(url);
       //URL.revokeObjectURL(url);
@@ -406,7 +458,10 @@ class DesktopComponent extends HTMLElement {
       console.error("Failed to import text as module:", error);
       // Optionally, you can display the text in a window or handle it differently
       if (this.appService) {
-        this.appService.displayPlainTextInWindow(processedContent, "Pasted Text");
+        this.appService.displayPlainTextInWindow(
+          processedContent,
+          "Pasted Text",
+        );
       }
     }
   }
@@ -425,12 +480,16 @@ class DesktopComponent extends HTMLElement {
       width = app.width || 600, // Default width if not provided
       height = app.height || 400, // Default height if not provided
     } = app;
+
+    this.importUrl(sourceUrl);
+
     // Create the content element for the app
     const content = document.createElement(tag);
     const windowEl = document.createElement("window-component");
 
     // Get content's derived width and height
-    const { width: contentWidth, height: contentHeight } = content.getBoundingClientRect();
+    const { width: contentWidth, height: contentHeight } = content
+      .getBoundingClientRect();
     // If content's width or height is less than 10px, use the defaults passed in
     if (contentWidth < 10 || contentHeight < 10) {
       windowEl.width = width;
@@ -440,12 +499,12 @@ class DesktopComponent extends HTMLElement {
       windowEl.height = contentHeight;
     }
 
-    windowEl.appName = name
-    windowEl.appIcon = icon
-    windowEl.sourceUrl = sourceUrl
-    windowEl.appTag = tag
-    windowEl.x = x
-    windowEl.y = y
+    windowEl.appName = name;
+    windowEl.appIcon = icon;
+    windowEl.sourceUrl = sourceUrl;
+    windowEl.appTag = tag;
+    windowEl.x = x;
+    windowEl.y = y;
     windowEl.isMinimized = app.isMinimized || false; // Default to false if not provided
 
     windowEl.appendChild(content);
@@ -455,11 +514,11 @@ class DesktopComponent extends HTMLElement {
   }
   addContent(config) {
     const {
-        appName = 'Content Viewer',
-        appIcon = '📄',
-        width = 600,
-        height = 400,
-        content,
+      appName = "Content Viewer",
+      appIcon = "📄",
+      width = 600,
+      height = 400,
+      content,
     } = config;
 
     const windowEl = document.createElement("window-component");
@@ -470,10 +529,10 @@ class DesktopComponent extends HTMLElement {
     windowEl.x = 150 + (Math.random() * 200);
     windowEl.y = 150 + (Math.random() * 100);
 
-    if (typeof content === 'string') {
-        windowEl.innerHTML = content;
+    if (typeof content === "string") {
+      windowEl.innerHTML = content;
     } else if (content instanceof HTMLElement) {
-        windowEl.appendChild(content);
+      windowEl.appendChild(content);
     }
 
     this.addWindow(windowEl);
@@ -495,17 +554,19 @@ class DesktopComponent extends HTMLElement {
   _updateDockPosition(position) {
     // Dock position is now handled by CSS attribute selectors
     // Notify dock component if needed
-    const dockComponent = this.shadowRoot.querySelector('dock-component');
+    const dockComponent = this.shadowRoot.querySelector("dock-component");
     if (dockComponent) {
-      dockComponent.setAttribute('position', position);
+      dockComponent.setAttribute("position", position);
     } else if (this.startupManager) {
       // If dock not loaded yet, it will get the position when it loads
-      console.log(`📍 Dock position will be set to "${position}" when dock loads`);
+      console.log(
+        `📍 Dock position will be set to "${position}" when dock loads`,
+      );
     }
   }
 
   _updateGridSnap(enabled) {
-    this.style.setProperty('--grid-snap-size', enabled ? '20px' : '0px');
+    this.style.setProperty("--grid-snap-size", enabled ? "20px" : "0px");
   }
 
   _updateDesktopIcons(visible) {
@@ -513,7 +574,7 @@ class DesktopComponent extends HTMLElement {
   }
 
   _updateAccentColor(color) {
-    this.style.setProperty('--accent-color', color);
+    this.style.setProperty("--accent-color", color);
   }
 
   _updateNotificationSounds(enabled) {
@@ -555,46 +616,49 @@ class DesktopComponent extends HTMLElement {
   }
 
   logEventFlow(level, event) {
+    return;
     const timestamp = Date.now();
     const targetInfo = {
-      tagName: event.target.tagName?.toLowerCase() || 'unknown',
-      className: event.target.className || '',
-      id: event.target.id || '',
-      textContent: event.target.textContent?.slice(0, 30) || ''
+      tagName: event.target.tagName?.toLowerCase() || "unknown",
+      className: event.target.className || "",
+      id: event.target.id || "",
+      textContent: event.target.textContent?.slice(0, 30) || "",
     };
-    
+
     console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
       type: event.type,
       target: targetInfo,
       bubbles: event.bubbles,
       composed: event.composed,
       eventPhase: event.eventPhase,
-      currentTarget: event.currentTarget.constructor.name
+      currentTarget: event.currentTarget.constructor.name,
     });
-    
+
     // Store event flow data for global access
     if (!window.eventFlowTest) {
-      window.eventFlowTest = { 
+      window.eventFlowTest = {
         events: [],
         clear: () => {
           window.eventFlowTest.events = [];
-          console.log('🧹 Event flow test data cleared');
+          console.log("🧹 Event flow test data cleared");
         },
         analyze: () => {
-          console.log('🔍 Event Flow Analysis:');
-          console.log('='.repeat(50));
-          
+          console.log("🔍 Event Flow Analysis:");
+          console.log("=".repeat(50));
+
           if (window.eventFlowTest.events.length === 0) {
-            console.log('No events recorded. Click something in the System Preferences app!');
+            console.log(
+              "No events recorded. Click something in the System Preferences app!",
+            );
             return;
           }
-          
+
           // Group events by unique click sequence (within 50ms window)
           const sequences = [];
           let currentSequence = [];
           let lastTimestamp = 0;
-          
-          window.eventFlowTest.events.forEach(event => {
+
+          window.eventFlowTest.events.forEach((event) => {
             if (event.timestamp - lastTimestamp > 50) {
               if (currentSequence.length > 0) {
                 sequences.push([...currentSequence]);
@@ -604,27 +668,43 @@ class DesktopComponent extends HTMLElement {
             currentSequence.push(event);
             lastTimestamp = event.timestamp;
           });
-          
+
           if (currentSequence.length > 0) {
             sequences.push(currentSequence);
           }
-          
+
           sequences.forEach((sequence, index) => {
             console.log(`\n📋 Event Sequence ${index + 1}:`);
             sequence.forEach((event, eventIndex) => {
-              const phases = ['', 'CAPTURING', 'AT_TARGET', 'BUBBLING'];
-              const phaseText = phases[event.eventPhase] || 'UNKNOWN';
-              console.log(`  ${eventIndex + 1}. [${event.level}] ${event.type} - ${phaseText} phase`);
-              console.log(`     Target: ${event.target.tagName}${event.target.id ? '#' + event.target.id : ''}`);
+              const phases = ["", "CAPTURING", "AT_TARGET", "BUBBLING"];
+              const phaseText = phases[event.eventPhase] || "UNKNOWN";
+              console.log(
+                `  ${
+                  eventIndex + 1
+                }. [${event.level}] ${event.type} - ${phaseText} phase`,
+              );
+              console.log(
+                `     Target: ${event.target.tagName}${
+                  event.target.id ? "#" + event.target.id : ""
+                }`,
+              );
               if (event.appName) console.log(`     App: ${event.appName}`);
-              console.log(`     Time: +${event.timestamp - sequence[0].timestamp}ms`);
+              console.log(
+                `     Time: +${event.timestamp - sequence[0].timestamp}ms`,
+              );
             });
           });
-          
-          console.log('\n✅ Actual Event Flow Discovered:');
-          console.log('   Window (mousedown) → App (click target) → Desktop (click bubbling)');
-          console.log('   This is correct DOM behavior: Target phase first, then bubbling up!');
-          console.log('\n💡 To test: Click buttons in System Preferences, then run eventFlowTest.analyze()');
+
+          console.log("\n✅ Actual Event Flow Discovered:");
+          console.log(
+            "   Window (mousedown) → App (click target) → Desktop (click bubbling)",
+          );
+          console.log(
+            "   This is correct DOM behavior: Target phase first, then bubbling up!",
+          );
+          console.log(
+            "\n💡 To test: Click buttons in System Preferences, then run eventFlowTest.analyze()",
+          );
         },
         help: () => {
           console.log(`
@@ -643,7 +723,7 @@ How to test:
 
 Expected flow: Desktop → Window → App
           `);
-        }
+        },
       };
     }
     window.eventFlowTest.events.push({
@@ -651,7 +731,7 @@ Expected flow: Desktop → Window → App
       timestamp,
       type: event.type,
       target: targetInfo,
-      eventPhase: event.eventPhase
+      eventPhase: event.eventPhase,
     });
   }
 }
