@@ -2,7 +2,7 @@ import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
-
+import '../components/window-component.js';
 // import { PreviewService } from '../services/preview-service.js';
 
 class DesktopComponent extends HTMLElement {

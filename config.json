@@ -8,7 +8,7 @@
           {
             "name": "WallpaperManager",
             "path": "./wallpaper-manager.js",
-            "required": true,
+            "required": false,
             "priority": 1,
             "enabled": true,
             "config": {
@@ -19,7 +19,7 @@
           {
             "name": "WindowManager",
             "path": "./window-manager.js",
-            "required": true,
+            "required": false,
             "priority": 1,
             "dependencies": ["AppService"],
             "enabled": true,
@@ -31,7 +31,7 @@
           {
             "name": "AppService",
             "path": "/wc/dynamic-component-system/src/index.js",
-            "required": true,
+            "required": false,
             "priority": 1,
             "enabled": true,
             "config": {
@@ -50,7 +50,7 @@
           {
             "name": "ContextMenuManager",
             "path": "./context-menu-manager.js",
-            "required": true,
+            "required": false,
             "priority": 2,
             "dependencies": ["WallpaperManager"],
             "enabled": true,
@@ -62,7 +62,7 @@
           {
             "name": "DockComponent",
             "path": "../components/dock-component.js",
-            "required": true,
+            "required": false,
             "priority": 2,
             "enabled": true,
             "isWebComponent": true,
@@ -195,5 +195,4 @@
     }
   }
 }
-
 
