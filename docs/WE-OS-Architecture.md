@@ -48,26 +48,32 @@ The architecture follows several key Unix design principles:
 Desktop Component (Kernel)
 ├── StartupManager (System Bootstrap)
 │   ├── Phase 1: Critical Services
-│   │   ├── AppService (Process Management)
+│   │   ├── AppService (Dynamic Component System - External)
 │   │   ├── WallpaperManager (Display Management)
 │   │   └── WindowManager (Window System)
 │   ├── Phase 2: UI Components
-│   │   └── ContextMenuManager (UI Management)
+│   │   ├── ContextMenuManager (UI Management)
+│   │   └── DockComponent (Application Launcher)
 │   └── Phase 3: Optional Services
 │       ├── NotificationService (System Notifications)
-│       └── EventMonitor (System Monitoring)
+│       ├── NotificationDisplayComponent (UI Notifications)
+│       ├── EventMonitor (System Monitoring)
+│       ├── WebLLMService (AI Integration)
+│       └── SpotlightComponent (Search Interface)
 ├── UI Components (Static)
 │   ├── Window Component (Window System)
-│   ├── Dock Component (Application Launcher)
-│   └── Menu Bar Component (Global Menu)
+│   ├── Menu Bar Component (Global Menu)
+│   └── Dock Component (Application Launcher)
 ├── Applications (User Processes)
 │   ├── Terminal (System Shell)
 │   ├── TextEdit (Text Processing)
-│   ├── Safari (Web Browsing)
-│   └── System Preferences (Configuration)
+│   ├── Safari/Chrome (Web Browsing with Headless Chrome)
+│   ├── System Preferences (Configuration)
+│   └── Preview (Image/File Viewer)
 └── Communication Layer
     ├── Event Bus (IPC)
-    └── Message Types (Protocol Definitions)
+    ├── Message Types (Protocol Definitions)
+    └── Event Monitor (System Event Tracking)
 ```
 
 ## Detailed Component Analysis
@@ -91,10 +97,10 @@ The Desktop Component serves as the system kernel, providing:
 - Coordinate window focus and z-index management
 
 **Startup Architecture**:
-The Desktop Component now uses a sophisticated startup system with three phases:
-1. **Critical Phase**: Core services (AppService, WallpaperManager, WindowManager)
-2. **UI Phase**: User interface components (ContextMenuManager)
-3. **Optional Phase**: Background services (NotificationService, EventMonitor)
+The Desktop Component uses a sophisticated configurable startup system with three phases:
+1. **Critical Phase**: Core services (AppService from external system, WallpaperManager, WindowManager)
+2. **UI Phase**: User interface components (ContextMenuManager, DockComponent)
+3. **Optional Phase**: Background services (NotificationService, NotificationDisplayComponent, EventMonitor, WebLLMService, SpotlightComponent)
 
 Components load in parallel within phases, with dependency resolution ensuring proper initialization order.
 
@@ -110,7 +116,7 @@ The StartupManager orchestrates the entire system initialization process:
 - **Graceful Fallbacks**: Handles optional component failures without breaking startup
 - **Performance Monitoring**: Tracks startup metrics and component load times
 
-**Startup Phases**:
+**Startup Configuration Example**:
 ```javascript
 {
   "startup": {
@@ -119,23 +125,96 @@ The StartupManager orchestrates the entire system initialization process:
         "name": "critical",
         "parallel": true,
         "components": [
-          { "name": "AppService", "required": true, "priority": 1 },
-          { "name": "WallpaperManager", "required": true, "priority": 1 },
-          { "name": "WindowManager", "dependencies": ["AppService"], "priority": 1 }
+          {
+            "name": "AppService",
+            "path": "/wc/dynamic-component-system/src/index.js",
+            "required": false,
+            "priority": 1,
+            "config": {
+              "constructorArgs": [],
+              "postInit": "init",
+              "postInitArgs": ["desktopComponent"]
+            }
+          },
+          {
+            "name": "WallpaperManager",
+            "path": "./wallpaper-manager.js",
+            "required": false,
+            "priority": 1,
+            "config": {
+              "constructorArgs": ["desktopComponent"]
+            }
+          },
+          {
+            "name": "WindowManager",
+            "path": "./window-manager.js",
+            "dependencies": ["AppService"],
+            "priority": 1,
+            "config": {
+              "constructorArgs": ["desktopComponent", "deps.AppService"]
+            }
+          }
         ]
       },
       {
-        "name": "ui", 
+        "name": "ui",
+        "parallel": true,
         "waitFor": "critical",
         "components": [
-          { "name": "ContextMenuManager", "dependencies": ["WallpaperManager"] }
+          {
+            "name": "ContextMenuManager",
+            "dependencies": ["WallpaperManager"],
+            "config": {
+              "constructorArgs": ["desktopComponent", "deps.WallpaperManager"]
+            }
+          },
+          {
+            "name": "DockComponent",
+            "path": "../components/dock-component.js",
+            "isWebComponent": true,
+            "tagName": "dock-component",
+            "config": {
+              "constructorArgs": ["desktopComponent"]
+            }
+          }
         ]
       },
       {
         "name": "optional",
+        "parallel": true,
+        "waitFor": "ui",
         "defer": true,
         "components": [
-          { "name": "NotificationService", "required": false, "fallbackGraceful": true }
+          {
+            "name": "NotificationService",
+            "required": false,
+            "fallbackGraceful": true
+          },
+          {
+            "name": "WebLLMService",
+            "path": "./webllm-service.js",
+            "required": false,
+            "fallbackGraceful": true,
+            "config": {
+              "workerPath": "../chat-component/chat-worker.js",
+              "defaultModel": "Qwen2.5-0.5B-Instruct-q0f16-MLC",
+              "autoInitialize": false
+            }
+          },
+          {
+            "name": "SpotlightComponent",
+            "path": "/apps/spotlight/spotlight-component.js",
+            "isWebComponent": true,
+            "tagName": "spotlight-component"
+          },
+          {
+            "name": "NotificationDisplayComponent",
+            "isWebComponent": true,
+            "tagName": "notification-display-component",
+            "appendTo": "shadowRoot",
+            "connectTo": "NotificationService",
+            "connectMethod": "setDisplayComponent"
+          }
         ]
       }
     ]
@@ -144,21 +223,26 @@ The StartupManager orchestrates the entire system initialization process:
 ```
 
 **Performance Benefits**:
-- 45% faster startup time (200ms → 110ms for UI appearance)
+- Configurable parallel loading within phases
 - Critical services load first, UI becomes responsive immediately
 - Optional services load in background without blocking interaction
 - Failed optional components don't break core functionality
+- Support for external component systems (like dynamic-component-system)
+- Graceful fallbacks with proxy objects for failed components
+- Real-time performance monitoring and metrics
 
 ### 2. Process Management - App Service
 
-**File**: `src/services/app-service.js`
+**File**: `/wc/dynamic-component-system/src/index.js` (External System)
 
-Implements a complete process management system:
+Implements a complete process management system using an external dynamic component loading system:
 - **Dynamic Loading**: Loads Web Components as "processes" from ES6 modules
+- **External Integration**: Utilizes a dedicated dynamic component system
 - **Process Registry**: Maintains list of available and running applications
 - **Lifecycle Management**: Handles application creation, suspension, and termination
 - **Resource Management**: Manages component instances and cleanup
 - **File Association**: Routes file types to appropriate applications
+- **Component Integration**: Seamlessly integrates with desktop startup system
 
 **Process Model**:
 ```javascript
@@ -192,7 +276,59 @@ Complete windowing system implementation:
 5. **Persistence**: State saved to sessionStorage
 6. **Cleanup**: Proper resource cleanup on close
 
-### 4. Virtual File System - Terminal Implementation
+### 4. New Service Integrations
+
+#### 4.1. WebLLM Service - AI Integration
+
+**File**: `src/services/webllm-service.js`
+
+Provides AI capabilities to the desktop environment:
+- **Worker-Based Architecture**: Uses Web Workers for AI processing
+- **Model Management**: Supports multiple LLM models (Qwen, DeepSeek)
+- **Event-Driven API**: Integrates with desktop event bus
+- **Conversation Context**: Manages multi-turn conversations
+- **Streaming Support**: Real-time response generation
+- **Configuration**: Flexible model and generation settings
+
+**Supported Models**:
+- Qwen2.5-0.5B-Instruct (Fast, lightweight)
+- DeepSeek-R1-Distill-Qwen-7B (Advanced, larger)
+
+#### 4.2. Notification Display Component
+
+**File**: `src/services/notification-display-component.js`
+
+Advanced notification UI system:
+- **Visual Notifications**: Glassmorphism design with blur effects
+- **Animation System**: Smooth slide-in/slide-out animations
+- **Queue Management**: Multiple notification handling
+- **Event Integration**: Connected to notification service
+- **Click Interactions**: Action buttons and dismissal
+- **Positioning**: Smart viewport positioning
+
+#### 4.3. Spotlight Search Component
+
+**File**: `/apps/spotlight/spotlight-component.js`
+
+System-wide search interface:
+- **Global Search**: Search across applications and files
+- **Keyboard Shortcuts**: Command+Space activation
+- **Real-time Results**: Instant search as you type
+- **Application Launch**: Quick app launching
+- **File System Search**: Virtual file system integration
+
+#### 4.4. Preview Service and Application
+
+**Files**: `src/apps/preview/preview-service.js`, `src/apps/preview/preview-webapp.js`
+
+Image and file preview system:
+- **Multi-format Support**: Images, documents, and media files
+- **Dynamic Loading**: On-demand component loading
+- **Window Integration**: Full window system integration
+- **Service Architecture**: Separation of service and UI logic
+- **Fallback Handling**: Graceful failure for unsupported formats
+
+### 5. Virtual File System - Terminal Implementation
 
 **File**: `src/apps/terminal-webapp.js`
 
@@ -223,9 +359,9 @@ Sophisticated virtual filesystem with Unix-like commands:
 - **System**: `ps`, `kill`, `whoami`, `date`
 - **Desktop**: `open`, `desktop-config`
 
-### 5. Inter-Process Communication - Event Bus
+### 6. Inter-Process Communication - Event Bus
 
-**Files**: `src/events/event-bus.js`, `src/events/message-types.js`
+**Files**: `src/events/event-bus.js`, `src/events/message-types.js`, `src/events/event-monitor.js`
 
 Sophisticated IPC system with message validation:
 
@@ -246,7 +382,7 @@ const MessageTypes = {
 - **Event Propagation**: Hierarchical event bubbling
 - **Message Validation**: Type checking and payload validation
 
-### 6. State Persistence System
+### 7. State Persistence System
 
 Multi-layer storage strategy:
 
@@ -265,27 +401,107 @@ Multi-layer storage strategy:
 - Dock position and configuration
 - Application settings and preferences
 
+## Configuration System
+
+### Runtime Configuration Management
+
+The system supports a sophisticated configuration system with multiple layers:
+
+**Configuration Sources** (Priority Order):
+1. **localStorage Override**: `startup-config-override` key for development
+2. **config.json**: Main configuration file
+3. **Default Config**: Fallback configuration in StartupManager
+
+**Feature Configuration**:
+```javascript
+{
+  "features": {
+    "notifications": {
+      "enabled": true,
+      "soundsEnabled": true,
+      "maxRetentionMs": 300000
+    },
+    "eventMonitoring": {
+      "enabled": true,
+      "debugMode": false
+    },
+    "webllm": {
+      "enabled": true,
+      "autoInitialize": false,
+      "defaultModel": "Qwen2.5-0.5B-Instruct-q0f16-MLC",
+      "supportedModels": [
+        {
+          "id": "Qwen2.5-0.5B-Instruct-q0f16-MLC",
+          "name": "Qwen 0.5B (Fast)",
+          "size": "small"
+        },
+        {
+          "id": "DeepSeek-R1-Distill-Qwen-7B-q4f16_1-MLC", 
+          "name": "DeepSeek 7B (Smart)",
+          "size": "large"
+        }
+      ],
+      "generationDefaults": {
+        "temperature": 0.7,
+        "maxTokens": 1024,
+        "stream": true
+      }
+    }
+  },
+  "performance": {
+    "enableLazyLoading": true,
+    "maxConcurrentLoads": 3,
+    "timeoutMs": 5000,
+    "retryAttempts": 2
+  }
+}
+```
+
 ## Advanced Features
 
 ### Dynamic Component Loading
 
-The system supports dynamic loading of applications:
-```javascript
-// Load from URL
-const appComponent = await AppService.loadFromUrl('https://example.com/my-app.js');
+The system supports advanced dynamic loading through multiple mechanisms:
 
-// Load from text content
-const appComponent = await AppService.loadFromText(componentCode);
+**External Component System** (Primary):
+```javascript
+// Via external dynamic-component-system
+const appService = startupManager.getComponent('AppService');
+const appComponent = await appService.loadComponent(componentPath);
 ```
 
-### Notification System
+**Startup Manager Integration**:
+```javascript
+// Configurable component loading with dependencies
+const component = await startupManager.loadComponent({
+  name: 'MyService',
+  path: './my-service.js',
+  dependencies: ['AppService'],
+  config: {
+    constructorArgs: ['arg1', 'deps.AppService'],
+    postInit: 'initialize'
+  }
+});
+```
 
-**File**: `src/services/notification-manager.js`
+**Web Component Registration**:
+```javascript
+// Automatic web component registration
+startupManager.registerWebComponent('my-component', MyComponentClass);
+```
 
-Complete notification management:
+### Enhanced Notification System
+
+**Files**: `src/services/notification-service.js`, `src/services/notification-display-component.js`
+
+Complete notification management with visual display:
+- **Service Layer**: Core notification logic and state management
+- **Display Component**: Advanced UI with glassmorphism design
 - **Permission System**: App-based notification permissions
 - **Queue Management**: Notification ordering and priority
+- **Visual Animations**: Smooth slide-in/slide-out effects
 - **Interaction Handling**: User response to notifications
+- **Event Integration**: Connected to desktop event bus
 - **Persistence**: Notification history and management
 
 ### Context Menu System
@@ -339,15 +555,31 @@ class ProcessManager {
 
 ### Advanced IPC Mechanisms
 
-**Web Worker Integration**:
+**Web Worker Integration** (WebLLM Service Example):
 ```javascript
-// Background service processes
-class ServiceWorker extends Worker {
-  constructor(serviceName) {
-    super(`/services/${serviceName}-worker.js`);
-    this.serviceName = serviceName;
+// AI service using Web Workers
+class WebLLMService {
+  constructor(config) {
+    this.worker = new Worker(config.workerPath);
+    this.setupWorkerCommunication();
+  }
+  
+  setupWorkerCommunication() {
+    this.worker.onmessage = (event) => {
+      const { type, data } = event.data;
+      eventBus.emit(MESSAGES.WEBLLM_RESPONSE, { type, data });
+    };
   }
 }
+```
+
+**Event Bus Integration**:
+```javascript
+// Service-to-service communication
+eventBus.emit(MESSAGES.NOTIFICATION_SHOW, {
+  title: 'AI Response Ready',
+  message: 'Your request has been processed'
+});
 ```
 
 **Shared Memory Simulation**:
@@ -418,24 +650,34 @@ class SystemMonitor {
 
 ### Web Technologies Used
 
-1. **Web Components**: Core component architecture
+1. **Web Components**: Core component architecture with custom elements
 2. **Shadow DOM**: Component isolation and encapsulation
 3. **ES6 Modules**: Dynamic loading and dependency management
-4. **Custom Events**: Inter-component communication
-5. **Web Storage**: State persistence
-6. **Web Workers**: Background processing
-7. **IndexedDB**: Large data storage
+4. **Custom Events**: Inter-component communication via EventBus
+5. **Web Storage**: State persistence (localStorage/sessionStorage)
+6. **Web Workers**: Background processing (WebLLM AI service)
+7. **IndexedDB**: Large data storage for AI models and files
 8. **BroadcastChannel**: Cross-tab communication
-9. **Service Workers**: Background services
-10. **WebAssembly**: Performance-critical operations
+9. **Service Workers**: Background services and caching
+10. **WebAssembly**: Performance-critical operations (AI inference)
+11. **Fetch API**: Dynamic component and resource loading
+12. **Performance API**: Startup and runtime performance monitoring
+13. **CSS Custom Properties**: Theme and styling system
+14. **Intersection Observer**: Efficient UI updates and animations
 
 ### Performance Considerations
 
-- **Lazy Loading**: Components loaded on demand
-- **Virtual Scrolling**: Efficient list rendering
-- **Event Delegation**: Optimized event handling
-- **Component Pooling**: Reuse of component instances
+- **Phased Startup**: Critical components load first, optional components defer
+- **Parallel Loading**: Multiple components load simultaneously within phases
+- **Lazy Loading**: Components loaded on demand via dynamic imports
+- **Dependency Resolution**: Smart loading order based on component dependencies
+- **Graceful Fallbacks**: Failed optional components don't break system
+- **Component Pooling**: Reuse of component instances where applicable
 - **Memory Management**: Proper cleanup and garbage collection
+- **Event Delegation**: Optimized event handling via EventBus
+- **Performance Monitoring**: Real-time metrics for startup and runtime performance
+- **External Component Integration**: Efficient loading of external systems
+- **Worker-Based Processing**: CPU-intensive tasks offloaded to Web Workers
 
 ### Browser Compatibility
 

@@ -45,7 +45,7 @@ export const APPS = [
         icon: '⚙️', 
         sourceUrl: '../apps/system-preferences-webapp.js', 
         tag: "system-preferences-webapp", 
-        onstartup: false 
+        onstartup: true
     },
     { 
         id: 'terminal', 

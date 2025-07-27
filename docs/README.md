@@ -1,227 +1,168 @@
-# Desktop Browser with Headless Chrome
+# WE-OS Documentation
 
-A web-based desktop simulation featuring a fully functional Safari browser powered by headless Chrome for complete website compatibility.
+WE-OS is a sophisticated web-based operating system simulation that recreates a complete desktop environment using modern web technologies. Built entirely with vanilla HTML, CSS, and JavaScript Web Components, it implements core operating system concepts within browser security constraints.
 
-## Features
+## 📚 Documentation Index
 
-- **Full Website Compatibility**: Uses headless Chrome for 100% website compatibility
-- **Interactive Browsing**: Click on links, fill forms, and interact with websites naturally
-- **Real Browser Engine**: Powered by Chromium for authentic web rendering
-- **Screenshot-based Display**: Shows real website screenshots with click interaction
-- **Complete Navigation**: Back, forward, refresh, and address bar functionality
-- **Session Management**: Each browser instance has its own isolated session
-- **Modern UI**: Clean, Safari-like interface with Chrome engine badge
+### Core Architecture
+- **[WE-OS-Architecture.md](WE-OS-Architecture.md)** - Complete system architecture documentation
+- **[startup-optimization.md](startup-optimization.md)** - Startup system design and optimization
 
-## Architecture
+### Project Planning & Requirements
+- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Project requirements and specifications
+- **[desktop-PLAN.md](desktop-PLAN.md)** - Desktop development plan
+- **[window-state-persistence-plan.md](window-state-persistence-plan.md)** - Window state management plan
+- **[dynamic-component-system-integration.md](dynamic-component-system-integration.md)** - Dynamic component system integration guide
+
+### Development Guidelines
+- **[GEMINI.md](GEMINI.md)** - Gemini AI integration guidelines
+- **[../CLAUDE.md](../CLAUDE.md)** - Claude AI development instructions
+
+## 🏗️ System Overview
+
+### Key Features
+- **Complete Desktop Environment**: Window management, dock, menu bar, desktop icons
+- **Dynamic Component System**: ES6 web component applications loaded at runtime
+- **Configurable Startup System**: 3-phase startup with dependency resolution
+- **AI Integration**: WebLLM service for local AI capabilities
+- **Advanced Notifications**: Visual notification system with animations
+- **Search Integration**: Spotlight-like search functionality
+- **Virtual File System**: Unix-like file system with terminal
+- **Web Component Architecture**: Modular, reusable component system
+- **Security Model**: Safe code execution with import resolution and error handling
+
+### Architecture Highlights
 
 ```
-Frontend (Safari App) → Chrome Server (Puppeteer) → Headless Chrome → Websites
+Desktop Environment (Browser-Based OS)
+├── Configurable Startup System (3 phases)
+│   ├── Critical: Core services (AppService, WindowManager, WallpaperManager)
+│   ├── UI: Interface components (Dock, ContextMenu, Notifications)
+│   └── Optional: Background services (AI, Search, Monitoring)
+├── Application Ecosystem
+│   ├── Terminal (Virtual file system)
+│   ├── Safari/Chrome (Web browsing)
+│   ├── TextEdit (Text processing)
+│   ├── Preview (File viewer)
+│   └── System Preferences (Configuration)
+├── Event-Driven Communication
+│   ├── EventBus (Inter-component messaging)
+│   ├── Message Types (Protocol definitions)
+│   └── Event Monitor (System monitoring)
+└── Web Technologies
+    ├── Web Components (Shadow DOM)
+    ├── ES6 Modules (Dynamic loading)
+    ├── Web Workers (AI processing)
+    └── Web APIs (Storage, Performance, etc.)
 ```
 
-The Chrome server:
-1. Manages headless Chrome browser instances
-2. Creates isolated sessions for each browser window
-3. Captures screenshots and handles user interactions
-4. Provides full JavaScript execution and modern web features
+## 🚀 Quick Start
 
-## Setup Instructions
+### Development Setup
 
-### 1. Install Dependencies
+1. **No Build Process Required**: This project runs directly in the browser
+2. **Open `index.html`**: Simply open in a modern web browser
+3. **Configuration**: Edit `config.json` for startup customization
 
-```bash
-npm install
+### Browser Compatibility
+- Chrome/Chromium (Recommended)
+- Firefox
+- Safari
+- Edge
+
+### Key Files
+- **`index.html`**: Main entry point
+- **`config.json`**: Startup and feature configuration
+- **`src/components/desktop-component.js`**: Main desktop kernel
+- **`src/services/startup-manager.js`**: Configurable startup system
+
+## 📖 Reading Guide
+
+### For New Developers
+1. Start with **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for system overview
+2. Review **[REQUIREMENTS.md](REQUIREMENTS.md)** for project goals
+3. Check **[../CLAUDE.md](../CLAUDE.md)** for development guidelines
+
+### For System Architecture
+1. **[WE-OS-Architecture.md](WE-OS-Architecture.md)** - Complete architecture documentation
+2. **[startup-optimization.md](startup-optimization.md)** - Startup system details
+3. **[dynamic-component-system-integration.md](dynamic-component-system-integration.md)** - Component loading system
+
+### For Feature Development
+1. **[desktop-PLAN.md](desktop-PLAN.md)** - Desktop feature planning
+2. **[window-state-persistence-plan.md](window-state-persistence-plan.md)** - Window management
+3. **Configuration examples in `config.json`**
+
+## 🔧 Configuration
+
+The system uses a sophisticated configuration system:
+
+- **Runtime Config**: `config.json` for startup phases and features
+- **localStorage Override**: For development configuration testing
+- **Feature Flags**: Enable/disable AI, notifications, monitoring
+- **Performance Tuning**: Concurrent loading limits, timeouts, retries
+
+See **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for detailed configuration examples.
+
+## 🌟 Notable Features
+
+### Startup System
+- **3-Phase Loading**: Critical → UI → Optional components
+- **Dependency Resolution**: Automatic component ordering
+- **Graceful Fallbacks**: Failed optional components don't break system
+- **Performance Monitoring**: Real-time startup metrics
+
+### AI Integration
+- **WebLLM Service**: Local AI inference using Web Workers
+- **Multiple Models**: Support for different AI models (Qwen, DeepSeek)
+- **Event-Driven**: Integrated with desktop event system
+- **Configurable**: Model selection and generation parameters
+
+### Desktop Environment
+- **Window Management**: Full windowing system with drag, resize, focus
+- **Virtual File System**: Unix-like commands and directory structure
+- **Notification System**: Visual notifications with glassmorphism design
+- **Search**: Spotlight-like global search functionality
+
+## 📁 Project Structure
+
 ```
-
-This will install all required dependencies including Puppeteer (which downloads Chromium automatically).
-
-### 2. Start the Chrome Server
-
-```bash
-npm run chrome
-```
-
-Or for development with auto-restart:
-
-```bash
-npm run chrome-dev
-```
-
-The Chrome server will start on `http://localhost:3001`
-
-### 3. Open the Desktop
-
-Open your browser and navigate to:
-```
-http://localhost:3001
-```
-
-### 4. Use the Safari Browser
-
-1. Click on the Safari icon in the dock
-2. Wait for Chrome session to initialize
-3. Enter a URL in the address bar (e.g., `github.com`, `stackoverflow.com`)
-4. Click "Go" or press Enter
-5. Click on the screenshot to interact with websites!
-
-**Note**: The browser displays screenshots of real websites. Click anywhere on the screenshot to interact with that location on the actual webpage.
-
-## How It Works
-
-### Chrome Server (`chrome-server.js`)
-
-- **Puppeteer Integration**: Controls headless Chrome browser instances
-- **Session Management**: Creates isolated browser sessions for each user
-- **Screenshot Capture**: Takes real-time screenshots of web pages
-- **Interaction Handling**: Processes clicks, navigation, and form interactions
-- **Full JavaScript Support**: Executes all JavaScript just like a real browser
-
-### Frontend Browser (`src/apps/safari-webapp.js`)
-
-- **Modern Web Component**: Built as a custom HTML element
-- **Chrome Integration**: Communicates with headless Chrome backend
-- **Interactive Screenshots**: Click on screenshots to interact with websites
-- **Real-time Updates**: Live screenshot updates as you browse
-- **Session Lifecycle**: Manages Chrome sessions automatically
-- **Error Handling**: Graceful fallback when Chrome server is unavailable
-
-## API Endpoints
-
-### `POST /api/chrome/new-session`
-Creates a new Chrome browser session.
-
-**Response:**
-```json
-{
-  "sessionId": "unique_session_id"
-}
-```
-
-### `POST /api/chrome/navigate`
-Navigates to a URL in the specified session.
-
-**Body:**
-```json
-{
-  "sessionId": "session_id",
-  "url": "target_url"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "url": "actual_url",
-  "title": "page_title",
-  "screenshot": "base64_image_data"
-}
-```
-
-### `POST /api/chrome/click`
-Clicks at specified coordinates.
-
-**Body:**
-```json
-{
-  "sessionId": "session_id",
-  "x": 100,
-  "y": 200
-}
-```
-
-### `POST /api/chrome/back` / `POST /api/chrome/forward` / `POST /api/chrome/refresh`
-Navigation actions.
-
-**Body:**
-```json
-{
-  "sessionId": "session_id"
-}
-```
-
-### `GET /api/health`
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "OK",
-  "message": "Chrome headless browser server is running",
-  "activeSessions": 2
-}
-```
-
-## Security Features
-
-- **IP Filtering**: Blocks requests to localhost, 127.0.0.1, and private IP ranges
-- **URL Validation**: Validates URLs before processing
-- **Content Sanitization**: Processes and modifies content for safe display
-- **User Agent**: Uses realistic browser user agent strings
-
-## Supported Features
-
-- **Full JavaScript Execution**: Complete JavaScript support including modern frameworks
-- **CSS and Styling**: Perfect rendering of all CSS, animations, and responsive design
-- **Interactive Elements**: Forms, buttons, dropdowns, and all interactive components
-- **Media Content**: Images, videos, and audio content
-- **Modern Web APIs**: WebSockets, localStorage, and other browser APIs
-- **Authentication**: Login flows and session management work normally
-
-## Limitations
-
-- **Screenshot-based Interaction**: Interaction is through clicking on screenshots (not direct DOM manipulation)
-- **Performance**: Slightly slower than direct browsing due to screenshot capture
-- **Resource Usage**: Uses more memory due to running headless Chrome instances
-- **File Downloads**: Downloads are handled by the headless browser (not directly accessible)
-
-## Troubleshooting
-
-### "Failed to initialize Chrome browser" Error
-- Make sure the Chrome server is running (`npm run chrome`)
-- Check that Puppeteer installed correctly (`npm install`)
-- Verify Chrome/Chromium is available on your system
-
-### Pages Not Loading
-- Check the Chrome server console for error messages
-- Some websites may have anti-automation measures
-- Try different websites (GitHub, Stack Overflow work well for testing)
-
-### Slow Performance
-- Screenshots take time to capture and transmit
-- Complex websites may take longer to load
-- Consider the network connection speed
-
-## Development
-
-### Project Structure
-```
-├── chrome-server.js        # Headless Chrome server
-├── server.js              # Legacy proxy server (for reference)
-├── package.json           # Dependencies and scripts
+├── index.html                 # Main entry point
+├── config.json               # Startup and feature configuration
 ├── src/
-│   └── apps/
-│       ├── safari-webapp.js      # Chrome-based Safari browser
-│       └── safari-chrome-webapp.js  # Alternative implementation
-├── index.html             # Main desktop interface
-└── README.md             # This file
+│   ├── components/           # Core UI components
+│   │   ├── desktop-component.js
+│   │   ├── window-component.js
+│   │   ├── dock-component.js
+│   │   └── menu-bar-component.js
+│   ├── services/            # System services
+│   │   ├── startup-manager.js
+│   │   ├── window-manager.js
+│   │   ├── wallpaper-manager.js
+│   │   ├── notification-service.js
+│   │   └── webllm-service.js
+│   ├── apps/               # Application components
+│   │   ├── terminal-webapp.js
+│   │   ├── textedit-webapp.js
+│   │   ├── safari-webapp.js
+│   │   └── preview/
+│   └── events/             # Event system
+│       ├── event-bus.js
+│       ├── message-types.js
+│       └── event-monitor.js
+└── docs/                   # Documentation
+    ├── WE-OS-Architecture.md
+    ├── startup-optimization.md
+    └── [this file]
 ```
 
-### Adding Features
+## 🤝 Contributing
 
-To extend the browser functionality:
+1. Read the **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for system understanding
+2. Follow development guidelines in **[../CLAUDE.md](../CLAUDE.md)**
+3. Test changes by opening `index.html` in a browser
+4. Update documentation for significant changes
 
-1. **Chrome Server**: Modify `chrome-server.js` to add new Puppeteer capabilities
-2. **Frontend**: Enhance `safari-webapp.js` with new UI elements or interaction methods
-3. **Session Management**: Add new session-based features like tabs or bookmarks
-4. **Performance**: Optimize screenshot capture and transmission
-
-### Available Scripts
-
-- `npm run chrome` - Start the Chrome headless server
-- `npm run chrome-dev` - Start Chrome server with auto-restart
-- `npm start` - Start legacy proxy server
-- `npm run dev` - Start legacy proxy server with auto-restart
-
-## License
+## 📄 License
 
 MIT License - feel free to use and modify as needed.
