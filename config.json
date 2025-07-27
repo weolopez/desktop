@@ -48,7 +48,8 @@
             "required": true,
             "priority": 2,
             "enabled": true,
-            "isWebComponent": true
+            "isWebComponent": true,
+            "tagName": "dock-component"
           }
         ]
       },
@@ -87,6 +88,15 @@
               "autoInitialize": false,
               "serviceVersion": "1.0.0"
             }
+          },
+          {
+            "name": "SpotlightComponent",
+            "path": "/apps/spotlight/spotlight-component.js",
+            "required": false,
+            "priority": 4,
+            "enabled": true,
+            "isWebComponent": true,
+            "tagName": "spotlight-component"
           }
         ]
       }

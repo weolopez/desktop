@@ -182,7 +182,7 @@ class DesktopComponent extends HTMLElement {
         name: e.detail.name || e.detail.tagName || "Dynamic Component",
         icon: e.detail.icon || "📦",
         tag: e.detail.tagName,
-        sourceUrl: e.detail.url || e.detail.sourceUrl || "",
+        sourceUrl: e.detail.url || e.detail.sourceUrl || ""
       });
     });
     // eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
@@ -315,9 +315,10 @@ class DesktopComponent extends HTMLElement {
                     <slot></slot>
                 </div>
                 
+                    <!-- 
                 <div class="dock-container" id="dock-container">
-                    <!-- dock-component will be inserted here by StartupManager -->
                 </div>
+                    dock-component will be inserted here by StartupManager -->
             </div>
             <!-- notification-display-component is now loaded dynamically by StartupManager -->
         `;
