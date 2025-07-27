@@ -303,35 +303,8 @@ class SystemPreferencesWebapp extends HTMLElement {
                     <div class="panel" id="system-panel">
                         <h2>System</h2>
                         
-                        <h3>Startup Configuration</h3>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="enable-notifications" checked>
-                                Enable notification system
-                            </label>
-                            <small>Loads notification service during startup</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="enable-event-monitor" checked>
-                                Enable event monitoring
-                            </label>
-                            <small>Loads event monitor for debugging</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="max-concurrent-loads">Max concurrent component loads:</label>
-                            <input type="range" id="max-concurrent-loads" min="1" max="8" value="3">
-                            <span id="concurrent-loads-value">3</span>
-                            <small>Controls how many components load in parallel during startup</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="startup-timeout">Component load timeout (ms):</label>
-                            <input type="range" id="startup-timeout" min="1000" max="10000" step="500" value="5000">
-                            <span id="timeout-value">5000</span>
-                            <small>How long to wait for components to load before giving up</small>
+                        <div id="startup-config-container">
+                            <!-- Startup configuration will be dynamically generated here -->
                         </div>
 
                         <div class="form-group">
@@ -427,23 +400,23 @@ class SystemPreferencesWebapp extends HTMLElement {
             this.updateNotificationSounds(e.target.checked);
         });
 
-        // System panel event listeners
-        this.shadowRoot.getElementById('enable-notifications').addEventListener('change', (e) => {
-            this.updateConfigSetting('notifications.enabled', e.target.checked);
+        // System panel event delegation for dynamic content
+        const startupConfigContainer = this.shadowRoot.getElementById('startup-config-container');
+        startupConfigContainer.addEventListener('change', (e) => {
+            if (e.target.matches('.component-toggle')) {
+                const componentName = e.target.dataset.component;
+                this.updateComponentSetting(componentName, 'enabled', e.target.checked);
+            } else if (e.target.matches('.phase-parallel-toggle')) {
+                const phaseName = e.target.dataset.phase;
+                this.updatePhaseSetting(phaseName, 'parallel', e.target.checked);
+            }
         });
 
-        this.shadowRoot.getElementById('enable-event-monitor').addEventListener('change', (e) => {
-            this.updateConfigSetting('eventMonitoring.enabled', e.target.checked);
-        });
-
-        this.shadowRoot.getElementById('max-concurrent-loads').addEventListener('input', (e) => {
-            this.shadowRoot.getElementById('concurrent-loads-value').textContent = e.target.value;
-            this.updateConfigSetting('performance.maxConcurrentLoads', parseInt(e.target.value));
-        });
-
-        this.shadowRoot.getElementById('startup-timeout').addEventListener('input', (e) => {
-            this.shadowRoot.getElementById('timeout-value').textContent = e.target.value;
-            this.updateConfigSetting('performance.timeoutMs', parseInt(e.target.value));
+        startupConfigContainer.addEventListener('input', (e) => {
+            if (e.target.matches('.component-priority-input')) {
+                const componentName = e.target.dataset.component;
+                this.updateComponentSetting(componentName, 'priority', parseInt(e.target.value));
+            }
         });
 
         this.shadowRoot.getElementById('save-to-localstorage').addEventListener('change', (e) => {
@@ -529,8 +502,6 @@ class SystemPreferencesWebapp extends HTMLElement {
         if (this.desktopComponent) {
             this.desktopComponent.setAttribute('wallpaper', wallpaper);
         }
-        
-        // Update UI
         this.shadowRoot.querySelectorAll('.wallpaper-option').forEach(option => {
             option.classList.toggle('selected', option.dataset.wallpaper === wallpaper);
         });
@@ -544,13 +515,13 @@ class SystemPreferencesWebapp extends HTMLElement {
 
     updateGridSnap(enabled) {
         if (this.desktopComponent) {
-            this.desktopComponent.setAttribute('grid-snap', enabled.toString());
+            this.desktopComponent.setAttribute('grid-snap', enabled);
         }
     }
 
     updateDesktopIcons(visible) {
         if (this.desktopComponent) {
-            this.desktopComponent.setAttribute('show-desktop-icons', visible.toString());
+            this.desktopComponent.setAttribute('show-desktop-icons', visible);
         }
     }
 
@@ -562,28 +533,25 @@ class SystemPreferencesWebapp extends HTMLElement {
 
     updateNotificationSounds(enabled) {
         if (this.desktopComponent) {
-            this.desktopComponent.setAttribute('notification-sounds', enabled.toString());
+            this.desktopComponent.setAttribute('notification-sounds', enabled);
         }
     }
 
-    // System configuration methods
     async loadSystemConfig() {
-        // First try to load from localStorage (highest priority)
-        if (this.loadSettingsFromLocalStorage()) {
-            return this.currentConfig;
+        const storedConfig = this.loadSettingsFromLocalStorage();
+        if (storedConfig) {
+            console.log('Loaded startup config from localStorage');
+            return storedConfig;
         }
-        
-        // Fall back to config.json
+
         try {
             const response = await fetch('/desktop/config.json');
-            this.currentConfig = await response.json();
-            console.log('📄 Startup configuration loaded from config.json');
-            return this.currentConfig;
+            const config = await response.json();
+            console.log('Loaded startup config from config.json');
+            return config;
         } catch (error) {
-            console.warn('Failed to load config.json:', error);
-            this.currentConfig = this.getDefaultConfig();
-            console.log('⚙️ Using default startup configuration');
-            return this.currentConfig;
+            console.error('Failed to load config.json, using default config:', error);
+            return this.getDefaultConfig();
         }
     }
 
@@ -593,7 +561,7 @@ class SystemPreferencesWebapp extends HTMLElement {
                 phases: [
                     {
                         name: "critical",
-                        parallel: true,
+                        parallel: false,
                         components: [
                             { name: "AppService", required: true, priority: 1, enabled: true },
                             { name: "WallpaperManager", required: true, priority: 1, enabled: true },
@@ -635,53 +603,50 @@ class SystemPreferencesWebapp extends HTMLElement {
     }
 
     updateConfigSetting(path, value) {
-        if (!this.currentConfig) {
-            this.currentConfig = this.getDefaultConfig();
-        }
+        if (!this.currentConfig) return;
 
-        // Set nested property using dot notation
         const keys = path.split('.');
-        let obj = this.currentConfig.startup;
-        
+        let current = this.currentConfig;
         for (let i = 0; i < keys.length - 1; i++) {
-            if (!obj[keys[i]]) {
-                obj[keys[i]] = {};
-            }
-            obj = obj[keys[i]];
+            current = current[keys[i]];
+            if (!current) return;
         }
-        
-        obj[keys[keys.length - 1]] = value;
-        
-        // Update component enable state directly for component-level settings
-        if (path === 'notifications.enabled') {
-            const notificationComponent = this.findComponentInConfig('NotificationService');
-            if (notificationComponent) {
-                notificationComponent.enabled = value;
-            }
-            // Also update features for backward compatibility
-            if (!obj.features) obj.features = {};
-            if (!obj.features.notifications) obj.features.notifications = {};
-            obj.features.notifications.enabled = value;
-        } else if (path === 'eventMonitoring.enabled') {
-            const eventMonitorComponent = this.findComponentInConfig('EventMonitor');
-            if (eventMonitorComponent) {
-                eventMonitorComponent.enabled = value;
-            }
-            // Also update features for backward compatibility
-            if (!obj.features) obj.features = {};
-            if (!obj.features.eventMonitoring) obj.features.eventMonitoring = {};
-            obj.features.eventMonitoring.enabled = value;
-        }
+        current[keys[keys.length - 1]] = value;
 
-        // Auto-save to localStorage if enabled
+        this.updateEnabledComponentsCount();
         if (this.saveToLocalStorage) {
             this.saveSettingsToLocalStorage();
-            // Refresh the enabled components count after saving
-            this.updateEnabledComponentsCount();
+        }
+    }
+
+    updateComponentSetting(componentName, key, value) {
+        if (!this.currentConfig) return;
+        for (const phase of this.currentConfig.startup.phases) {
+            const component = phase.components.find(c => c.name === componentName);
+            if (component) {
+                component[key] = value;
+                break;
+            }
+        }
+        this.updateEnabledComponentsCount();
+        if (this.saveToLocalStorage) {
+            this.saveSettingsToLocalStorage();
+        }
+    }
+
+    updatePhaseSetting(phaseName, key, value) {
+        if (!this.currentConfig) return;
+        const phase = this.currentConfig.startup.phases.find(p => p.name === phaseName);
+        if (phase) {
+            phase[key] = value;
+        }
+        if (this.saveToLocalStorage) {
+            this.saveSettingsToLocalStorage();
         }
     }
 
     findComponentInConfig(componentName) {
+        if (!this.currentConfig) return null;
         for (const phase of this.currentConfig.startup.phases) {
             const component = phase.components.find(c => c.name === componentName);
             if (component) return component;
@@ -691,53 +656,39 @@ class SystemPreferencesWebapp extends HTMLElement {
 
     updateEnabledComponentsCount() {
         if (!this.currentConfig) return;
-        
-        // Count enabled components across all phases
         let enabledCount = 0;
         let totalCount = 0;
-        for (const phase of this.currentConfig.startup.phases) {
-            totalCount += phase.components.length;
-            enabledCount += phase.components.filter(c => c.enabled !== false).length;
-        }
-        this.shadowRoot.getElementById('enabled-components').textContent = `${enabledCount}/${totalCount}`;
+        this.currentConfig.startup.phases.forEach(phase => {
+            phase.components.forEach(component => {
+                totalCount++;
+                if (component.enabled) {
+                    enabledCount++;
+                }
+            });
+        });
+        this.shadowRoot.getElementById('enabled-components').textContent = `${enabledCount} / ${totalCount}`;
     }
 
     saveSettingsToLocalStorage() {
-        try {
+        if (this.currentConfig) {
             localStorage.setItem('startup-config-override', JSON.stringify(this.currentConfig));
-            console.log('📦 Startup configuration saved to localStorage');
-            console.log('🔍 DEBUG: NotificationService enabled:', this.findComponentInConfig('NotificationService')?.enabled);
-            console.log('🔍 DEBUG: EventMonitor enabled:', this.findComponentInConfig('EventMonitor')?.enabled);
-        } catch (error) {
-            console.error('Failed to save to localStorage:', error);
         }
     }
 
     loadSettingsFromLocalStorage() {
-        try {
-            const stored = localStorage.getItem('startup-config-override');
-            if (stored) {
-                this.currentConfig = JSON.parse(stored);
-                console.log('📦 Startup configuration loaded from localStorage');
-                console.log('🔍 DEBUG: Loaded NotificationService enabled:', this.findComponentInConfig('NotificationService')?.enabled);
-                console.log('🔍 DEBUG: Loaded EventMonitor enabled:', this.findComponentInConfig('EventMonitor')?.enabled);
-                return true;
-            }
-        } catch (error) {
-            console.error('Failed to load from localStorage:', error);
-        }
-        return false;
+        const storedConfig = localStorage.getItem('startup-config-override');
+        return storedConfig ? JSON.parse(storedConfig) : null;
     }
 
     clearLocalStorageSettings() {
         localStorage.removeItem('startup-config-override');
-        console.log('📦 Startup configuration cleared from localStorage');
     }
 
     async saveConfigToFile() {
         try {
-            const configBlob = new Blob([JSON.stringify(this.currentConfig, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(configBlob);
+            const configString = JSON.stringify(this.currentConfig, null, 2);
+            const blob = new Blob([configString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
@@ -754,9 +705,7 @@ class SystemPreferencesWebapp extends HTMLElement {
 
     async applySettingsNow() {
         if (this.desktopComponent && this.desktopComponent.startupManager) {
-            // Update the startup manager's config
             this.desktopComponent.startupManager.config = this.currentConfig;
-            // Save to localStorage if enabled
             if (this.saveToLocalStorage) {
                 this.saveSettingsToLocalStorage();
             } else {
@@ -782,46 +731,23 @@ class SystemPreferencesWebapp extends HTMLElement {
     }
 
     async loadSystemSettings() {
-        const config = await this.loadSystemConfig();
-        
-        // Check if we have localStorage settings and update checkbox
-        const hasLocalStorage = localStorage.getItem('startup-config-override') !== null;
-        this.saveToLocalStorage = hasLocalStorage;
-        this.shadowRoot.getElementById('save-to-localstorage').checked = hasLocalStorage;
-        
-        // Update configuration source indicator
-        this.shadowRoot.getElementById('config-source').textContent = hasLocalStorage ? 
-            'localStorage (highest priority)' : 'config.json (default)';
+        if (!this.currentConfig) {
+            this.currentConfig = await this.loadSystemConfig();
+        }
+        this.renderStartupConfig(this.currentConfig);
 
-        // Count enabled components across all phases
-        let enabledCount = 0;
-        let totalCount = 0;
-        for (const phase of config.startup.phases) {
-            totalCount += phase.components.length;
-            enabledCount += phase.components.filter(c => c.enabled !== false).length;
-        }
-        this.shadowRoot.getElementById('enabled-components').textContent = `${enabledCount}/${totalCount}`;
-        
-        // Update UI with current config values based on actual component enabled state
-        const notificationComponent = this.findComponentInConfig('NotificationService');
-        if (notificationComponent) {
-            this.shadowRoot.getElementById('enable-notifications').checked = notificationComponent.enabled !== false;
-        }
-        
-        const eventMonitorComponent = this.findComponentInConfig('EventMonitor');
-        if (eventMonitorComponent) {
-            this.shadowRoot.getElementById('enable-event-monitor').checked = eventMonitorComponent.enabled !== false;
-        }
-        
-        if (config.startup.performance) {
-            this.shadowRoot.getElementById('max-concurrent-loads').value = config.startup.performance.maxConcurrentLoads || 3;
-            this.shadowRoot.getElementById('concurrent-loads-value').textContent = config.startup.performance.maxConcurrentLoads || 3;
-            
-            this.shadowRoot.getElementById('startup-timeout').value = config.startup.performance.timeoutMs || 5000;
-            this.shadowRoot.getElementById('timeout-value').textContent = config.startup.performance.timeoutMs || 5000;
-        }
+        // Load storage preference
+        const storedPreference = localStorage.getItem('system-preferences-save-to-localstorage');
+        this.saveToLocalStorage = storedPreference !== 'false';
+        this.shadowRoot.getElementById('save-to-localstorage').checked = this.saveToLocalStorage;
 
-        // Load startup metrics if available
+        // Update status metrics
+        this.shadowRoot.getElementById('config-source').textContent = this.saveToLocalStorage ? 'localStorage' : 'config.json';
+        this.updateEnabledComponentsCount();
+        this.updateStartupMetrics();
+    }
+
+    updateStartupMetrics() {
         if (this.desktopComponent && this.desktopComponent.startupManager) {
             const metrics = this.desktopComponent.startupManager.getStartupMetrics();
             this.shadowRoot.getElementById('last-startup-time').textContent = `${metrics.totalTime.toFixed(2)}ms`;
@@ -831,35 +757,93 @@ class SystemPreferencesWebapp extends HTMLElement {
     }
 
     logEventFlow(level, event) {
-        const timestamp = Date.now();
+        if (!window.eventFlowTest || !window.eventFlowTest.capture) return;
+
         const targetInfo = {
-            tagName: event.target.tagName?.toLowerCase() || 'unknown',
-            className: event.target.className || '',
-            id: event.target.id || '',
-            textContent: event.target.textContent?.slice(0, 30) || ''
+            id: event.target.id,
+            tagName: event.target.tagName,
+            dataset: { ...event.target.dataset }
         };
-        
+
+        const timestamp = new Date().toISOString();
         console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
             type: event.type,
             target: targetInfo,
-            bubbles: event.bubbles,
-            composed: event.composed,
-            eventPhase: event.eventPhase,
-            currentTarget: event.currentTarget.constructor.name,
-            appName: 'System Preferences'
+            path: event.composedPath().map(el => el.tagName).join(' > ')
         });
-        
-        // Store event flow data for global access
-        if (!window.eventFlowTest) {
-            window.eventFlowTest = { events: [] };
+
+        // Store event for analysis if needed
+        if (!window.eventFlowTest.events) {
+            window.eventFlowTest.events = [];
         }
         window.eventFlowTest.events.push({
             level,
             timestamp,
             type: event.type,
-            target: targetInfo,
-            eventPhase: event.eventPhase,
-            appName: 'System Preferences'
+            target: targetInfo
+        });
+    }
+
+    renderStartupConfig(config) {
+        const container = this.shadowRoot.getElementById('startup-config-container');
+        if (!config || !config.startup) {
+            container.innerHTML = '<p>Error: Invalid startup configuration.</p>';
+            return;
+        }
+
+        const { phases, performance } = config.startup;
+
+        let html = '<h3>Startup Configuration</h3>';
+
+        html += `
+            <h4>Performance</h4>
+            <div class="form-group">
+                <label for="max-concurrent-loads">Max Concurrent Loads: <span id="concurrent-loads-value">${performance.maxConcurrentLoads}</span></label>
+                <input type="range" id="max-concurrent-loads" min="1" max="10" value="${performance.maxConcurrentLoads}">
+            </div>
+            <div class="form-group">
+                <label for="startup-timeout">Timeout (ms): <span id="timeout-value">${performance.timeoutMs}</span></label>
+                <input type="range" id="startup-timeout" min="1000" max="20000" step="1000" value="${performance.timeoutMs}">
+            </div>
+        `;
+
+        phases.forEach(phase => {
+            html += `
+                <h4>
+                    Phase: ${phase.name}
+                    <label style="font-weight: normal; font-size: 12px; margin-left: 10px;">
+                        <input type="checkbox" class="phase-parallel-toggle" data-phase="${phase.name}" ${phase.parallel ? 'checked' : ''}>
+                        Run in Parallel
+                    </label>
+                </h4>
+            `;
+            phase.components.forEach(component => {
+                html += `
+                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                        <label>
+                            <input type="checkbox" class="component-toggle" data-component="${component.name}" ${component.enabled ? 'checked' : ''} ${component.required ? 'disabled' : ''}>
+                            ${component.name} ${component.required ? '(required)' : ''}
+                        </label>
+                        <span>
+                            Priority: 
+                            <input type="number" class="component-priority-input" data-component="${component.name}" value="${component.priority}" style="width: 60px;">
+                        </span>
+                    </div>
+                `;
+            });
+        });
+
+        container.innerHTML = html;
+
+        // Re-attach event listeners for performance sliders
+        this.shadowRoot.getElementById('max-concurrent-loads').addEventListener('input', (e) => {
+            this.shadowRoot.getElementById('concurrent-loads-value').textContent = e.target.value;
+            this.updateConfigSetting('startup.performance.maxConcurrentLoads', parseInt(e.target.value));
+        });
+
+        this.shadowRoot.getElementById('startup-timeout').addEventListener('input', (e) => {
+            this.shadowRoot.getElementById('timeout-value').textContent = e.target.value;
+            this.updateConfigSetting('startup.performance.timeoutMs', parseInt(e.target.value));
         });
     }
 }
