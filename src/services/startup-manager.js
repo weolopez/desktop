@@ -296,6 +296,36 @@ export class StartupManager {
     }
   }
 
+  resolveConstructorArgs(args, context) {
+    return args.map(arg => {
+      if (typeof arg !== 'string') return arg;
+      
+      // Handle dot notation for dependencies
+      if (arg.startsWith('deps.')) {
+        const depName = arg.substring(5);
+        return context.deps[depName];
+      }
+      
+      // Handle config references
+      if (arg.startsWith('config.')) {
+        const configPath = arg.substring(7);
+        return this.getNestedProperty(context.config, configPath);
+      }
+      
+      // Handle direct context properties
+      if (context.hasOwnProperty(arg)) {
+        return context[arg];
+      }
+      
+      // Return as literal string if no resolution found
+      return arg;
+    });
+  }
+
+  getNestedProperty(obj, path) {
+    return path.split('.').reduce((current, key) => current && current[key], obj);
+  }
+
   async instantiateComponent(config, moduleResult, desktopComponent) {
     // Handle web components differently from service classes
     if (config.isWebComponent) {
@@ -312,99 +342,75 @@ export class StartupManager {
 
     const deps = this.resolveDependencies(config);
     
-    // Handle service instantiation with proper dependencies
-    if (config.name === 'WindowManager') {
-      return new ComponentClass(desktopComponent, deps.AppService);
-    } else if (config.name === 'ContextMenuManager') {
-      return new ComponentClass(desktopComponent, deps.WallpaperManager);
-    } else if (config.name === 'AppService') {
-      const instance = new ComponentClass();
-      instance.init(desktopComponent);
-      return instance;
-    } else if (config.name === 'NotificationService') {
-      const instance = new ComponentClass(desktopComponent);
+    // Get instantiation configuration from config file
+    const instantiationConfig = this.config.startup.instantiation[config.name] || 
+                               this.config.startup.instantiation.default;
+    
+    // Resolve constructor arguments
+    const constructorArgs = this.resolveConstructorArgs(instantiationConfig.constructorArgs, {
+      desktopComponent,
+      deps,
+      config
+    });
+    
+    // Create instance
+    const instance = new ComponentClass(...constructorArgs);
+    
+    // Handle post-initialization
+    if (instantiationConfig.postInit) {
+      const postInitArgs = this.resolveConstructorArgs(
+        instantiationConfig.postInitArgs || [], 
+        { desktopComponent, deps, config }
+      );
       
-      // Dynamically load notification display component if specified
-      if (config.includeDisplayComponent) {
-        this.loadNotificationDisplayComponent(instance, desktopComponent);
+      if (instantiationConfig.async) {
+        await instance[instantiationConfig.postInit](...postInitArgs);
+      } else {
+        instance[instantiationConfig.postInit](...postInitArgs);
       }
-      
-      return instance;
-    } else if (config.name === 'WebLLMService') {
-      const instance = new ComponentClass(config.config);
-      await instance.initialize();
-      return instance;
-    } else {
-      return new ComponentClass(desktopComponent);
     }
+    
+    
+    return instance;
   }
 
   async instantiateWebComponent(config, moduleResult, desktopComponent) {
-          await customElements.whenDefined(config.tagName);
-      const desktopSurface = desktopComponent.shadowRoot.children[2];
-      const customElement = document.createElement(config.tagName);
+    await customElements.whenDefined(config.tagName);
+    
+    const customElement = document.createElement(config.tagName);
+    
+    // Set element ID if specified
+    if (config.elementId) {
+      customElement.id = config.elementId;
+    }
+    
+    // Set component-specific attributes
+    if (config.name === 'DockComponent') {
       customElement.setAttribute('dock-position', 'bottom');
-      desktopSurface.appendChild(customElement);
-      return customElement;
-    // console.log(`🧩 Setting up web component: ${config.name}`);
+    }
     
-    // // Web component modules register themselves when imported
-    // // We just need to create and insert the DOM element
+    // Determine where to append the element
+    let appendTarget;
+    if (config.appendTo === 'shadowRoot') {
+      appendTarget = desktopComponent.shadowRoot;
+    } else {
+      // Default to desktop surface for most components
+      appendTarget = desktopComponent.shadowRoot.children[2];
+    }
     
-    // if (config.name === 'DockComponent') {
-    //   // Wait for the custom element to be defined
-    //   await customElements.whenDefined('dock-component');
-      
-    //   // Create the dock component element
-    //   const dockElement = document.createElement('dock-component');
-      
-    //   // Apply current dock position if set
-    //   const currentDockPosition = desktopComponent.getAttribute('dock-position') || 'bottom';
-    //   dockElement.setAttribute('position', currentDockPosition);
-    //   console.log(`📍 Setting dock position to: ${currentDockPosition}`);
-      
-    //   // Insert it into the dock container
-    //   const dockContainer = desktopComponent.shadowRoot.getElementById('dock-container');
-    //   if (dockContainer) {
-    //     dockContainer.appendChild(dockElement);
-    //     console.log(`✅ DockComponent inserted into dock-container`);
-    //   } else {
-    //     console.error(`❌ dock-container not found in desktop template`);
-    //   }
-      
-    //   return dockElement;
-    // }
+    appendTarget.appendChild(customElement);
     
-    // // Default web component handling for future components
-    // return null;
+    // Handle service connections if specified
+    if (config.connectTo && config.connectMethod) {
+      const targetService = this.loadedComponents.get(config.connectTo);
+      if (targetService && typeof targetService[config.connectMethod] === 'function') {
+        targetService[config.connectMethod](customElement);
+      }
+    }
+    
+    return customElement;
   }
 
-  async loadNotificationDisplayComponent(notificationService, desktopComponent) {
-    try {
-      console.log('⏳ Loading notification display component...');
-      
-      // Dynamically import the notification display component
-      await import('./notification-display-component.js');
-      
-      // Wait for the next frame to ensure the component is registered
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      
-      // Find or create the notification display element
-      let notificationDisplay = desktopComponent.shadowRoot.querySelector('notification-display-component');
-      if (!notificationDisplay) {
-        notificationDisplay = document.createElement('notification-display-component');
-        notificationDisplay.id = 'notification-display';
-        desktopComponent.shadowRoot.appendChild(notificationDisplay);
-      }
-      
-      // Connect the notification service to the display component
-      notificationService.setDisplayComponent(notificationDisplay);
-      
-      console.log('✅ Notification display component loaded and connected');
-    } catch (error) {
-      console.warn('⚠️ Failed to load notification display component:', error);
-    }
-  }
 
   createGracefulFallback(component) {
     console.log(`🛡️ Creating graceful fallback for ${component.name}`);
