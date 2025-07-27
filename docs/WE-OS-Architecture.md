@@ -231,29 +231,157 @@ The StartupManager orchestrates the entire system initialization process:
 - Graceful fallbacks with proxy objects for failed components
 - Real-time performance monitoring and metrics
 
-### 2. Process Management - App Service
+### 2. Dynamic Component System - Application Loading
 
-**File**: `/wc/dynamic-component-system/src/index.js` (External System)
+**Location**: `/wc/dynamic-component-system/` (External System)
 
-Implements a complete process management system using an external dynamic component loading system:
-- **Dynamic Loading**: Loads Web Components as "processes" from ES6 modules
-- **External Integration**: Utilizes a dedicated dynamic component system
-- **Process Registry**: Maintains list of available and running applications
-- **Lifecycle Management**: Handles application creation, suspension, and termination
-- **Resource Management**: Manages component instances and cleanup
-- **File Association**: Routes file types to appropriate applications
-- **Component Integration**: Seamlessly integrates with desktop startup system
+WE-OS integrates with a sophisticated **Dynamic Component System** that provides secure, event-driven loading of ES6 web component applications at runtime.
 
-**Process Model**:
+#### 2.1. Core Architecture
+
+**Components**:
+- **ComponentRegistry**: Central registry mapping MIME types to web components
+- **ComponentLoader**: Secure loading from URLs or code strings with import resolution
+- **Event System**: Custom events for component registration and content rendering
+- **Security Layer**: Safe code execution with Blob URLs and validation
+
+**Integration Pattern**:
 ```javascript
-// Process representation
+// WE-OS config.json integration
 {
-  name: 'terminal-webapp',
-  displayName: 'Terminal',
-  icon: '/assets/icons/terminal.png',
-  component: WebComponentClass,
-  instances: [windowInstance1, windowInstance2],
-  capabilities: ['file-system', 'network']
+  "name": "AppService",
+  "path": "/wc/dynamic-component-system/src/index.js",
+  "config": {
+    "constructorArgs": [],
+    "postInit": "init",
+    "postInitArgs": ["desktopComponent"]
+  }
+}
+```
+
+#### 2.2. Component Loading Mechanisms
+
+**URL-Based Loading**:
+```javascript
+// Load application from URL
+document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
+  detail: { 
+    url: '/apps/calculator-webapp.js', 
+    mimeType: 'application/javascript' 
+  }
+}));
+```
+
+**Code String Loading**:
+```javascript
+// Load from inline code
+const componentCode = `
+class MyApp extends HTMLElement {
+  connectedCallback() {
+    this.innerHTML = '<h1>Dynamic App</h1>';
+  }
+}
+customElements.define('my-app', MyApp);
+`;
+
+document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
+  detail: { 
+    code: componentCode,
+    mimeType: 'application/javascript-inline'
+  }
+}));
+```
+
+#### 2.3. Event-Driven API
+
+**Registration Events**:
+- `PUBLISH_COMPONENT`: Register a new component
+- `COMPONENT_REGISTERED`: Confirmation of successful registration
+- `PUBLISH_TEXT`: Render content using registered components
+- `INNER_HTML`: Return rendered HTML content
+
+**Example Application Launch**:
+```javascript
+const launchDesktopApp = async (appPath, appName, appIcon) => {
+  // 1. Register component
+  document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
+    detail: { url: appPath, mimeType: 'application/javascript' }
+  }));
+  
+  // 2. Wait for registration
+  const registration = await new Promise(resolve => {
+    document.addEventListener('COMPONENT_REGISTERED', resolve, { once: true });
+  });
+  
+  // 3. Create desktop window
+  if (registration.detail.success) {
+    const window = document.createElement('window-component');
+    window.setAttribute('app-name', appName);
+    window.setAttribute('app-icon', appIcon);
+    
+    const app = document.createElement(registration.detail.tagName);
+    window.appendChild(app);
+    
+    return { window, app };
+  }
+};
+```
+
+#### 2.4. Security Model
+
+**Safe Code Execution**:
+```javascript
+// Components execute in isolated Blob URLs
+const blob = new Blob([componentSource], { type: "text/javascript" });
+const url = URL.createObjectURL(blob);
+try {
+  await import(url);
+} finally {
+  URL.revokeObjectURL(url); // Automatic cleanup
+}
+```
+
+**Import Resolution**:
+```javascript
+// Automatic relative to absolute URL conversion
+const processedSource = componentSource.replace(
+  /from\s+['"\`]\.\/([^'"\`]+)['"\`]/g,
+  (match, relativePath) => {
+    const absoluteUrl = new URL(relativePath, baseUrl).href;
+    return `from '${absoluteUrl}'`;
+  }
+);
+```
+
+#### 2.5. MIME Type Registry
+
+**Supported Types**:
+```javascript
+export const MIME_TYPES = {
+  JAVASCRIPT: 'application/javascript',
+  MERMAID: 'text/x-mermaid',
+  MARKDOWN: 'text/markdown',
+  HTML: 'text/html',
+  CSS: 'text/css',
+  JSON: 'application/json',
+  PLAIN_TEXT: 'text/plain'
+};
+```
+
+**Registry Operations**:
+```javascript
+// Get component registry
+const registry = componentSystem.getRegistry();
+
+// Register component
+registry.register('text/custom', {
+  tagName: 'custom-renderer',
+  sourceUrl: '/components/custom-renderer.js'
+});
+
+// Check and retrieve
+if (registry.hasComponent('text/markdown')) {
+  const component = registry.getComponent('text/markdown');
 }
 ```
 
@@ -459,35 +587,124 @@ The system supports a sophisticated configuration system with multiple layers:
 
 ## Advanced Features
 
-### Dynamic Component Loading
+### Advanced Dynamic Component Features
 
-The system supports advanced dynamic loading through multiple mechanisms:
+#### Content Rendering System
 
-**External Component System** (Primary):
+The dynamic component system supports rendering different content types through registered components:
+
+**Markdown Rendering**:
 ```javascript
-// Via external dynamic-component-system
-const appService = startupManager.getComponent('AppService');
-const appComponent = await appService.loadComponent(componentPath);
-```
-
-**Startup Manager Integration**:
-```javascript
-// Configurable component loading with dependencies
-const component = await startupManager.loadComponent({
-  name: 'MyService',
-  path: './my-service.js',
-  dependencies: ['AppService'],
-  config: {
-    constructorArgs: ['arg1', 'deps.AppService'],
-    postInit: 'initialize'
+// Register markdown renderer
+document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
+  detail: { 
+    url: '/components/markdown-renderer.js', 
+    mimeType: 'text/markdown' 
   }
-});
+}));
+
+// Render markdown content
+document.dispatchEvent(new CustomEvent('PUBLISH_TEXT', {
+  detail: {
+    mimeType: 'text/markdown',
+    texts: ['# Hello World\nThis is **markdown** content.']
+  }
+}));
 ```
 
-**Web Component Registration**:
+**Live Code Execution**:
 ```javascript
-// Automatic web component registration
-startupManager.registerWebComponent('my-component', MyComponentClass);
+// Execute JavaScript code dynamically
+const executeCode = (code) => {
+  document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
+    detail: {
+      code: code,
+      mimeType: `application/javascript-${Date.now()}`
+    }
+  }));
+};
+```
+
+#### Application Development Patterns
+
+**Basic Web App Structure**:
+```javascript
+// calculator-webapp.js
+class CalculatorWebApp extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+  
+  connectedCallback() {
+    this.render();
+    this.setupEventListeners();
+  }
+  
+  render() {
+    this.shadowRoot.innerHTML = `
+      <style>
+        /* Component-scoped styles */
+      </style>
+      <div class="calculator">
+        <!-- App content -->
+      </div>
+    `;
+  }
+}
+
+customElements.define('calculator-webapp', CalculatorWebApp);
+```
+
+**Inter-Component Communication**:
+```javascript
+class ChatWebApp extends HTMLElement {
+  sendMessage(message) {
+    // Use WE-OS event bus
+    document.dispatchEvent(new CustomEvent('APP_MESSAGE', {
+      detail: {
+        from: 'chat-webapp',
+        type: 'message',
+        data: { message, timestamp: Date.now() }
+      }
+    }));
+  }
+  
+  connectedCallback() {
+    // Listen for system events
+    document.addEventListener('NOTIFICATION_RECEIVED', (e) => {
+      this.displayNotification(e.detail);
+    });
+  }
+}
+```
+
+#### Performance and Security
+
+**Component Caching**:
+```javascript
+// Registry maintains loaded components
+const getCachedComponent = (mimeType) => {
+  if (registry.hasComponent(mimeType)) {
+    return registry.getComponent(mimeType);
+  }
+  // Load and cache new component
+};
+```
+
+**Error Handling**:
+```javascript
+try {
+  await import(componentUrl);
+} catch (error) {
+  if (error.message.includes('already been used')) {
+    console.warn('Component already registered');
+    // Handle gracefully
+  } else {
+    console.error('Component loading failed:', error);
+    // Provide fallback
+  }
+}
 ```
 
 ### Enhanced Notification System

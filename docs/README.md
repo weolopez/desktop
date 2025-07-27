@@ -7,14 +7,20 @@ WE-OS is a sophisticated web-based operating system simulation that recreates a 
 ### Core Architecture
 - **[WE-OS-Architecture.md](WE-OS-Architecture.md)** - Complete system architecture documentation
 - **[startup-optimization.md](startup-optimization.md)** - Startup system design and optimization
+- **[component-reference.md](component-reference.md)** - Core component documentation and APIs
 
-### Project Planning & Requirements
-- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Project requirements and specifications
-- **[desktop-PLAN.md](desktop-PLAN.md)** - Desktop development plan
-- **[window-state-persistence-plan.md](window-state-persistence-plan.md)** - Window state management plan
+### Application Development
+- **[application-guide.md](application-guide.md)** - Building applications using existing patterns
 - **[dynamic-component-system-integration.md](dynamic-component-system-integration.md)** - Dynamic component system integration guide
+- **[event-system-api.md](event-system-api.md)** - Complete event system API reference
 
-### Development Guidelines
+### System Services
+- **[ai-subsystem.md](ai-subsystem.md)** - Complete AI subsystem integration including WebLLM, Chat Component, and Spotlight
+- **[notification-system.md](notification-system.md)** - Notification service documentation
+- **[configuration-reference.md](configuration-reference.md)** - Complete config.json reference
+
+### Project Guidelines
+- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Project requirements and specifications
 - **[GEMINI.md](GEMINI.md)** - Gemini AI integration guidelines
 - **[../CLAUDE.md](../CLAUDE.md)** - Claude AI development instructions
 
@@ -85,13 +91,20 @@ Desktop Environment (Browser-Based OS)
 
 ### For System Architecture
 1. **[WE-OS-Architecture.md](WE-OS-Architecture.md)** - Complete architecture documentation
-2. **[startup-optimization.md](startup-optimization.md)** - Startup system details
-3. **[dynamic-component-system-integration.md](dynamic-component-system-integration.md)** - Component loading system
+2. **[component-reference.md](component-reference.md)** - Core component APIs and patterns
+3. **[startup-optimization.md](startup-optimization.md)** - Startup system details
+4. **[configuration-reference.md](configuration-reference.md)** - Configuration system reference
 
-### For Feature Development
-1. **[desktop-PLAN.md](desktop-PLAN.md)** - Desktop feature planning
-2. **[window-state-persistence-plan.md](window-state-persistence-plan.md)** - Window management
-3. **Configuration examples in `config.json`**
+### For Application Development
+1. **[application-guide.md](application-guide.md)** - Building applications step-by-step
+2. **[event-system-api.md](event-system-api.md)** - Event system API reference
+3. **[dynamic-component-system-integration.md](dynamic-component-system-integration.md)** - Component loading system
+4. **Component examples in `/wc/dynamic-component-system/examples/`**
+
+### For Service Integration
+1. **[ai-subsystem.md](ai-subsystem.md)** - Complete AI subsystem integration with WebLLM, Chat Component, and Spotlight
+2. **[notification-system.md](notification-system.md)** - Notification system usage
+3. **[event-system-api.md](event-system-api.md)** - Inter-component communication
 
 ## 🔧 Configuration
 
@@ -113,10 +126,11 @@ See **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for detailed configuratio
 - **Performance Monitoring**: Real-time startup metrics
 
 ### AI Integration
-- **WebLLM Service**: Local AI inference using Web Workers
+- **AI Subsystem**: Complete local AI integration with WebLLM, Chat Component, and Spotlight
 - **Multiple Models**: Support for different AI models (Qwen, DeepSeek)
+- **Knowledge Integration**: Resume and project data for contextual responses
+- **Global Access**: Spotlight (Cmd+K) for system-wide AI assistance
 - **Event-Driven**: Integrated with desktop event system
-- **Configurable**: Model selection and generation parameters
 
 ### Desktop Environment
 - **Window Management**: Full windowing system with drag, resize, focus
@@ -151,9 +165,18 @@ See **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for detailed configuratio
 │       ├── message-types.js
 │       └── event-monitor.js
 └── docs/                   # Documentation
-    ├── WE-OS-Architecture.md
+    ├── README.md (this file)      # Documentation index
+    ├── WE-OS-Architecture.md      # System architecture
+    ├── application-guide.md       # Application development
+    ├── event-system-api.md        # Event system reference
+    ├── ai-subsystem.md            # Complete AI subsystem integration
+    ├── notification-system.md     # Notification system
+    ├── component-reference.md     # Core components
+    ├── configuration-reference.md # Configuration guide
+    ├── dynamic-component-system-integration.md
     ├── startup-optimization.md
-    └── [this file]
+    ├── REQUIREMENTS.md
+    └── GEMINI.md
 ```
 
 ## 🤝 Contributing
