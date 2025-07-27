@@ -44,9 +44,38 @@ export class StartupManager {
             name: "critical",
             parallel: true,
             components: [
-              { name: "AppService", path: "./src/services/app-service.js", required: true, priority: 1 },
-              { name: "WallpaperManager", path: "./src/services/wallpaper-manager.js", required: true, priority: 1 },
-              { name: "WindowManager", path: "./src/services/window-manager.js", required: true, priority: 1, dependencies: ["AppService"] }
+              {
+                name: "AppService",
+                path: "./src/services/app-service.js",
+                required: true,
+                priority: 1,
+                config: {
+                  constructorArgs: [],
+                  postInit: "init",
+                  postInitArgs: ["desktopComponent"]
+                }
+              },
+              {
+                name: "WallpaperManager",
+                path: "./src/services/wallpaper-manager.js",
+                required: true,
+                priority: 1,
+                config: {
+                  constructorArgs: ["desktopComponent"],
+                  postInit: null
+                }
+              },
+              {
+                name: "WindowManager",
+                path: "./src/services/window-manager.js",
+                required: true,
+                priority: 1,
+                dependencies: ["AppService"],
+                config: {
+                  constructorArgs: ["desktopComponent", "deps.AppService"],
+                  postInit: null
+                }
+              }
             ]
           },
           {
@@ -54,7 +83,17 @@ export class StartupManager {
             parallel: true,
             waitFor: "critical",
             components: [
-              { name: "ContextMenuManager", path: "./src/services/context-menu-manager.js", required: true, priority: 2, dependencies: ["WallpaperManager"] }
+              {
+                name: "ContextMenuManager",
+                path: "./src/services/context-menu-manager.js",
+                required: true,
+                priority: 2,
+                dependencies: ["WallpaperManager"],
+                config: {
+                  constructorArgs: ["desktopComponent", "deps.WallpaperManager"],
+                  postInit: null
+                }
+              }
             ]
           },
           {
@@ -63,7 +102,18 @@ export class StartupManager {
             waitFor: "ui",
             defer: true,
             components: [
-              { name: "NotificationService", path: "./src/services/notification-service.js", required: false, priority: 3, enabled: true, fallbackGraceful: true }
+              {
+                name: "NotificationService",
+                path: "./src/services/notification-service.js",
+                required: false,
+                priority: 3,
+                enabled: true,
+                fallbackGraceful: true,
+                config: {
+                  constructorArgs: ["desktopComponent"],
+                  postInit: null
+                }
+              }
             ]
           }
         ],
@@ -342,9 +392,11 @@ export class StartupManager {
 
     const deps = this.resolveDependencies(config);
     
-    // Get instantiation configuration from config file
-    const instantiationConfig = this.config.startup.instantiation[config.name] || 
-                               this.config.startup.instantiation.default;
+    // Get instantiation configuration from component's config section
+    const instantiationConfig = config.config || {
+      constructorArgs: ["desktopComponent"],
+      postInit: null
+    };
     
     // Resolve constructor arguments
     const constructorArgs = this.resolveConstructorArgs(instantiationConfig.constructorArgs, {
@@ -359,7 +411,7 @@ export class StartupManager {
     // Handle post-initialization
     if (instantiationConfig.postInit) {
       const postInitArgs = this.resolveConstructorArgs(
-        instantiationConfig.postInitArgs || [], 
+        instantiationConfig.postInitArgs || [],
         { desktopComponent, deps, config }
       );
       

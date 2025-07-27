@@ -10,22 +10,35 @@
             "path": "./wallpaper-manager.js",
             "required": true,
             "priority": 1,
-            "enabled": true
+            "enabled": true,
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           },
           {
-            "name": "WindowManager", 
+            "name": "WindowManager",
             "path": "./window-manager.js",
             "required": true,
             "priority": 1,
             "dependencies": ["AppService"],
-            "enabled": true
+            "enabled": true,
+            "config": {
+              "constructorArgs": ["desktopComponent", "deps.AppService"],
+              "postInit": null
+            }
           },
           {
             "name": "AppService",
             "path": "/wc/dynamic-component-system/src/index.js",
             "required": true,
             "priority": 1,
-            "enabled": true
+            "enabled": true,
+            "config": {
+              "constructorArgs": [],
+              "postInit": "init",
+              "postInitArgs": ["desktopComponent"]
+            }
           }
         ]
       },
@@ -40,7 +53,11 @@
             "required": true,
             "priority": 2,
             "dependencies": ["WallpaperManager"],
-            "enabled": true
+            "enabled": true,
+            "config": {
+              "constructorArgs": ["desktopComponent", "deps.WallpaperManager"],
+              "postInit": null
+            }
           },
           {
             "name": "DockComponent",
@@ -49,7 +66,11 @@
             "priority": 2,
             "enabled": true,
             "isWebComponent": true,
-            "tagName": "dock-component"
+            "tagName": "dock-component",
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           }
         ]
       },
@@ -65,14 +86,22 @@
             "required": false,
             "priority": 3,
             "enabled": true,
-            "fallbackGraceful": true
+            "fallbackGraceful": true,
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           },
           {
-            "name": "EventMonitor", 
+            "name": "EventMonitor",
             "path": "../events/event-monitor.js",
             "required": false,
             "priority": 3,
-            "enabled": true
+            "enabled": true,
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           },
           {
             "name": "WebLLMService",
@@ -85,7 +114,11 @@
               "workerPath": "../chat-component/chat-worker.js",
               "defaultModel": "Qwen2.5-0.5B-Instruct-q0f16-MLC",
               "autoInitialize": false,
-              "serviceVersion": "1.0.0"
+              "serviceVersion": "1.0.0",
+              "constructorArgs": ["config.config"],
+              "postInit": "initialize",
+              "postInitArgs": [],
+              "async": true
             }
           },
           {
@@ -95,7 +128,11 @@
             "priority": 4,
             "enabled": true,
             "isWebComponent": true,
-            "tagName": "spotlight-component"
+            "tagName": "spotlight-component",
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           },
           {
             "name": "NotificationDisplayComponent",
@@ -108,7 +145,11 @@
             "appendTo": "shadowRoot",
             "elementId": "notification-display",
             "connectTo": "NotificationService",
-            "connectMethod": "setDisplayComponent"
+            "connectMethod": "setDisplayComponent",
+            "config": {
+              "constructorArgs": ["desktopComponent"],
+              "postInit": null
+            }
           }
         ]
       }
@@ -150,35 +191,6 @@
           "maxTokens": 1024,
           "stream": true
         }
-      }
-    },
-    "instantiation": {
-      "WindowManager": {
-        "constructorArgs": ["desktopComponent", "deps.AppService"],
-        "postInit": null
-      },
-      "ContextMenuManager": {
-        "constructorArgs": ["desktopComponent", "deps.WallpaperManager"],
-        "postInit": null
-      },
-      "AppService": {
-        "constructorArgs": [],
-        "postInit": "init",
-        "postInitArgs": ["desktopComponent"]
-      },
-      "NotificationService": {
-        "constructorArgs": ["desktopComponent"],
-        "postInit": null
-      },
-      "WebLLMService": {
-        "constructorArgs": ["config.config"],
-        "postInit": "initialize",
-        "postInitArgs": [],
-        "async": true
-      },
-      "default": {
-        "constructorArgs": ["desktopComponent"],
-        "postInit": null
       }
     }
   }
