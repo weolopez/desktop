@@ -30,6 +30,8 @@ class DockComponent extends HTMLElement {
                 :host {
                     display: block;
                     pointer-events: auto;
+                    width: fit-content;
+                    margin: 0 auto;
                 }
 
                 .dock-container {
