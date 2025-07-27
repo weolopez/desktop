@@ -16,6 +16,7 @@ WE-OS is a sophisticated web-based operating system simulation that recreates a 
 
 ### System Services
 - **[ai-subsystem.md](ai-subsystem.md)** - Complete AI subsystem integration including WebLLM, Chat Component, and Spotlight
+- **[knowledge-configuration.md](knowledge-configuration.md)** - Configuring additional knowledge sources for AI
 - **[notification-system.md](notification-system.md)** - Notification service documentation
 - **[configuration-reference.md](configuration-reference.md)** - Complete config.json reference
 
@@ -103,8 +104,9 @@ Desktop Environment (Browser-Based OS)
 
 ### For Service Integration
 1. **[ai-subsystem.md](ai-subsystem.md)** - Complete AI subsystem integration with WebLLM, Chat Component, and Spotlight
-2. **[notification-system.md](notification-system.md)** - Notification system usage
-3. **[event-system-api.md](event-system-api.md)** - Inter-component communication
+2. **[knowledge-configuration.md](knowledge-configuration.md)** - Adding custom knowledge sources to AI
+3. **[notification-system.md](notification-system.md)** - Notification system usage
+4. **[event-system-api.md](event-system-api.md)** - Inter-component communication
 
 ## 🔧 Configuration
 
@@ -170,6 +172,7 @@ See **[WE-OS-Architecture.md](WE-OS-Architecture.md)** for detailed configuratio
     ├── application-guide.md       # Application development
     ├── event-system-api.md        # Event system reference
     ├── ai-subsystem.md            # Complete AI subsystem integration
+    ├── knowledge-configuration.md # AI knowledge source configuration
     ├── notification-system.md     # Notification system
     ├── component-reference.md     # Core components
     ├── configuration-reference.md # Configuration guide
