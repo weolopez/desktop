@@ -100,10 +100,6 @@ class DesktopComponent extends HTMLElement {
   async connectedCallback() {
     this.render();
 
-    // Initialize and run startup sequence
-    await this.startupManager.init();
-    await this.startupManager.startupSequence(this);
-
     // Populate legacy service references for backwards compatibility
     this._populateLegacyReferences();
 
@@ -117,6 +113,11 @@ class DesktopComponent extends HTMLElement {
     // Notification display setup is now handled by StartupManager
     this.setupAppEventListeners();
     // this.showTestNotification();
+
+    // Initialize and run startup sequence
+    await this.startupManager.init();
+    await this.startupManager.startupSequence(this);
+
   }
 
   _populateLegacyReferences() {
