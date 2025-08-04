@@ -70,6 +70,14 @@ export const APPS = [
         sourceUrl: '../apps/safari-webapp.js', 
         tag: "safari-webapp", 
         onstartup: false 
+    },
+    { 
+        id: 'resume', 
+        name: 'Resume', 
+        icon: '📝', 
+        sourceUrl: '/resume-component.js', 
+        tag: "resume-component", 
+        onstartup: true 
     }
     // { 
     //     id: 'notification', 
