@@ -564,7 +564,6 @@ class SystemPreferencesWebapp extends HTMLElement {
                         parallel: false,
                         components: [
                             { name: "AppService", required: true, priority: 1, enabled: true },
-                            { name: "WallpaperManager", required: true, priority: 1, enabled: true },
                             { name: "WindowManager", dependencies: ["AppService"], required: true, priority: 1, enabled: true }
                         ]
                     },
@@ -573,7 +572,7 @@ class SystemPreferencesWebapp extends HTMLElement {
                         parallel: true,
                         waitFor: "critical",
                         components: [
-                            { name: "ContextMenuManager", dependencies: ["WallpaperManager"], required: true, priority: 2, enabled: true },
+                            { name: "ContextMenuManager", required: true, priority: 2, enabled: true },
                             { name: "DockComponent", required: true, priority: 2, enabled: true, isWebComponent: true }
                         ]
                     },
@@ -817,20 +816,23 @@ class SystemPreferencesWebapp extends HTMLElement {
                     </label>
                 </h4>
             `;
-            phase.components.forEach(component => {
-                html += `
-                    <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
-                        <label>
-                            <input type="checkbox" class="component-toggle" data-component="${component.name}" ${component.enabled ? 'checked' : ''} ${component.required ? 'disabled' : ''}>
-                            ${component.name} ${component.required ? '(required)' : ''}
-                        </label>
-                        <span>
-                            Priority: 
-                            <input type="number" class="component-priority-input" data-component="${component.name}" value="${component.priority}" style="width: 60px;">
-                        </span>
-                    </div>
-                `;
-            });
+            phase.components
+                // Hide any legacy/removed components from being rendered in UI
+                .filter(component => component.name !== "WallpaperManager")
+                .forEach(component => {
+                    html += `
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between;">
+                            <label>
+                                <input type="checkbox" class="component-toggle" data-component="${component.name}" ${component.enabled ? 'checked' : ''} ${component.required ? 'disabled' : ''}>
+                                ${component.name} ${component.required ? '(required)' : ''}
+                            </label>
+                            <span>
+                                Priority:
+                                <input type="number" class="component-priority-input" data-component="${component.name}" value="${component.priority}" style="width: 60px;">
+                            </span>
+                        </div>
+                    `;
+                });
         });
 
         container.innerHTML = html;

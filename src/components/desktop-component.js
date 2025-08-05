@@ -26,7 +26,6 @@ class DesktopComponent extends HTMLElement {
 
     // Legacy service references will be populated after startup
     this.appService = null;
-    this.wallpaperManager = null;
     this.contextMenuManager = null;
     this.windowManager = null;
 
@@ -122,9 +121,6 @@ class DesktopComponent extends HTMLElement {
 
   _populateLegacyReferences() {
     this.appService = this.startupManager.getComponent("AppService");
-    this.wallpaperManager = this.startupManager.getComponent(
-      "WallpaperManager",
-    );
     this.contextMenuManager = this.startupManager.getComponent(
       "ContextMenuManager",
     );
@@ -152,7 +148,6 @@ class DesktopComponent extends HTMLElement {
       phasesCompleted: metrics.phasesCompleted,
       servicesStatus: {
         appService: !!this.appService,
-        wallpaperManager: !!this.wallpaperManager,
         contextMenuManager: !!this.contextMenuManager,
         windowManager: !!this.windowManager,
       },
@@ -549,8 +544,24 @@ class DesktopComponent extends HTMLElement {
 
   // Attribute handler methods
   _updateWallpaper(wallpaper) {
-    // Wallpaper is now handled by CSS attribute selectors
-    // No additional JavaScript needed
+    // Wallpaper is handled by CSS attribute selectors
+  }
+
+  // Wallpaper helpers (migrated from WallpaperManager)
+  get currentWallpaper() {
+    return this.getAttribute("wallpaper") || "gradient";
+  }
+
+  set currentWallpaper(value) {
+    this.setAttribute("wallpaper", value);
+  }
+
+  changeWallpaper() {
+    const wallpapers = ["gradient", "monterey", "big-sur"];
+    const currentIndex = wallpapers.indexOf(this.currentWallpaper);
+    const nextIndex = (currentIndex + 1) % wallpapers.length;
+    const newWallpaper = wallpapers[nextIndex];
+    this.currentWallpaper = newWallpaper; // triggers attributeChangedCallback which persists
   }
 
   _updateDockPosition(position) {

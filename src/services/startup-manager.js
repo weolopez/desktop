@@ -56,16 +56,6 @@ export class StartupManager {
                 }
               },
               {
-                name: "WallpaperManager",
-                path: "./src/services/wallpaper-manager.js",
-                required: true,
-                priority: 1,
-                config: {
-                  constructorArgs: ["desktopComponent"],
-                  postInit: null
-                }
-              },
-              {
                 name: "WindowManager",
                 path: "./src/services/window-manager.js",
                 required: true,
@@ -88,9 +78,8 @@ export class StartupManager {
                 path: "./src/services/context-menu-manager.js",
                 required: true,
                 priority: 2,
-                dependencies: ["WallpaperManager"],
                 config: {
-                  constructorArgs: ["desktopComponent", "deps.WallpaperManager"],
+                  constructorArgs: ["desktopComponent"],
                   postInit: null
                 }
               }
