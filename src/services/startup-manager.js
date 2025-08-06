@@ -11,7 +11,7 @@ export class StartupManager {
     this.startTime = performance.now();
   }
 
-  async init() {
+  async init(config) {
     // First check for localStorage override (highest priority)
     try {
       const localConfig = localStorage.getItem('startup-config-override');
@@ -26,7 +26,11 @@ export class StartupManager {
 
     // Fall back to config.json
     try {
-      const response = await fetch('/desktop/config.json');
+
+      const configURL = config || '/desktop/config.json';
+      console.log(`🔍 Attempting to load startup config from: ${configURL}`);
+
+      const response = await fetch(configURL);
       this.config = await response.json();
       console.log('📄 Startup config loaded from config.json:', this.config.startup.phases.length, 'phases');
     } catch (error) {
@@ -424,11 +428,10 @@ export class StartupManager {
     if (config.elementId) {
       customElement.id = config.elementId;
     }
-    
-    // Set component-specific attributes
-    if (config.name === 'DockComponent') {
-      customElement.setAttribute('dock-position', 'bottom');
-    }
+    // for Object.keys(config.attributes) setAttribute
+    Object.keys(config.config.attributes || {}).forEach(attr => {
+      customElement.setAttribute(attr, config.config.attributes[attr]);
+    });
     
     // Determine where to append the element
     let appendTarget;

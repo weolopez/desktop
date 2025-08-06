@@ -3,11 +3,12 @@ import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
-// import { PreviewService } from '../services/preview-service.js';
+import '/wc/dynamic-component-system/src/index.js'
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
     return [
+      "config",
       "wallpaper",
       "dock-position",
       "grid-snap",
@@ -114,7 +115,8 @@ class DesktopComponent extends HTMLElement {
     // this.showTestNotification();
 
     // Initialize and run startup sequence
-    await this.startupManager.init();
+    //pass attribute "config" to StartupManager
+    await this.startupManager.init(this.getAttribute("config"));
     await this.startupManager.startupSequence(this);
 
   }
@@ -130,9 +132,9 @@ class DesktopComponent extends HTMLElement {
   _initializeLoadedServices() {
     // AppService.init() is now called during instantiation in StartupManager
 
-    if (this.contextMenuManager) {
-      this.contextMenuManager.init();
-    }
+    // if (this.contextMenuManager) {
+    //   this.contextMenuManager.init();
+    // }
 
     if (this.windowManager) {
       this.windowManager.setupEventListeners();

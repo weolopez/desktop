@@ -1,16 +1,23 @@
-import { APPS } from '../config.js';
 import { MESSAGES } from '../events/message-types.js';
 import eventBus from '../events/event-bus.js';
 class DockComponent extends HTMLElement {
-    constructor() {
+    constructor(confg) {
         super();
+        console.log('DockComponent constructor called with config:', confg);
         this.attachShadow({ mode: 'open' });
-        this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' })); // Only Finder starts running
+        // this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' })); // Only Finder starts running
         this.minimizedWindows = [];
         this.magnification = true;
     }
 
-    connectedCallback() {
+    async connectedCallback() {
+        const configURL = this.getAttribute("config") || '../dock.js';
+        let APPS = async () => {
+            return await import(configURL)
+        }
+        APPS = (await APPS()).APPS;
+
+        this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' })); // Only Finder starts running
         this.startup()
         this.render();
         this.setupEventListeners();

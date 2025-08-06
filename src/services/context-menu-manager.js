@@ -2,20 +2,20 @@ import eventBus from "../events/event-bus.js";
 import { MESSAGES } from "../events/message-types.js";
 
 export class ContextMenuManager {
-  constructor(desktopComponent, wallpaperManager) {
+  constructor(desktopComponent) {
     this.desktopComponent = desktopComponent;
-    this.wallpaperManager = wallpaperManager;
     this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
-                <div class="context-menu-item" data-action="change-wallpaper">Change Desktop Background...</div>
+                <div class="context-menu-item" data-action="clear-cache">Clear Cache</div>
                 <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="use-cmouse">Use Camera Mouse</div>
                 <div class="context-menu-item" data-action="show-view-options">Show View Options</div>
                 <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="paste">Paste</div>
                 <div class="context-menu-item" data-action="get-info">Get Info</div>
-                <div class="context-menu-separator"></div>
                 <div class="context-menu-item" data-action="open-finder-webapp">Open Finder Web App</div>
+                <div class="context-menu-separator"></div>
+                <div class="context-menu-item" data-action="inspect">Right Click to Inspect</div>
             </div>
         `;
     this.contextMenuCss = `
@@ -51,6 +51,7 @@ export class ContextMenuManager {
                 margin: 4px 0;
             }
         `;
+        this.init() 
   }
 
   init() {
@@ -91,9 +92,9 @@ export class ContextMenuManager {
   async handleContextMenuAction(action) {
     switch (action) {
       case "change-wallpaper":
-        if (this.wallpaperManager) {
-          this.wallpaperManager.changeWallpaper();
-        }
+        if (this.clear-cache) {
+          localStorage.clear();
+        } 
         break;
       case "show-view-options":
         console.log("Show view options clicked");
@@ -113,6 +114,11 @@ export class ContextMenuManager {
         break;
       case "get-info":
         console.log("Get info clicked");
+        break;
+      case "inspect":
+        if (window && window.open) {
+          window.open('about:blank', '_blank').document.write('<script>debugger;</script>');
+        }
         break;
       case "open-finder-webapp":
         eventBus.publish(MESSAGES.TEXT_MESSAGE_PUBLISH, { texts: ["finder-webapp"] });
