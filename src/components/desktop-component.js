@@ -1,9 +1,9 @@
+import {DynamicComponentSystem} from '/js/dynamic-component-system.js'
 import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
-import '/wc/dynamic-component-system/src/index.js'
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
@@ -20,7 +20,8 @@ class DesktopComponent extends HTMLElement {
 
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
+    this.attachShadow({ mode: "open" })
+    new DynamicComponentSystem()
 
     // Initialize startup manager for configurable component loading
     this.startupManager = new StartupManager();
@@ -31,10 +32,17 @@ class DesktopComponent extends HTMLElement {
     this.windowManager = null;
 
     // Initialize attributes from localStorage if not set
-    this._initializeAttributes();
+    this._initializeAttributes().then(() => {
+      // Attributes initialized
+      console.log("DesktopComponent attributes initialized");
+    });
   }
 
-  _initializeAttributes() {
+  async _initializeAttributes() {
+
+    await this.startupManager.init(this.getAttribute("config"));
+    await this.startupManager.startupSequence(this);
+
     if (!this.hasAttribute("wallpaper")) {
       const savedWallpaper = localStorage.getItem("desktop-wallpaper") ||
         "gradient";
@@ -103,8 +111,6 @@ class DesktopComponent extends HTMLElement {
     // Populate legacy service references for backwards compatibility
     this._populateLegacyReferences();
 
-    // Initialize services that were successfully loaded
-    this._initializeLoadedServices();
 
     // Log startup metrics for debugging
     this._logStartupMetrics();
@@ -116,9 +122,9 @@ class DesktopComponent extends HTMLElement {
 
     // Initialize and run startup sequence
     //pass attribute "config" to StartupManager
-    await this.startupManager.init(this.getAttribute("config"));
-    await this.startupManager.startupSequence(this);
 
+    // Initialize services that were successfully loaded
+    // this._initializeLoadedServices();
   }
 
   _populateLegacyReferences() {
@@ -126,7 +132,7 @@ class DesktopComponent extends HTMLElement {
     this.contextMenuManager = this.startupManager.getComponent(
       "ContextMenuManager",
     );
-    this.windowManager = this.startupManager.getComponent("WindowManager");
+    // this.windowManager = this.startupManager.getComponent("WindowManager");
   }
 
   _initializeLoadedServices() {
@@ -135,6 +141,7 @@ class DesktopComponent extends HTMLElement {
     // if (this.contextMenuManager) {
     //   this.contextMenuManager.init();
     // }
+    // this.windowManager = this.startupManager.getComponent("WindowManager");
 
     if (this.windowManager) {
       this.windowManager.setupEventListeners();
@@ -176,6 +183,7 @@ class DesktopComponent extends HTMLElement {
         alert(`Error registering component: ${e.detail.error}`);
         return;
       }
+      if (!e.detail.launch) return
       this.addApp({
         name: e.detail.name || e.detail.tagName || "Dynamic Component",
         icon: e.detail.icon || "📦",
@@ -469,6 +477,11 @@ class DesktopComponent extends HTMLElement {
     await import(sourceUrl);
   }
   addApp(app) {
+    if (app.singleton) if (this.shadowRoot.querySelector(app.tag)) {
+      console.warn(`App ${app.name} is already running.`);
+      return;
+    }
+
     const {
       name = app.name || "Untitled App", // Default name if not provided
       icon = app.icon || "📄", // Default icon if not provided

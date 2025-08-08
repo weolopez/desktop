@@ -3,8 +3,11 @@ import { MESSAGES } from "../events/message-types.js";
 
 export class WindowManager {
     constructor(desktopComponent, appService) {
-        this.desktopComponent = desktopComponent;
-        this.appService = appService;
+        this.desktopComponent = desktopComponent
+        this.desktopComponent.windowManager = this;
+        this.appService = appService
+        this.setupEventListeners();
+        this.desktopComponent._initializeLoadedServices()
     }
 
     setupEventListeners() {

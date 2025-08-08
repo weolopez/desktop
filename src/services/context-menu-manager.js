@@ -91,10 +91,10 @@ export class ContextMenuManager {
 
   async handleContextMenuAction(action) {
     switch (action) {
-      case "change-wallpaper":
-        if (this.clear-cache) {
-          localStorage.clear();
-        } 
+      case "clear-cache":
+          localStorage.clear()
+          // reload the page to apply changes
+          window.location.reload();
         break;
       case "show-view-options":
         console.log("Show view options clicked");

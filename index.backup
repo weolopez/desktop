@@ -17,8 +17,8 @@
 </head>
 
 <body>
-    <desktop-component config="/desktop.json" wallpaper="monterey"></desktop-component>
-    <script type="module" src="/desktop/src/components/desktop-component.js"></script>
+    <desktop-component></desktop-component>
+    <script type="module" src="src/components/desktop-component.js"></script>
 </body>
 
 </html>

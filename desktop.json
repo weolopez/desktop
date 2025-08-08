@@ -8,25 +8,13 @@
           {
             "name": "WindowManager",
             "path": "./window-manager.js",
-            "required": false,
+            "required": true,
             "priority": 1,
-            "dependencies": ["AppService"],
+            "dependencies": [],
             "enabled": true,
             "config": {
               "constructorArgs": ["desktopComponent", "deps.AppService"],
               "postInit": null
-            }
-          },
-          {
-            "name": "AppService",
-            "path": "/js/dynamic-component-system.js",
-            "required": false,
-            "priority": 1,
-            "enabled": true,
-            "config": {
-              "constructorArgs": [],
-              "postInit": "init",
-              "postInitArgs": ["desktopComponent"]
             }
           }
         ]
@@ -57,7 +45,7 @@
             "isWebComponent": true,
             "tagName": "dock-component",
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "attributes": { "config": "/ml5174/dock.js",  "dock-position": "bottom"},
               "postInit": null
             }
           }
@@ -87,37 +75,6 @@
             "required": false,
             "priority": 3,
             "enabled": true,
-            "config": {
-              "constructorArgs": ["desktopComponent"],
-              "postInit": null
-            }
-          },
-          {
-            "name": "WebLLMService",
-            "path": "./webllm-service.js",
-            "required": false,
-            "priority": 3,
-            "enabled": true,
-            "fallbackGraceful": true,
-            "config": {
-              "workerPath": "../chat-component/chat-worker.js",
-              "defaultModel": "Qwen2.5-0.5B-Instruct-q0f16-MLC",
-              "autoInitialize": false,
-              "serviceVersion": "1.0.0",
-              "constructorArgs": ["config.config"],
-              "postInit": "initialize",
-              "postInitArgs": [],
-              "async": true
-            }
-          },
-          {
-            "name": "SpotlightComponent",
-            "path": "/apps/spotlight/spotlight-component.js",
-            "required": false,
-            "priority": 4,
-            "enabled": true,
-            "isWebComponent": true,
-            "tagName": "spotlight-component",
             "config": {
               "constructorArgs": ["desktopComponent"],
               "postInit": null

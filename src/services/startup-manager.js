@@ -35,84 +35,8 @@ export class StartupManager {
       console.log('📄 Startup config loaded from config.json:', this.config.startup.phases.length, 'phases');
     } catch (error) {
       console.warn('⚠️ Failed to load config.json, using defaults:', error);
-      this.config = this.getDefaultConfig();
-      console.log('⚙️ Using default startup config:', this.config.startup.phases.length, 'phases');
+      alert('⚙️ Using default startup config:', this.config.startup.phases.length, 'phases');
     }
-  }
-
-  getDefaultConfig() {
-    return {
-      startup: {
-        phases: [
-          {
-            name: "critical",
-            parallel: true,
-            components: [
-              {
-                name: "AppService",
-                path: "./src/services/app-service.js",
-                required: true,
-                priority: 1,
-                config: {
-                  constructorArgs: [],
-                  postInit: "init",
-                  postInitArgs: ["desktopComponent"]
-                }
-              },
-              {
-                name: "WindowManager",
-                path: "./src/services/window-manager.js",
-                required: true,
-                priority: 1,
-                dependencies: ["AppService"],
-                config: {
-                  constructorArgs: ["desktopComponent", "deps.AppService"],
-                  postInit: null
-                }
-              }
-            ]
-          },
-          {
-            name: "ui",
-            parallel: true,
-            waitFor: "critical",
-            components: [
-              {
-                name: "ContextMenuManager",
-                path: "./src/services/context-menu-manager.js",
-                required: true,
-                priority: 2,
-                config: {
-                  constructorArgs: ["desktopComponent"],
-                  postInit: null
-                }
-              }
-            ]
-          },
-          {
-            name: "optional",
-            parallel: true,
-            waitFor: "ui",
-            defer: true,
-            components: [
-              {
-                name: "NotificationService",
-                path: "./src/services/notification-service.js",
-                required: false,
-                priority: 3,
-                enabled: true,
-                fallbackGraceful: true,
-                config: {
-                  constructorArgs: ["desktopComponent"],
-                  postInit: null
-                }
-              }
-            ]
-          }
-        ],
-        performance: { enableLazyLoading: true, maxConcurrentLoads: 3, timeoutMs: 5000, retryAttempts: 2 }
-      }
-    };
   }
 
   async startupSequence(desktopComponent) {
