@@ -1,4 +1,4 @@
-import {DynamicComponentSystem} from '/js/dynamic-component-system.js'
+import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
 import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";

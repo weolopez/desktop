@@ -11,7 +11,7 @@ export const APPS = [
         id: 'chat', 
         name: 'Chat', 
         icon: '💬', 
-        sourceUrl: '/chat/chat-component.js', 
+        sourceUrl: '/chat-component/chat-component.js', 
         tag: "chat-component", 
         onstartup: false 
     },
@@ -70,6 +70,14 @@ export const APPS = [
         icon: '🧭', 
         sourceUrl: '../apps/safari-webapp.js', 
         tag: "safari-webapp", 
+        onstartup: false 
+    }, // add /wc/mouse-trail.js a mouse trail
+    { 
+        id: 'mouse-trail', 
+        name: 'Mouse Trail', 
+        icon: '🐭', 
+        sourceUrl: '/wc/mouse-trail.js', 
+        tag: "mouse-trail", 
         onstartup: false 
     }
     // { 

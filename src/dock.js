@@ -79,7 +79,15 @@ export const APPS = [
         sourceUrl: '/resume-component.js', 
         tag: "resume-component", 
         onstartup: true 
-    }
+    },
+    { 
+        id: 'fancy', 
+        name: 'fancy', 
+        icon: '🗓️', 
+        sourceUrl: '/wc/fancy-table.js', 
+        tag: "fancy-table", 
+        onstartup: false 
+    },
     // { 
     //     id: 'notification', 
     //     name: 'Notification', 

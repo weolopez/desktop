@@ -11,7 +11,7 @@ class DockComponent extends HTMLElement {
     }
 
     async connectedCallback() {
-        const configURL = this.getAttribute("config") || '../dock.js';
+        const configURL = this.getAttribute("config") || '/desktop/dock.js';
         let APPS = async () => {
             return await import(configURL)
         }

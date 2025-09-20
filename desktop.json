@@ -45,7 +45,7 @@
             "isWebComponent": true,
             "tagName": "dock-component",
             "config": {
-              "attributes": { "config": "/ml5174/dock.js",  "dock-position": "bottom"},
+              "attributes": { "config": "/desktop/dock.js",  "dock-position": "bottom"},
               "postInit": null
             }
           }
