@@ -32,12 +32,12 @@ export const APPS = [
         onstartup: false 
     },
     { 
-        id: 'generate-tdd', 
-        name: 'Generate TDD', 
-        icon: '📝', 
-        sourceUrl: '/application_architect/generate-tdd/generate-tdd.js', 
-        tag: "generate-tdd", 
-        onstartup: false 
+        id: 'resume-component', 
+        name: 'Mauricio Resume',
+        icon: '📝',
+        sourceUrl: '/resume-component.js',
+        tag: "resume-component",
+        onstartup: true
     },
     { 
         id: 'system-preferences', 
