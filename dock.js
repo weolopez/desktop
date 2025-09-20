@@ -56,13 +56,13 @@ export const APPS = [
         tag: "terminal-webapp", 
         onstartup: false 
     },
-    { 
-        id: 'textedit', 
-        name: 'TextEdit', 
-        icon: '📝', 
-        sourceUrl: '../apps/textedit-webapp.js', 
-        tag: "textedit-webapp", 
-        onstartup: false 
+    {
+        id: 'soccer-prediction',
+        name: 'EPL Prediction',
+        icon: '⚽',
+        sourceUrl: '/wc/prediction-table.js',
+        tag: "prediction-table",
+        onstartup: false
     },
     { 
         id: 'safari', 
