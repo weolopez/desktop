@@ -59,7 +59,7 @@ class DesktopComponent extends HTMLElement {
         this.setAttribute("dock-position", savedDockPosition);
       }
       if (!this.hasAttribute("grid-snap")) {
-        const savedGridSnap = await this.storageService.getItem("grid-snap", 'preferences') || "true";
+        const savedGridSnap = await this.storageService.getItem("grid-snap", 'preferences') || "false";
         this.setAttribute("grid-snap", savedGridSnap);
       }
       if (!this.hasAttribute("show-desktop-icons")) {

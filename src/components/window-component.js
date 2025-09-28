@@ -401,7 +401,7 @@ class WindowComponent extends HTMLElement {
             
             // Keep window within bounds
             this.x = Math.max(0, Math.min(this.x, window.innerWidth - this.width));
-            this.y = Math.max(24, Math.min(this.y, window.innerHeight - 100)); // Account for menu bar and dock
+            this.y = Math.max(0, Math.min(this.y, window.innerHeight)); // Account for menu bar and dock
             
             this.updatePosition();
         } else if (this.isResizing) {
