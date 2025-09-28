@@ -4,6 +4,7 @@ import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
+import StorageService from '../services/storage-service.js';
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
@@ -31,7 +32,10 @@ class DesktopComponent extends HTMLElement {
     this.contextMenuManager = null;
     this.windowManager = null;
 
-    // Initialize attributes from localStorage if not set
+    // Storage service
+    this.storageService = new StorageService();
+
+    // Initialize attributes from storage if not set
     this._initializeAttributes().then(() => {
       // Attributes initialized
       console.log("DesktopComponent attributes initialized");
@@ -43,34 +47,42 @@ class DesktopComponent extends HTMLElement {
     await this.startupManager.init(this.getAttribute("config"));
     await this.startupManager.startupSequence(this);
 
-    if (!this.hasAttribute("wallpaper")) {
-      const savedWallpaper = localStorage.getItem("desktop-wallpaper") ||
-        "gradient";
-      this.setAttribute("wallpaper", savedWallpaper);
-    }
-    if (!this.hasAttribute("dock-position")) {
-      const savedDockPosition = localStorage.getItem("dock-position") ||
-        "bottom";
-      this.setAttribute("dock-position", savedDockPosition);
-    }
-    if (!this.hasAttribute("grid-snap")) {
-      const savedGridSnap = localStorage.getItem("grid-snap") || "true";
-      this.setAttribute("grid-snap", savedGridSnap);
-    }
-    if (!this.hasAttribute("show-desktop-icons")) {
-      const savedShowIcons = localStorage.getItem("show-desktop-icons") ||
-        "true";
-      this.setAttribute("show-desktop-icons", savedShowIcons);
-    }
-    if (!this.hasAttribute("accent-color")) {
-      const savedAccentColor = localStorage.getItem("accent-color") ||
-        "#007AFF";
-      this.setAttribute("accent-color", savedAccentColor);
-    }
-    if (!this.hasAttribute("notification-sounds")) {
-      const savedNotificationSounds =
-        localStorage.getItem("notification-sounds") || "true";
-      this.setAttribute("notification-sounds", savedNotificationSounds);
+    try {
+      await this.storageService.openDB();
+
+      if (!this.hasAttribute("wallpaper")) {
+        const savedWallpaper = await this.storageService.getItem("desktop-wallpaper", 'preferences') || "gradient";
+        this.setAttribute("wallpaper", savedWallpaper);
+      }
+      if (!this.hasAttribute("dock-position")) {
+        const savedDockPosition = await this.storageService.getItem("dock-position", 'preferences') || "bottom";
+        this.setAttribute("dock-position", savedDockPosition);
+      }
+      if (!this.hasAttribute("grid-snap")) {
+        const savedGridSnap = await this.storageService.getItem("grid-snap", 'preferences') || "true";
+        this.setAttribute("grid-snap", savedGridSnap);
+      }
+      if (!this.hasAttribute("show-desktop-icons")) {
+        const savedShowIcons = await this.storageService.getItem("show-desktop-icons", 'preferences') || "true";
+        this.setAttribute("show-desktop-icons", savedShowIcons);
+      }
+      if (!this.hasAttribute("accent-color")) {
+        const savedAccentColor = await this.storageService.getItem("accent-color", 'preferences') || "#007AFF";
+        this.setAttribute("accent-color", savedAccentColor);
+      }
+      if (!this.hasAttribute("notification-sounds")) {
+        const savedNotificationSounds = await this.storageService.getItem("notification-sounds", 'preferences') || "true";
+        this.setAttribute("notification-sounds", savedNotificationSounds);
+      }
+    } catch (error) {
+      console.error('Failed to load attributes from storage:', error);
+      // Fallback to defaults if storage fails
+      this.setAttribute("wallpaper", "gradient");
+      this.setAttribute("dock-position", "bottom");
+      this.setAttribute("grid-snap", "true");
+      this.setAttribute("show-desktop-icons", "true");
+      this.setAttribute("accent-color", "#007AFF");
+      this.setAttribute("notification-sounds", "true");
     }
   }
 
@@ -80,27 +92,27 @@ class DesktopComponent extends HTMLElement {
     switch (name) {
       case "wallpaper":
         this._updateWallpaper(newValue);
-        localStorage.setItem("desktop-wallpaper", newValue);
+        this.storageService.setItem("desktop-wallpaper", newValue, 'preferences').catch(console.error);
         break;
       case "dock-position":
         this._updateDockPosition(newValue);
-        localStorage.setItem("dock-position", newValue);
+        this.storageService.setItem("dock-position", newValue, 'preferences').catch(console.error);
         break;
       case "grid-snap":
         this._updateGridSnap(newValue === "true");
-        localStorage.setItem("grid-snap", newValue);
+        this.storageService.setItem("grid-snap", newValue, 'preferences').catch(console.error);
         break;
       case "show-desktop-icons":
         this._updateDesktopIcons(newValue === "true");
-        localStorage.setItem("show-desktop-icons", newValue);
+        this.storageService.setItem("show-desktop-icons", newValue, 'preferences').catch(console.error);
         break;
       case "accent-color":
         this._updateAccentColor(newValue);
-        localStorage.setItem("accent-color", newValue);
+        this.storageService.setItem("accent-color", newValue, 'preferences').catch(console.error);
         break;
       case "notification-sounds":
         this._updateNotificationSounds(newValue === "true");
-        localStorage.setItem("notification-sounds", newValue);
+        this.storageService.setItem("notification-sounds", newValue, 'preferences').catch(console.error);
         break;
     }
   }

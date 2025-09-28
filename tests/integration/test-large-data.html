@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Integration Test: Large Data Storage</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <script type="module">
+    import StorageService from '../../src/services/storage-service.js';
+    window.StorageService = StorageService;
+    // Integration test for large data storage (>5MB)
+    // Store large data and verify retrieval
+
+    (async () => {
+      if (typeof StorageService === 'undefined') {
+        console.error('StorageService not loaded');
+        return;
+      }
+
+      const storage = new StorageService();
+      await storage.openDB();
+
+      try {
+        // Generate large data >5MB (e.g., 6MB string)
+        const largeData = new Array(6 * 1024 * 1024).join('A'); // ~6MB string
+        const largeObj = { content: largeData, metadata: { size: largeData.length, type: 'large-text' } };
+
+        const id = 'large-test-' + Date.now();
+        await storage.setItem(id, largeObj, 'extended');
+
+        // Retrieve and verify - getItem returns just the content for extended store
+        const retrieved = await storage.getItem(id, 'extended');
+
+        if (!retrieved || retrieved.length !== largeData.length) {
+          throw new Error(`Large data not stored/retrieved: expected ${largeData.length} chars, got ${retrieved ? retrieved.length : 0}`);
+        }
+
+        console.log('Integration test passed: Large data (>5MB) stored and retrieved successfully');
+      } catch (error) {
+        console.error('Integration test failed:', error.message);
+        // This should fail initially as methods not fully implemented
+      }
+    })();
+  </script>
+</body>
+</html>

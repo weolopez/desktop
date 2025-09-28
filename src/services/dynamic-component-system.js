@@ -281,7 +281,7 @@ export class DynamicComponentSystem {
     init() {
         initializeEventHandlers(this.registry);
         // load initial components if any from '/components-list.json'
-        let componentsListUrl = this.options.componentsListUrl || '/components-list.json';
+        let componentsListUrl = this.options.componentsListUrl || '/desktop/components-list.json';
         fetch(componentsListUrl)
             .then(response => response.json())
             .then(components => {
