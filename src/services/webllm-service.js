@@ -25,11 +25,11 @@ class SimpleLogger {
     const timestamp = new Date().toISOString();
     const prefix = `[${timestamp}] [${this.component}] [${level.toUpperCase()}]`;
     
-    if (data) {
-      console.log(`${prefix} ${message}`, data);
-    } else {
-      console.log(`${prefix} ${message}`);
-    }
+  //  if (data) {
+  //    console.log(`${prefix} ${message}`, data);
+  //  } else {
+  //    console.log(`${prefix} ${message}`);
+  //  }
   }
   
   error(message, level = 'error', data = null) {

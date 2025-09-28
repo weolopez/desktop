@@ -555,8 +555,18 @@ class WindowComponent extends HTMLElement {
     }
 
     focus() {
+        console.log('🪟 Window focus() - Root node host:', this.getRootNode().host);
+        console.log('🪟 Window focus() - Host windowManager:', this.getRootNode().host?.windowManager);
+        console.log('🪟 Window focus() - getNextZIndex available:', !!this.getRootNode().host?.windowManager?.getNextZIndex);
+        
         this.isFocused = true;
-        this.style.zIndex = this.getNextZIndex();
+        const host = this.getRootNode().host;
+        if (host && host.windowManager && host.windowManager.getNextZIndex) {
+            this.style.zIndex = host.windowManager.getNextZIndex();
+        } else {
+            console.warn('🪟 Window focus() - WindowManager not available, using fallback z-index');
+            this.style.zIndex = '1000'; // Fallback
+        }
         
         // Update visual state
         const window = this.shadowRoot.querySelector('.window');
@@ -588,15 +598,6 @@ class WindowComponent extends HTMLElement {
         window.style.height = `${this.height}px`;
     }
 
-    getNextZIndex() {
-        const allWindows = document.querySelectorAll('window-component');
-        let maxZ = 100;
-        allWindows.forEach(win => {
-            const z = parseInt(win.style.zIndex) || 100;
-            maxZ = Math.max(maxZ, z);
-        });
-        return maxZ + 1;
-    }
 
     logEventFlow(level, event) {
         const timestamp = Date.now();

@@ -3,8 +3,10 @@ import { MESSAGES } from "../events/message-types.js";
 
 export class WindowManager {
     constructor(desktopComponent, appService) {
+        console.log('🔧 WindowManager constructor - Setting up with desktopComponent:', desktopComponent);
         this.desktopComponent = desktopComponent
         this.desktopComponent.windowManager = this;
+        console.log('🔧 WindowManager constructor - windowManager assigned to desktopComponent:', !!this.desktopComponent.windowManager);
         this.appService = appService
         this.setupEventListeners();
         this.desktopComponent._initializeLoadedServices()
@@ -93,6 +95,16 @@ export class WindowManager {
             windowId,
             appName
         });
+    }
+
+    getNextZIndex() {
+        const windows = this.desktopComponent.getWindows();
+        let maxZ = 100;
+        windows.forEach(win => {
+            const z = parseInt(win.style.zIndex) || 100;
+            maxZ = Math.max(maxZ, z);
+        });
+        return maxZ + 1;
     }
 
     saveWindowsState() {
