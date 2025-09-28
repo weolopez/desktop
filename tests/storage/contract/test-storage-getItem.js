@@ -1,7 +1,7 @@
 // Contract test for StorageService.getItem method
 // Expected: Promise resolves with value on success
 
-import StorageService from '../../src/services/storage-service.js';
+import StorageService from '../../../src/services/storage-service.js';
 
 (async () => {
 

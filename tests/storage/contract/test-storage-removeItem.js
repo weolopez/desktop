@@ -1,7 +1,7 @@
 // Contract test for StorageService.removeItem method
 // Expected: Promise resolves on success
 
-import StorageService from '../../src/services/storage-service.js';
+import StorageService from '../../../src/services/storage-service.js';
 
 (async () => {
 

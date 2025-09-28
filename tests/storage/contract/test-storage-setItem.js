@@ -1,7 +1,7 @@
 // Contract test for StorageService.setItem method
 // Expected: Promise resolves with {status: 'ok'} on success
 
-import StorageService from '../../src/services/storage-service.js';
+import StorageService from '../../../src/services/storage-service.js';
 
 (async () => {
   // Import or assume StorageService is available

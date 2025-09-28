@@ -1,7 +1,7 @@
 // Unit tests for StorageService object store creation
 // Verify object stores are created with correct keyPaths and indexes
 
-import StorageService from '../../src/services/storage-service.js';
+import StorageService from '../../../src/services/storage-service.js';
 
 (async () => {
 
