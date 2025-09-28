@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Performance Test: Storage Operations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <script type="module">
+    import StorageService from '../../src/services/storage-service.js';
+    window.StorageService = StorageService;
+    // Performance test for async storage operations (<50ms latency)
+    // Measure setItem, getItem, removeItem times
+
+    (async () => {
+      if (typeof StorageService === 'undefined') {
+        console.error('StorageService not loaded');
+        return;
+      }
+
+      const storage = new StorageService();
+      await storage.openDB();
+
+      const testKey = 'perf-test-' + Date.now();
+      const testValue = new Array(1024 * 1024).join('perf-data'); // 1MB data for realistic test
+
+      const iterations = 10;
+      const results = { set: [], get: [], remove: [] };
+
+      console.log('Running performance test for 10 iterations...');
+
+      for (let i = 0; i < iterations; i++) {
+        // Test setItem
+        const startSet = performance.now();
+        await storage.setItem(testKey + i, testValue, 'extended');
+        const endSet = performance.now();
+        results.set.push(endSet - startSet);
+
+        // Test getItem
+        const startGet = performance.now();
+        await storage.getItem(testKey + i, 'extended');
+        const endGet = performance.now();
+        results.get.push(endGet - startGet);
+
+        // Test removeItem
+        const startRemove = performance.now();
+        await storage.removeItem(testKey + i, 'extended');
+        const endRemove = performance.now();
+        results.remove.push(endRemove - startRemove);
+      }
+
+      // Calculate averages
+      const avgSet = results.set.reduce((a, b) => a + b, 0) / iterations;
+      const avgGet = results.get.reduce((a, b) => a + b, 0) / iterations;
+      const avgRemove = results.remove.reduce((a, b) => a + b, 0) / iterations;
+
+      console.log('Performance Results (ms):');
+      console.log(`Average setItem: ${avgSet.toFixed(2)}ms`);
+      console.log(`Average getItem: ${avgGet.toFixed(2)}ms`);
+      console.log(`Average removeItem: ${avgRemove.toFixed(2)}ms`);
+
+      if (avgSet > 50 || avgGet > 50 || avgRemove > 50) {
+        console.error('Performance test failed: Latency exceeds 50ms threshold');
+      } else {
+        console.log('Performance test passed: All operations under 50ms');
+      }
+    })();
+  </script>
+</body>
+</html>

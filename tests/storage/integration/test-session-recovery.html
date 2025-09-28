@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Integration Test: Session Recovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <script type="module">
+    import StorageService from '../../src/services/storage-service.js';
+    window.StorageService = StorageService;
+    // Integration test for session recovery on refresh
+    // Check window states are recovered from storage
+
+    (async () => {
+      if (typeof StorageService === 'undefined') {
+        console.error('StorageService not loaded');
+        return;
+      }
+
+      const storage = new StorageService();
+      await storage.openDB();
+
+      try {
+        // Simulate setting session state (e.g., window positions)
+        const sessionData = {
+          windows: [
+            { id: 'win1', x: 100, y: 100, width: 800, height: 600 },
+            { id: 'win2', x: 200, y: 200, width: 400, height: 300 }
+          ],
+          zIndex: ['win1', 'win2'],
+          focus: 'win2'
+        };
+        const sessionId = 'test-session-' + Date.now();
+        await storage.setItem(sessionId, sessionData, 'sessions');
+
+        // Simulate refresh - 'recover' by getting the data
+        const recoveredData = await storage.getItem(sessionId, 'sessions');
+
+        if (!recoveredData || recoveredData.windows.length !== 2 || recoveredData.focus !== 'win2') {
+          throw new Error('Session not recovered: ' + JSON.stringify(recoveredData));
+        }
+
+        console.log('Integration test passed: Session state recovered on refresh');
+      } catch (error) {
+        console.error('Integration test failed:', error.message);
+        // This should fail initially as methods not fully implemented
+      }
+    })();
+  </script>
+</body>
+</html>

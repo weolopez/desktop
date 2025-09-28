@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contract Test: removeItem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <script type="module">
+    import StorageService from '../../src/services/storage-service.js';
+
+    (async () => {
+      const storage = new StorageService();
+      await storage.openDB();
+
+      try {
+        // Assume a test key has been set previously or set it here for the test
+        await storage.setItem('testKey', 'testValue', 'preferences');
+        const result = await storage.removeItem('testKey', 'preferences');
+        if (result.status !== 'ok') {
+          throw new Error(`Expected successful resolve with status 'ok', got ${result.status}`);
+        }
+        console.log('Contract test passed: removeItem resolves successfully');
+      } catch (error) {
+        console.error('Contract test failed:', error.message);
+      }
+    })();
+  </script>
+</body>
+</html>

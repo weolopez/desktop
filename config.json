@@ -19,7 +19,7 @@
           },
           {
             "name": "AppService",
-            "path": "/js/dynamic-component-system.js",
+            "path": "/desktop/src/services/dynamic-component-system.js",
             "required": false,
             "priority": 1,
             "enabled": true,

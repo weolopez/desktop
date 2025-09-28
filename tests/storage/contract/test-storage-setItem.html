@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contract Test: setItem</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <script type="module">
+    import StorageService from '../../src/services/storage-service.js';
+
+    (async () => {
+      const storage = new StorageService();
+      await storage.openDB();
+
+      try {
+        const result = await storage.setItem('testKey', 'testValue', 'preferences');
+        if (result.status !== 'ok') {
+          throw new Error(`Expected status 'ok', got ${result.status}`);
+        }
+        console.log('Contract test passed: setItem returns {status: "ok"}');
+      } catch (error) {
+        console.error('Contract test failed:', error.message);
+      }
+    })();
+  </script>
+</body>
+</html>
