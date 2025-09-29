@@ -536,9 +536,9 @@ class WindowComponent extends HTMLElement {
             this.savedHeight = this.height;
             
             this.x = 0;
-            this.y = 24; // Account for menu bar
+            this.y = 0; // Account for menu bar
             this.width = window.innerWidth;
-            this.height = window.innerHeight - 24 - 80; // Account for menu bar and dock
+            this.height = window.innerHeight - 80; // Account for menu bar and dock
             this.isMaximized = true;
         }
         
