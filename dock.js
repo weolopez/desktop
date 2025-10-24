@@ -32,14 +32,6 @@ export const APPS = [
         onstartup: false 
     },
     { 
-        id: 'resume-component', 
-        name: 'Mauricio Resume',
-        icon: '📝',
-        sourceUrl: '/resume-component.js',
-        tag: "resume-component",
-        onstartup: true
-    },
-    { 
         id: 'system-preferences', 
         name: 'System Preferences', 
         icon: '⚙️', 
