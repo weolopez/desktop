@@ -93,10 +93,7 @@ class StorageService {
   }
 
   async setItem(key, value, store = 'preferences') {
-    //if this.db is null return null
-    if (!this.db) {
-      return null;
-    }
+
     const timestamp = Date.now();
     let item;
 
@@ -114,10 +111,7 @@ class StorageService {
   }
 
   async getItem(key, store = 'preferences') {
-    //if this.db is null return null
-    if (!this.db) {
-      return null;
-    }
+
     return this._runTransaction(store, 'readonly', (os) => os.get(key)).then(item => {
       if (!item) {
         return null;

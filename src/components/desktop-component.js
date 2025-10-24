@@ -93,10 +93,10 @@ class DesktopComponent extends HTMLElement {
     }
   }
 
-  attributeChangedCallback(name, oldValue, newValue) {
+  async attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
 
-    this._getDB()
+    await this._getDB()
 
     switch (name) {
       case "wallpaper":
