@@ -18,10 +18,10 @@ class StorageService {
     if (!this.supported) {
       return Promise.reject(new Error('IndexedDB not supported'));
     }
-
+  
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion);
-
+  
       request.onerror = () => {
         const error = request.error;
         if (error.name === 'AbortError' || error.name === 'UnknownError') {
@@ -33,25 +33,25 @@ class StorageService {
         }
         reject(error);
       };
-
+  
       request.onsuccess = () => {
         this.db = request.result;
         resolve(this.db);
       };
-
+  
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-
+  
         // Create object stores if they don't exist
         if (!db.objectStoreNames.contains('preferences')) {
           db.createObjectStore('preferences', { keyPath: 'key' });
         }
-
+  
         if (!db.objectStoreNames.contains('sessions')) {
           const sessionsStore = db.createObjectStore('sessions', { keyPath: 'id' });
           sessionsStore.createIndex('created', 'created', { unique: false });
         }
-
+  
         if (!db.objectStoreNames.contains('extended')) {
           const extendedStore = db.createObjectStore('extended', { keyPath: 'id' });
           extendedStore.createIndex('type', 'type', { unique: false });
@@ -93,6 +93,10 @@ class StorageService {
   }
 
   async setItem(key, value, store = 'preferences') {
+    //if this.db is null return null
+    if (!this.db) {
+      return null;
+    }
     const timestamp = Date.now();
     let item;
 
@@ -110,6 +114,10 @@ class StorageService {
   }
 
   async getItem(key, store = 'preferences') {
+    //if this.db is null return null
+    if (!this.db) {
+      return null;
+    }
     return this._runTransaction(store, 'readonly', (os) => os.get(key)).then(item => {
       if (!item) {
         return null;

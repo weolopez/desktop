@@ -1,10 +1,10 @@
+import StorageService from '../services/storage-service.js';
 import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
 import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
-import StorageService from '../services/storage-service.js';
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
@@ -42,14 +42,21 @@ class DesktopComponent extends HTMLElement {
     });
   }
 
+  async _getDB() {
+      if (!this.storageService || !this.storageService.db) {
+        await this.storageService.openDB();
+      } 
+      return this.storageService.db;
+  }
+
   async _initializeAttributes() {
 
     await this.startupManager.init(this.getAttribute("config"));
     await this.startupManager.startupSequence(this);
 
     try {
-      await this.storageService.openDB();
-
+      await this._getDB();
+ 
       if (!this.hasAttribute("wallpaper")) {
         const savedWallpaper = await this.storageService.getItem("desktop-wallpaper", 'preferences') || "gradient";
         this.setAttribute("wallpaper", savedWallpaper);
@@ -88,6 +95,8 @@ class DesktopComponent extends HTMLElement {
 
   attributeChangedCallback(name, oldValue, newValue) {
     if (oldValue === newValue) return;
+
+    this._getDB()
 
     switch (name) {
       case "wallpaper":
