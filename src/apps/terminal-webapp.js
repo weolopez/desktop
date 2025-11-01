@@ -8,60 +8,47 @@
 // import { Unicode11Addon } from 'xterm-addon-unicode11';
 // import { Readline } from '../../vendor/xterm-readline/xterm-readline.js';
 // import { COMMANDS } from '../../src/config.js';
+import { FilesystemProvider, DEFAULT_FILESYSTEM_STRUCTURE } from '/js/filesystem-provider.js';
 
-class TerminalWebapp extends HTMLElement {
+export class TerminalWebapp extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
         this.commandHistory = [];
         this.historyIndex = -1;
         this.currentPath = '/Users/desktop';
-        this.fileSystem = this.initializeFileSystem();
+        this.fileSystem = new FilesystemProvider('terminal-filesystem', DEFAULT_FILESYSTEM_STRUCTURE);
         this.desktopComponent = null;
+        this.ready = false;
     }
 
-    connectedCallback() {
+    async connectedCallback() {
         this.desktopComponent = document.querySelector('desktop-component');
+
+        // Wait for filesystem to be ready before setting current path
+        await this.fileSystem.ready;
+        this.fileSystem.setCurrentPath(this.currentPath);
+
+        try {
+            this._root = this.attachShadow({ mode: 'open' });
+            if (!this._root) {
+                throw new Error('attachShadow returned null');
+            }
+        } catch (e) {
+            console.warn('Shadow DOM not supported, falling back to light DOM');
+            this._root = this;
+            this._useLightDom = true;
+        }
         this.render();
         this.setupEventListeners();
         this.focusInput();
         this.addWelcomeMessage();
+
+        this.ready = true;
     }
 
-    initializeFileSystem() {
-        return {
-            '/': {
-                type: 'directory',
-                children: {
-                    'Users': {
-                        type: 'directory',
-                        children: {
-                            'desktop': {
-                                type: 'directory',
-                                children: {
-                                    'Documents': { type: 'directory', children: {} },
-                                    'Downloads': { type: 'directory', children: {} },
-                                    'Desktop': { type: 'directory', children: {} },
-                                    'welcome.txt': { type: 'file', content: 'Welcome to the virtual desktop terminal!' }
-                                }
-                            }
-                        }
-                    },
-                    'Applications': {
-                        type: 'directory',
-                        children: {
-                            'System Preferences.app': { type: 'file', content: 'system-preferences-webapp' },
-                            'Safari.app': { type: 'file', content: 'safari-webapp' },
-                            'TextEdit.app': { type: 'file', content: 'textedit-webapp' }
-                        }
-                    }
-                }
-            }
-        };
-    }
 
     render() {
-        this.shadowRoot.innerHTML = `
+        const html = `
             <style>
                 :host {
                     display: block;
@@ -194,11 +181,25 @@ class TerminalWebapp extends HTMLElement {
                 </div>
             </div>
         `;
+
+        if (this._useLightDom) {
+            this.innerHTML = html;
+        } else {
+            this._root.innerHTML = html;
+        }
     }
 
     setupEventListeners() {
-        const input = this.shadowRoot.getElementById('input');
-        
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in setupEventListeners');
+            return;
+        }
+        const input = this._root.getElementById('input');
+        if (!input) {
+            console.log('TerminalWebapp: input element not found in setupEventListeners');
+            return;
+        }
+
         input.addEventListener('keydown', (e) => {
             switch (e.key) {
                 case 'Enter':
@@ -235,7 +236,15 @@ class TerminalWebapp extends HTMLElement {
     }
 
     focusInput() {
-        const input = this.shadowRoot.getElementById('input');
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in focusInput');
+            return;
+        }
+        const input = this._root.getElementById('input');
+        if (!input) {
+            console.log('TerminalWebapp: input element not found in focusInput');
+            return;
+        }
         input.focus();
     }
 
@@ -245,8 +254,11 @@ class TerminalWebapp extends HTMLElement {
         this.addOutput('');
     }
 
-    executeCommand(command) {
+    async executeCommand(command) {
         if (!command) return;
+
+        // Wait for filesystem to be ready
+        await this.fileSystem.ready;
 
         // Add to history
         if (this.commandHistory[this.commandHistory.length - 1] !== command) {
@@ -259,7 +271,7 @@ class TerminalWebapp extends HTMLElement {
 
         // Parse and execute
         const [cmd, ...args] = command.split(/\s+/);
-        
+
         try {
             this.runCommand(cmd.toLowerCase(), args);
         } catch (error) {
@@ -376,27 +388,28 @@ class TerminalWebapp extends HTMLElement {
 
     listDirectory(args) {
         const path = args[0] || this.currentPath;
-        const node = this.getFileSystemNode(path);
-        
+        const node = this.fileSystem.getNode(path);
+
         if (!node) {
             this.addOutput(`ls: ${path}: No such file or directory`, 'terminal-error');
             return;
         }
-        
+
         if (node.type === 'file') {
             this.addOutput(path.split('/').pop());
             return;
         }
-        
-        const items = Object.entries(node.children || {});
+
+        const children = this.fileSystem.listChildren(path);
+        const items = Object.entries(children);
         if (items.length === 0) {
             this.addOutput('(empty directory)', 'terminal-info');
             return;
         }
-        
+
         items.forEach(([name, item]) => {
-            const className = item.type === 'directory' ? 'directory' : 
-                           name.endsWith('.app') ? 'executable' : '';
+            const className = item.type === 'directory' ? 'directory' :
+                            name.endsWith('.app') ? 'executable' : '';
             this.addOutput(name, className);
         });
     }
@@ -404,23 +417,25 @@ class TerminalWebapp extends HTMLElement {
     changeDirectory(path) {
         if (!path) {
             this.currentPath = '/Users/desktop';
+            this.fileSystem.setCurrentPath(this.currentPath);
             return;
         }
-        
-        const newPath = this.resolvePath(path);
-        const node = this.getFileSystemNode(newPath);
-        
+
+        const newPath = this.fileSystem.resolvePath(path, this.currentPath);
+        const node = this.fileSystem.getNode(newPath);
+
         if (!node) {
             this.addOutput(`cd: ${path}: No such file or directory`, 'terminal-error');
             return;
         }
-        
+
         if (node.type !== 'directory') {
             this.addOutput(`cd: ${path}: Not a directory`, 'terminal-error');
             return;
         }
-        
+
         this.currentPath = newPath;
+        this.fileSystem.setCurrentPath(this.currentPath);
     }
 
     makeDirectory(name) {
@@ -428,17 +443,15 @@ class TerminalWebapp extends HTMLElement {
             this.addOutput('mkdir: missing directory name', 'terminal-error');
             return;
         }
-        
-        const currentNode = this.getFileSystemNode(this.currentPath);
-        if (currentNode && currentNode.children) {
-            if (currentNode.children[name]) {
-                this.addOutput(`mkdir: ${name}: File exists`, 'terminal-error');
-                return;
-            }
-            
-            currentNode.children[name] = { type: 'directory', children: {} };
-            this.addOutput(`Directory created: ${name}`, 'terminal-success');
+
+        const fullPath = this.fileSystem.resolvePath(name, this.currentPath);
+        if (this.fileSystem.exists(fullPath)) {
+            this.addOutput(`mkdir: ${name}: File exists`, 'terminal-error');
+            return;
         }
+
+        this.fileSystem.createDirectory(fullPath);
+        this.addOutput(`Directory created: ${name}`, 'terminal-success');
     }
 
     createFile(name, content = '') {
@@ -446,12 +459,10 @@ class TerminalWebapp extends HTMLElement {
             this.addOutput('touch: missing file name', 'terminal-error');
             return;
         }
-        
-        const currentNode = this.getFileSystemNode(this.currentPath);
-        if (currentNode && currentNode.children) {
-            currentNode.children[name] = { type: 'file', content };
-            this.addOutput(`File created: ${name}`, 'terminal-success');
-        }
+
+        const fullPath = this.fileSystem.resolvePath(name, this.currentPath);
+        this.fileSystem.createFile(fullPath, content);
+        this.addOutput(`File created: ${name}`, 'terminal-success');
     }
 
     removeItem(name) {
@@ -459,10 +470,9 @@ class TerminalWebapp extends HTMLElement {
             this.addOutput('rm: missing file or directory name', 'terminal-error');
             return;
         }
-        
-        const currentNode = this.getFileSystemNode(this.currentPath);
-        if (currentNode && currentNode.children && currentNode.children[name]) {
-            delete currentNode.children[name];
+
+        const fullPath = this.fileSystem.resolvePath(name, this.currentPath);
+        if (this.fileSystem.remove(fullPath)) {
             this.addOutput(`Removed: ${name}`, 'terminal-success');
         } else {
             this.addOutput(`rm: ${name}: No such file or directory`, 'terminal-error');
@@ -474,12 +484,12 @@ class TerminalWebapp extends HTMLElement {
             this.addOutput('cat: missing file name', 'terminal-error');
             return;
         }
-        
-        const currentNode = this.getFileSystemNode(this.currentPath);
-        if (currentNode && currentNode.children && currentNode.children[name]) {
-            const file = currentNode.children[name];
-            if (file.type === 'file') {
-                this.addOutput(file.content || '(empty file)');
+
+        const fullPath = this.fileSystem.resolvePath(name, this.currentPath);
+        const node = this.fileSystem.getNode(fullPath);
+        if (node) {
+            if (node.type === 'file') {
+                this.addOutput(node.content || '(empty file)');
             } else {
                 this.addOutput(`cat: ${name}: Is a directory`, 'terminal-error');
             }
@@ -629,68 +639,47 @@ class TerminalWebapp extends HTMLElement {
             }
         } else {
             // Complete file/directory names
-            const currentNode = this.getFileSystemNode(this.currentPath);
-            if (currentNode && currentNode.children) {
-                const lastArg = args[args.length - 1];
-                const matches = Object.keys(currentNode.children).filter(name => 
-                    name.startsWith(lastArg)
-                );
-                
-                if (matches.length === 1) {
-                    const newArgs = [...args.slice(0, -1), matches[0]];
-                    input.value = cmd + ' ' + newArgs.join(' ');
-                }
+            const children = this.fileSystem.listChildren(this.currentPath);
+            const lastArg = args[args.length - 1];
+            const matches = Object.keys(children).filter(name =>
+                name.startsWith(lastArg)
+            );
+
+            if (matches.length === 1) {
+                const newArgs = [...args.slice(0, -1), matches[0]];
+                input.value = cmd + ' ' + newArgs.join(' ');
             }
         }
     }
 
     // Utility methods
-    resolvePath(path) {
-        if (path.startsWith('/')) {
-            return path;
-        }
-        
-        if (path === '..') {
-            const parts = this.currentPath.split('/').filter(p => p);
-            parts.pop();
-            return '/' + parts.join('/');
-        }
-        
-        if (path === '.') {
-            return this.currentPath;
-        }
-        
-        return this.currentPath + (this.currentPath.endsWith('/') ? '' : '/') + path;
-    }
 
-    getFileSystemNode(path) {
-        const parts = path.split('/').filter(p => p);
-        let current = this.fileSystem['/'];
-        
-        for (const part of parts) {
-            if (current && current.children && current.children[part]) {
-                current = current.children[part];
-            } else {
-                return null;
-            }
-        }
-        
-        return current;
-    }
 
     getPrompt() {
         return `desktop@terminal:${this.currentPath}$`;
     }
 
     updatePrompt() {
-        const prompt = this.shadowRoot.getElementById('prompt');
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in updatePrompt');
+            return;
+        }
+        const prompt = this._root.getElementById('prompt');
         if (prompt) {
             prompt.textContent = this.getPrompt();
         }
     }
 
     addOutput(text, className = '') {
-        const output = this.shadowRoot.getElementById('output');
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in addOutput');
+            return;
+        }
+        const output = this._root.getElementById('output');
+        if (!output) {
+            console.log('TerminalWebapp: output element not found in addOutput');
+            return;
+        }
         const line = document.createElement('div');
         line.className = `terminal-line ${className}`;
         line.textContent = text;
@@ -698,12 +687,28 @@ class TerminalWebapp extends HTMLElement {
     }
 
     clearOutput() {
-        const output = this.shadowRoot.getElementById('output');
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in clearOutput');
+            return;
+        }
+        const output = this._root.getElementById('output');
+        if (!output) {
+            console.log('TerminalWebapp: output element not found in clearOutput');
+            return;
+        }
         output.innerHTML = '';
     }
 
     scrollToBottom() {
-        const output = this.shadowRoot.getElementById('output');
+        if (!this._root) {
+            console.log('TerminalWebapp: _root is null in scrollToBottom');
+            return;
+        }
+        const output = this._root.getElementById('output');
+        if (!output) {
+            console.log('TerminalWebapp: output element not found in scrollToBottom');
+            return;
+        }
         output.scrollTop = output.scrollHeight;
     }
 }

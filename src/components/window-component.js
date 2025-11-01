@@ -23,11 +23,11 @@ class WindowComponent extends HTMLElement {
         const initialWidth = this.getAttribute('width');
         const initialHeight = this.getAttribute('height');
 
-        console.log('🪟 WindowComponent constructor - Reading attributes:', {
-            x: initialX, y: initialY, width: initialWidth, height: initialHeight,
-            minimized: this.hasAttribute('minimized'),
-            maximized: this.hasAttribute('maximized')
-        });
+        // console.log('🪟 WindowComponent constructor - Reading attributes:', {
+        //     x: initialX, y: initialY, width: initialWidth, height: initialHeight,
+        //     minimized: this.hasAttribute('minimized'),
+        //     maximized: this.hasAttribute('maximized')
+        // });
 
         this.x = initialX !== null ? parseInt(initialX) : 100;
         this.y = initialY !== null ? parseInt(initialY) : 100;
@@ -555,9 +555,9 @@ class WindowComponent extends HTMLElement {
     }
 
     focus() {
-        console.log('🪟 Window focus() - Root node host:', this.getRootNode().host);
-        console.log('🪟 Window focus() - Host windowManager:', this.getRootNode().host?.windowManager);
-        console.log('🪟 Window focus() - getNextZIndex available:', !!this.getRootNode().host?.windowManager?.getNextZIndex);
+        // console.log('🪟 Window focus() - Root node host:', this.getRootNode().host);
+        // console.log('🪟 Window focus() - Host windowManager:', this.getRootNode().host?.windowManager);
+        // console.log('🪟 Window focus() - getNextZIndex available:', !!this.getRootNode().host?.windowManager?.getNextZIndex);
         
         this.isFocused = true;
         const host = this.getRootNode().host;
@@ -608,16 +608,16 @@ class WindowComponent extends HTMLElement {
             textContent: event.target.textContent?.slice(0, 30) || ''
         };
         
-        console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
-            type: event.type,
-            target: targetInfo,
-            bubbles: event.bubbles,
-            composed: event.composed,
-            eventPhase: event.eventPhase,
-            currentTarget: event.currentTarget.constructor.name,
-            windowId: this.windowId,
-            appName: this.appName
-        });
+        // console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
+        //     type: event.type,
+        //     target: targetInfo,
+        //     bubbles: event.bubbles,
+        //     composed: event.composed,
+        //     eventPhase: event.eventPhase,
+        //     currentTarget: event.currentTarget.constructor.name,
+        //     windowId: this.windowId,
+        //     appName: this.appName
+        // });
         
         // Store event flow data for global access
         if (!window.eventFlowTest) {

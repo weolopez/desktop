@@ -267,6 +267,9 @@ class DesktopComponent extends HTMLElement {
                 :host([wallpaper="big-sur"]) {
                     --desktop-wallpaper: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
                 }
+                :host([wallpaper="ice-blue"]) {
+                    --desktop-wallpaper: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);
+                }
 
                 :host([dock-position="bottom"]) .dock-container {
                     bottom: 8px;
@@ -593,7 +596,7 @@ class DesktopComponent extends HTMLElement {
   }
 
   changeWallpaper() {
-    const wallpapers = ["gradient", "monterey", "big-sur"];
+    const wallpapers = ["gradient", "monterey", "big-sur", "ice-blue"];
     const currentIndex = wallpapers.indexOf(this.currentWallpaper);
     const nextIndex = (currentIndex + 1) % wallpapers.length;
     const newWallpaper = wallpapers[nextIndex];

@@ -135,12 +135,18 @@ class SystemPreferencesWebapp extends HTMLElement {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 }
 
-                .wallpaper-option.monterey {
+                .wallpaper-option. {
                     background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%);
                 }
 
+
+
                 .wallpaper-option.big-sur {
                     background: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+                }
+
+                .wallpaper-option.ice-blue {
+                    background: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);;
                 }
 
                 h2 {
@@ -252,6 +258,7 @@ class SystemPreferencesWebapp extends HTMLElement {
                             <div class="wallpaper-option gradient" data-wallpaper="gradient"></div>
                             <div class="wallpaper-option monterey" data-wallpaper="monterey"></div>
                             <div class="wallpaper-option big-sur" data-wallpaper="big-sur"></div>
+                            <div class="wallpaper-option ice-blue" data-wallpaper="ice-blue"></div>
                         </div>
 
                         <h3>Dock</h3>
