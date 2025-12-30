@@ -24,12 +24,12 @@ export const APPS = [
         onstartup: false 
     },
     { 
-        id: 'ask-genai', 
-        name: 'Ask GenAI', 
+        id: 'resume-component', 
+        name: 'Resume Component', 
         icon: '🔮', 
-        sourceUrl: '/operator/domain/ask-genai.js', 
-        tag: "ask-genai", 
-        onstartup: false 
+        sourceUrl: '/resume-component.js', 
+        tag: "resume-component", 
+        onstartup: true 
     },
     { 
         id: 'system-preferences', 
