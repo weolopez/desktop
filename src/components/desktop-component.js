@@ -435,7 +435,7 @@ class DesktopComponent extends HTMLElement {
         const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
         // check if text has a web component tag
         if (WEB_COMPONENT_TAG_REGEX.test(text)) {
-          const detail = { code: text, mimeType: "application/javascript" };
+          const detail = { code: text, mimeType: "application/javascript", launch: true };
           document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
         }
         else eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [text] });

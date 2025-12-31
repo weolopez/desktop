@@ -3,8 +3,8 @@ export const APPS = [
         id: 'finder', 
         name: 'Finder', 
         icon: '📁', 
-        sourceUrl: '/apps/finder/finder-webapp.js', 
-        tag: "finder-webapp", 
+        sourceUrl: '/experiments/editor/wc/github-explorer.js', 
+        tag: "github-explorer", 
         onstartup: false 
     },
     { 
@@ -49,11 +49,11 @@ export const APPS = [
         onstartup: false 
     },
     {
-        id: 'soccer-prediction',
-        name: 'EPL Prediction',
-        icon: '⚽',
-        sourceUrl: '/wc/prediction-table.js',
-        tag: "prediction-table",
+        id: 'event-debugger',
+        name: 'Event Debugger',
+        icon: '🛠️',
+        sourceUrl: '/experiments/wc/vibe-event-debugger.js',
+        tag: "vibe-event-debugger",
         onstartup: false
     },
     { 

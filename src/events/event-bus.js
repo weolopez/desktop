@@ -4,6 +4,7 @@
  * A unified service for dispatching and listening to custom events throughout
  * the desktop environment. This replaces scattered CustomEvent creation with
  * a clean, centralized API.
+ * 
  */
 
 import { MESSAGES, validateMessagePayload, getMessageDescription } from './message-types.js';
@@ -12,6 +13,25 @@ class EventBus {
     constructor() {
         this.listeners = new Map(); // Map of event types to listener arrays
         this.isDebugEnabled = false;
+
+        window.eventLogs = [];
+        const stored = localStorage.getItem('filteredEvents');
+        window.filteredEvents = stored ? JSON.parse(stored) : [];
+        window.addFilter = (eventType) => {
+            !window.filteredEvents.includes(eventType) && (window.filteredEvents.push(eventType), localStorage.setItem('filteredEvents', JSON.stringify(window.filteredEvents)));
+        };
+
+        const originalDispatch = EventTarget.prototype.dispatchEvent;
+        EventTarget.prototype.dispatchEvent = function(e) {
+            if (e instanceof CustomEvent) {
+                const isFiltered = window.filteredEvents.includes(e.type);
+                if (!isFiltered) {
+                    window.eventLogs.push({ type: e.type, detail: e.detail, time: Date.now(), target: this.tagName || 'window' });
+                    if (window.eventLogs.length > 100) window.eventLogs.shift();
+                }
+            }
+            return originalDispatch.apply(this, arguments);
+        };
     }
 
     /**

@@ -33,30 +33,28 @@ const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"
  * Processes relative imports in the component source code, converting them to absolute URLs.
  * @param {string} componentSource - The source code of the component.
  * @param {string} sourceUrl - The URL from which the component was loaded.
- * @returns {string} The processed source code with absolute import paths.
+ * @returns {string} The processed source code with absolute import paths. 
  */
 function processRelativeImports(componentSource, sourceUrl) {
-    if (sourceUrl && componentSource.includes("from './")) {
-        const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
-        return componentSource.replace(
-            /from\s+['"`]\.\/([^'"`]+)['"`]/g,
-            (match, relativePath) => {
-                const absoluteUrl = new URL(relativePath, baseUrl).href;
-                return `from '${absoluteUrl}'`;
-            },
-        );
-    } else if (sourceUrl && componentSource.includes("from '/")) {
-        const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
-        return componentSource.replace(
-            /from\s+['"`]\/([^'"`]+)['"`]/g,
-            (match, relativePath) => {
-                const absoluteUrl = new URL(relativePath, baseUrl).href;
-                return `from '${absoluteUrl}'`;
-            },
-        );
-    }
+    if (!sourceUrl) return componentSource;
 
-    return componentSource;
+    const baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
+
+    // Support both 'from' and 'import' with './' or '/'
+    // Handle any quote type " or ' or `
+    return componentSource.replace(
+        /(from|import)\s+(['"`])(\.?\/)([^'"`]+)\2/g,
+        (match, keyword, quote, prefix, relativePath) => {
+            try {
+                // Resolve the path against the baseUrl to maintain original behavior
+                const absoluteUrl = new URL(relativePath, baseUrl).href;
+                return `${keyword} '${absoluteUrl}'`;
+            } catch (e) {
+                console.warn(`Failed to resolve import path: ${prefix}${relativePath}`, e);
+                return match;
+            }
+        }
+    );
 }
 
 /**
