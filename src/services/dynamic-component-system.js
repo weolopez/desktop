@@ -100,7 +100,7 @@ export async function loadComponentFromUrl(url) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const componentSource = await response.text();
-        return await loadComponentFromString(componentSource, url);
+        return await loadComponentFromString(componentSource);
     } catch (error) {
         console.error(`Failed to load component from ${url}:`, error);
         return null;
@@ -264,44 +264,49 @@ export function initializeEventHandlers(registry) {
  * @description Main class to initialize and manage the dynamic component system.
  */
 export class DynamicComponentSystem {
-    /**
-     * @param {object} [options] - Configuration options for the system.
-     */
-    constructor(options = {}) {
-        this.registry = new ComponentRegistry();
-        this.options = options;
-        this.init();
+    constructor() {
+        this.setupEventListeners();
     }
 
-    /**
-     * Initializes the system by setting up event handlers.
-     */
-    init() {
-        initializeEventHandlers(this.registry);
-        // load initial components if any from '/components-list.json'
-        let componentsListUrl = this.options.componentsListUrl || '/desktop/components-list.json';
-        fetch(componentsListUrl)
-            .then(response => response.json())
-            .then(components => {
-                components.forEach(component => {
-                    component.launch = false
-                    document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
-                        detail: component
-                    }));
-                });
-            })
-            .catch(err => {
-                console.error('Failed to load components list:', err);
-            });
-
-        console.log('Dynamic Component System initialized.');
+    setupEventListeners() {
+        document.addEventListener('PUBLISH_COMPONENT', async (e) => {
+            const { detail } = e;
+            if (detail.url) {
+                await this.handleUrlPublish(detail);
+            } else if (detail.code) {
+                await this.handleCodePublish(detail);
+            }
+        });
     }
 
-    /**
-     * Provides access to the component registry.
-     * @returns {ComponentRegistry} The component registry instance.
-     */
-    getRegistry() {
-        return this.registry;
+    async handleUrlPublish(detail) {
+        const tagName = await loadComponentFromUrl(detail.url);
+        this.dispatchRegistrationResult(tagName, detail);
+    }
+
+    async handleCodePublish(detail) {
+        const tagName = await loadComponentFromString(detail.code, detail.sourceUrl);
+        this.dispatchRegistrationResult(tagName, detail);
+    }
+
+    dispatchRegistrationResult(tagName, originalDetail) {
+        const event = new CustomEvent('COMPONENT_REGISTERED', {
+            detail: {
+                ...originalDetail,
+                tagName,
+                success: !!tagName,
+                error: !tagName ? 'Failed to load component' : null
+            }
+        });
+        document.dispatchEvent(event);
+    }
+
+    // Expose static methods for direct usage
+    static async importText(text, sourceUrl) {
+        return loadComponentFromString(text, sourceUrl);
+    }
+
+    static async importUrl(url) {
+        return loadComponentFromUrl(url);
     }
 }

@@ -503,29 +503,15 @@ class DesktopComponent extends HTMLElement {
 
   async importText(text, sourceUrl = undefined) {
     try {
-      let processedContent = text;
-      const baseUrl = sourceUrl 
-        ? sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1)
-        : window.location.origin + "/";
-
-      // More robust relative import conversion
-      processedContent = text.replace(
-        /from\s+['"`](\.\.?\/[^'"`]+)['"`]/g,
-        (match, relativePath) => {
-          const absoluteUrl = new URL(relativePath, baseUrl).href;
-          console.log(`Converting: ${match} -> from '${absoluteUrl}'`);
-          return `from '${absoluteUrl}'`;
-        }
-      );
-
-      const blob = new Blob([processedContent], { type: "application/javascript" });
-      const url = URL.createObjectURL(blob);
-      
-      try {
-        await this.importUrl(url);
-      } finally {
-        // Revoke after a short delay to ensure the browser has finished the import
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const tagName = await DynamicComponentSystem.importText(text, sourceUrl);
+      if (!tagName) {
+        // If it's not a web component, maybe it's just a module we want to run?
+        // Or maybe we should just display it as text if it failed to load?
+        // For now, let's assume if it failed to return a tag name, it might still have executed side effects
+        // or it wasn't a component.
+        
+        // If we want to fallback to displaying text:
+        // this.appService?.displayPlainTextInWindow(text, "Pasted Text");
       }
     } catch (error) {
       console.error("Failed to import text as module:", error);
@@ -535,7 +521,7 @@ class DesktopComponent extends HTMLElement {
 
   async importUrl(sourceUrl) {
     try {
-      return await import(sourceUrl);
+      await DynamicComponentSystem.importUrl(sourceUrl);
     } catch (err) {
       console.error(`Failed to import module from ${sourceUrl}:`, err);
       throw err;
