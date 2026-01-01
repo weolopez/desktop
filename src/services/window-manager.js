@@ -144,7 +144,7 @@ export class WindowManager {
                     }
 
                     console.log('🔄 WindowManager - Restoring window:', state);
-                    this.desktopComponent.addApp({
+                    await this.desktopComponent.addApp({
                         name: state.appName,
                         icon: state.appIcon,
                         tag: state.appTag,

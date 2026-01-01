@@ -141,7 +141,7 @@ class DesktopComponent extends HTMLElement {
 
     this.setupPasteDrop();
     // Notification display setup is now handled by StartupManager
-    this.setupAppEventListeners();
+    await this.setupAppEventListeners();
     // this.showTestNotification();
 
     // Initialize and run startup sequence
@@ -198,17 +198,17 @@ class DesktopComponent extends HTMLElement {
     }, 2000);
   }
 
-  setupAppEventListeners() {
-    eventBus.subscribe(MESSAGES.LAUNCH_APP, this.addApp.bind(this));
+  async setupAppEventListeners() {
+    eventBus.subscribe(MESSAGES.LAUNCH_APP, await this.addApp.bind(this));
     // new CustomEvent('COMPONENT_REGISTERED' ` detail: { mimeType, success: true, tagName }
-    document.addEventListener('COMPONENT_REGISTERED', (e) => {
+    document.addEventListener('COMPONENT_REGISTERED', async (e) => {
       // if e.detail.error alert it
       if (e.detail.error) {
         alert(`Error registering component: ${e.detail.error}`);
         return;
       }
       if (!e.detail.launch) return
-      this.addApp({
+      await this.addApp({
         name: e.detail.name || e.detail.tagName || "Dynamic Component",
         icon: e.detail.icon || "📦",
         tag: e.detail.tagName,
@@ -461,123 +461,117 @@ class DesktopComponent extends HTMLElement {
     );
   }
 
+  /**
+   * Internal helper to create and configure a window-component
+   */
+  _createWindow(config, content) {
+    const {
+      name = config.appName || "Untitled",
+      icon = config.appIcon || "📄",
+      tag = config.appTag || "div",
+      sourceUrl = "",
+      x = 150 + (Math.random() * 200),
+      y = 150 + (Math.random() * 100),
+      width = 600,
+      height = 400,
+      isMinimized = false
+    } = config;
+
+    const windowEl = document.createElement("window-component");
+    
+    // Set properties
+    Object.assign(windowEl, {
+      appName: name,
+      appIcon: icon,
+      sourceUrl,
+      appTag: tag,
+      x, y, width, height,
+      isMinimized
+    });
+
+    if (content) {
+      if (typeof content === "string") {
+        windowEl.innerHTML = content;
+      } else {
+        windowEl.appendChild(content);
+      }
+    }
+
+    this.addWindow(windowEl);
+    return windowEl;
+  }
+
   async importText(text, sourceUrl = undefined) {
     try {
       let processedContent = text;
-      //default to domain as base
-      let baseUrl = window.location.origin + "/";
-      if (sourceUrl && text.includes("from './")) {
-        baseUrl = sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1);
-      }
-      if (text.includes("from './")) {
-        console.log("Converting relative imports to absolute URLs...");
-        console.log("Base URL for imports:", baseUrl);
+      const baseUrl = sourceUrl 
+        ? sourceUrl.substring(0, sourceUrl.lastIndexOf("/") + 1)
+        : window.location.origin + "/";
 
-        processedContent = text.replace(
-          /from\s+['"`]\.\/([^'"`]+)['"`]/g,
-          (match, relativePath) => {
-            const absoluteUrl = baseUrl + relativePath;
-            console.log(`Converting: ${match} -> from '${absoluteUrl}'`);
-            return `from '${absoluteUrl}'`;
-          },
-        );
-      }
-      const blob = new Blob([processedContent], {
-        type: "application/javascript",
-      });
+      // More robust relative import conversion
+      processedContent = text.replace(
+        /from\s+['"`](\.\.?\/[^'"`]+)['"`]/g,
+        (match, relativePath) => {
+          const absoluteUrl = new URL(relativePath, baseUrl).href;
+          console.log(`Converting: ${match} -> from '${absoluteUrl}'`);
+          return `from '${absoluteUrl}'`;
+        }
+      );
+
+      const blob = new Blob([processedContent], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
-      this.importUrl(url);
-      //URL.revokeObjectURL(url);
+      
+      try {
+        await this.importUrl(url);
+      } finally {
+        // Revoke after a short delay to ensure the browser has finished the import
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
     } catch (error) {
       console.error("Failed to import text as module:", error);
-      // Optionally, you can display the text in a window or handle it differently
-      if (this.appService) {
-        this.appService.displayPlainTextInWindow(
-          processedContent,
-          "Pasted Text",
-        );
-      }
+      this.appService?.displayPlainTextInWindow(text, "Import Error");
     }
   }
 
   async importUrl(sourceUrl) {
-    await import(sourceUrl);
+    try {
+      return await import(sourceUrl);
+    } catch (err) {
+      console.error(`Failed to import module from ${sourceUrl}:`, err);
+      throw err;
+    }
   }
-  addApp(app) {
-    if (app.singleton) if (this.shadowRoot.querySelector(app.tag)) {
+
+  async addApp(app) {
+    // Singleton check
+    if (app.singleton && this.shadowRoot.querySelector(app.tag)) {
       console.warn(`App ${app.name} is already running.`);
       return;
     }
 
-    const {
-      name = app.name || "Untitled App", // Default name if not provided
-      icon = app.icon || "📄", // Default icon if not provided
-      tag = app.tag || "untagged",
-      sourceUrl = app.sourceUrl || "",
-      x = app.x || 150 + (Math.random() * 200),
-      y = app.y || 150 + (Math.random() * 100),
-      width = app.width || 600, // Default width if not provided
-      height = app.height || 400, // Default height if not provided
-    } = app;
-    //if source url is valid
-    if (URL_PATTERN.test(sourceUrl)) {
-      this.importUrl(sourceUrl);
+    // Load source if it's a URL
+    if (app.sourceUrl && URL_PATTERN.test(app.sourceUrl)) {
+      try {
+        await this.importUrl(app.sourceUrl);
+      } catch (err) {
+        return; // Error already logged in importUrl
+      }
     }
 
-    // Create the content element for the app
-    const content = document.createElement(tag);
-    const windowEl = document.createElement("window-component");
+    const content = document.createElement(app.tag || "div");
+    this._createWindow(app, content);
 
-    // Get content's derived width and height
-    const { width: contentWidth, height: contentHeight } = content
-      .getBoundingClientRect();
-    // If content's width or height is less than 10px, use the defaults passed in
-    if (contentWidth < 10 || contentHeight < 10) {
-      windowEl.width = width;
-      windowEl.height = height;
-    } else {
-      windowEl.width = contentWidth;
-      windowEl.height = contentHeight;
-    }
-
-    windowEl.appName = name;
-    windowEl.appIcon = icon;
-    windowEl.sourceUrl = sourceUrl;
-    windowEl.appTag = tag;
-    windowEl.x = x;
-    windowEl.y = y;
-    windowEl.isMinimized = app.isMinimized || false; // Default to false if not provided
-
-    windowEl.appendChild(content);
-    this.addWindow(windowEl);
-
-    eventBus.publish(MESSAGES.APP_LAUNCHED, { name });
+    eventBus.publish(MESSAGES.APP_LAUNCHED, { name: app.name });
   }
+
   addContent(config) {
-    const {
-      appName = "Content Viewer",
-      appIcon = "📄",
-      width = 600,
-      height = 400,
-      content,
-    } = config;
-
-    const windowEl = document.createElement("window-component");
-    windowEl.appName = appName;
-    windowEl.appIcon = appIcon;
-    windowEl.width = width;
-    windowEl.height = height;
-    windowEl.x = 150 + (Math.random() * 200);
-    windowEl.y = 150 + (Math.random() * 100);
-
-    if (typeof content === "string") {
-      windowEl.innerHTML = content;
-    } else if (content instanceof HTMLElement) {
-      windowEl.appendChild(content);
-    }
-
-    this.addWindow(windowEl);
+    this._createWindow({
+      name: config.appName || "Content Viewer",
+      icon: config.appIcon || "📄",
+      ...config
+    }, config.content);
   }
+
   getWindows() {
     return this.shadowRoot.querySelectorAll("window-component");
   }

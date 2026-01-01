@@ -50,6 +50,14 @@ export const APPS = [
         onstartup: false 
     },
     {
+        id: 'monaco-editor-instance',
+        name: 'Monaco Editor Instance',
+        icon: '📝',
+        sourceUrl: '/sites/desktop/wc/monaco-editor-instance.js',
+        tag: 'monaco-editor-instance',
+        onstartup: false
+    },
+    {
         id: 'event-debugger',
         name: 'Event Debugger',
         icon: '🛠️',
