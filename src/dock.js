@@ -19,8 +19,8 @@ export const APPS = [
         id: 'user-management', 
         name: 'User Management', 
         icon: '👨‍⚕️', 
-        sourceUrl: '/admin/user-management/user-management-dashboard.js', 
-        tag: "user-management-dashboard", 
+        sourceUrl: '/wc/google-login.js', 
+        tag: "google-login", 
         onstartup: false 
     },
     { 

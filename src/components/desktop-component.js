@@ -1,3 +1,4 @@
+import '../services/window-manager.js'
 import StorageService from '../services/storage-service.js';
 import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
 import { StartupManager } from "../services/startup-manager.js";
@@ -5,6 +6,8 @@ import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
+
+const URL_PATTERN = /^(https?:\/\/|www\.|[\w.-]+\.[a-z]{2,})|^\/|^\.\.?\//i;
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
@@ -516,8 +519,10 @@ class DesktopComponent extends HTMLElement {
       width = app.width || 600, // Default width if not provided
       height = app.height || 400, // Default height if not provided
     } = app;
-
-    this.importUrl(sourceUrl);
+    //if source url is valid
+    if (URL_PATTERN.test(sourceUrl)) {
+      this.importUrl(sourceUrl);
+    }
 
     // Create the content element for the app
     const content = document.createElement(tag);

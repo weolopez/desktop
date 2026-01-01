@@ -29,6 +29,11 @@ class EventBus {
                     window.eventLogs.push({ type: e.type, detail: e.detail, time: Date.now(), target: this.tagName || 'window' });
                     if (window.eventLogs.length > 100) window.eventLogs.shift();
                 }
+                //if type is undefined add stacktrace to the event details
+                if (!e.type || e.type === 'undefined') {
+                    const stackTrace = new Error().stack;
+                    window.eventLogs.push({ type: 'unknown', detail: { stackTrace }, time: Date.now(), target: this.tagName || 'window' });
+                }
             }
             return originalDispatch.apply(this, arguments);
         };

@@ -17,6 +17,7 @@
 export const MESSAGES = {
     // Application lifecycle
     LAUNCH_APP: 'LAUNCH_APP',
+    APP_LAUNCHED: 'APP_LAUNCHED',
     PUBLISH_TEXT: 'PUBLISH_TEXT',
     
     // Window management
