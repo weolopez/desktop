@@ -13,6 +13,14 @@ export class WindowManager {
     }
 
     setupEventListeners() {
+        // Listen for window focus requests bubbling up from window components
+        this.desktopComponent.shadowRoot.addEventListener('window-request-focus', (e) => {
+            const targetWindow = e.target;
+            if (targetWindow && targetWindow.tagName === 'WINDOW-COMPONENT') {
+                targetWindow.style.zIndex = this.getNextZIndex();
+            }
+        });
+
         // Window management events
         document.addEventListener(MESSAGES.WINDOW_CLOSED, (e) => {
             this.handleWindowClose(e.detail);

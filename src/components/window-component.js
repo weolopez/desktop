@@ -422,60 +422,44 @@ class WindowComponent extends HTMLElement {
         const deltaX = e.clientX - this.dragStartX;
         const deltaY = e.clientY - this.dragStartY;
         
-        switch (this.resizeHandle) {
-            case 'right':
-                this.width = Math.max(this.minWidth, this.startWidth + deltaX);
-                break;
-            case 'bottom':
-                this.height = Math.max(this.minHeight, this.startHeight + deltaY);
-                break;
-            case 'left':
-                const newWidth = Math.max(this.minWidth, this.startWidth - deltaX);
-                if (newWidth > this.minWidth) {
-                    this.x = this.startX + deltaX;
-                    this.width = newWidth;
-                }
-                break;
-            case 'top':
-                const newHeight = Math.max(this.minHeight, this.startHeight - deltaY);
-                if (newHeight > this.minHeight) {
-                    this.y = this.startY + deltaY;
-                    this.height = newHeight;
-                }
-                break;
-            case 'bottom-right':
-                this.width = Math.max(this.minWidth, this.startWidth + deltaX);
-                this.height = Math.max(this.minHeight, this.startHeight + deltaY);
-                break;
-            case 'bottom-left':
-                const newWidthBL = Math.max(this.minWidth, this.startWidth - deltaX);
-                if (newWidthBL > this.minWidth) {
-                    this.x = this.startX + deltaX;
-                    this.width = newWidthBL;
-                }
-                this.height = Math.max(this.minHeight, this.startHeight + deltaY);
-                break;
-            case 'top-right':
-                this.width = Math.max(this.minWidth, this.startWidth + deltaX);
-                const newHeightTR = Math.max(this.minHeight, this.startHeight - deltaY);
-                if (newHeightTR > this.minHeight) {
-                    this.y = this.startY + deltaY;
-                    this.height = newHeightTR;
-                }
-                break;
-            case 'top-left':
-                const newWidthTL = Math.max(this.minWidth, this.startWidth - deltaX);
-                const newHeightTL = Math.max(this.minHeight, this.startHeight - deltaY);
-                if (newWidthTL > this.minWidth) {
-                    this.x = this.startX + deltaX;
-                    this.width = newWidthTL;
-                }
-                if (newHeightTL > this.minHeight) {
-                    this.y = this.startY + deltaY;
-                    this.height = newHeightTL;
-                }
-                break;
+        const RESIZE_DIRS = {
+            'top': { x: 0, y: 1, w: 0, h: -1 },
+            'bottom': { x: 0, y: 0, w: 0, h: 1 },
+            'left': { x: 1, y: 0, w: -1, h: 0 },
+            'right': { x: 0, y: 0, w: 1, h: 0 },
+            'top-left': { x: 1, y: 1, w: -1, h: -1 },
+            'top-right': { x: 0, y: 1, w: 1, h: -1 },
+            'bottom-left': { x: 1, y: 0, w: -1, h: 1 },
+            'bottom-right': { x: 0, y: 0, w: 1, h: 1 }
+        };
+
+        const dir = RESIZE_DIRS[this.resizeHandle];
+        if (!dir) return;
+
+        // Calculate new dimensions
+        let newWidth = this.startWidth + (deltaX * dir.w);
+        let newHeight = this.startHeight + (deltaY * dir.h);
+        let newX = this.startX + (deltaX * dir.x);
+        let newY = this.startY + (deltaY * dir.y);
+
+        // Apply constraints
+        if (newWidth < this.minWidth) {
+            newWidth = this.minWidth;
+            // If resizing from left, x shouldn't change beyond min width
+            if (dir.x) newX = this.startX + (this.startWidth - this.minWidth);
         }
+        
+        if (newHeight < this.minHeight) {
+            newHeight = this.minHeight;
+            // If resizing from top, y shouldn't change beyond min height
+            if (dir.y) newY = this.startY + (this.startHeight - this.minHeight);
+        }
+
+        // Update state
+        this.width = newWidth;
+        this.height = newHeight;
+        if (dir.x) this.x = newX;
+        if (dir.y) this.y = newY;
         
         this.updatePosition();
         this.updateSize();
@@ -555,18 +539,14 @@ class WindowComponent extends HTMLElement {
     }
 
     focus() {
-        // console.log('🪟 Window focus() - Root node host:', this.getRootNode().host);
-        // console.log('🪟 Window focus() - Host windowManager:', this.getRootNode().host?.windowManager);
-        // console.log('🪟 Window focus() - getNextZIndex available:', !!this.getRootNode().host?.windowManager?.getNextZIndex);
-        
         this.isFocused = true;
-        const host = this.getRootNode().host;
-        if (host && host.windowManager && host.windowManager.getNextZIndex) {
-            this.style.zIndex = host.windowManager.getNextZIndex();
-        } else {
-            console.warn('🪟 Window focus() - WindowManager not available, using fallback z-index');
-            this.style.zIndex = '1000'; // Fallback
-        }
+        
+        // Dispatch event to request focus from parent/manager
+        this.dispatchEvent(new CustomEvent('window-request-focus', { 
+            bubbles: true, 
+            composed: true,
+            detail: { windowId: this.windowId }
+        }));
         
         // Update visual state
         const window = this.shadowRoot.querySelector('.window');
