@@ -107,24 +107,6 @@ export async function loadComponentFromString(componentUrl, componentSource, sou
     }
 }
 
-/**
- * Fetches component source from a URL and loads it.
- * @param {string} url - The URL to fetch the component from.
- * @returns {Promise<string|null>} A promise that resolves with the component's tag name, or null on failure.
- */
-// export async function loadComponentFromUrl(url) {
-//     try {
-//         const response = await fetch(url);
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-//         const componentSource = await response.text();
-//         return await loadComponentFromString(componentSource);
-//     } catch (error) {
-//         console.error(`Failed to load component from ${url}:`, error);
-//         return null;
-//     }
-// }
 
 /**
  * @class ComponentRegistry
@@ -217,13 +199,7 @@ export function initializeEventHandlers(registry) {
         let sourceUrl = url || null;
 
         try {
-            // if (url) {
-            //     tagName = await loadComponentFromUrl(url);
-            // } else if (code) {
-                tagName = await loadComponentFromString(url, code);
-            // } else {
-            //     throw new Error('Either url or code must be provided.');
-            // }
+            tagName = await loadComponentFromString(url, code);
 
             if (tagName) {
                 registry.register(mimeType, { tagName, sourceUrl });
@@ -292,23 +268,9 @@ export class DynamicComponentSystem {
             const { detail } = e;
             const tagName = await loadComponentFromString(detail.url, detail.code, detail.sourceUrl);
             this.dispatchRegistrationResult(tagName, detail);
-            // if (detail.url) {
-            //     await this.handleUrlPublish(detail);
-            // } else if (detail.code) {
-            //     await this.handleCodePublish(detail);
-            // }
         });
     }
 
-    // async handleUrlPublish(detail) {
-    //     const tagName = await loadComponentFromUrl(detail.url);
-    //     this.dispatchRegistrationResult(tagName, detail);
-    // }
-
-    // async handleCodePublish(detail) {
-    //     const tagName = await loadComponentFromString(detail.code, detail.sourceUrl);
-    //     this.dispatchRegistrationResult(tagName, detail);
-    // }
 
     dispatchRegistrationResult(tagName, originalDetail) {
         const event = new CustomEvent('COMPONENT_REGISTERED', {
@@ -322,12 +284,4 @@ export class DynamicComponentSystem {
         document.dispatchEvent(event);
     }
 
-    // Expose static methods for direct usage
-    // static async importText(text, sourceUrl) {
-    //     return loadComponentFromString(text, sourceUrl);
-    // }
-
-    // static async importUrl(url) {
-    //     return loadComponentFromUrl(url);
-    // }
 }

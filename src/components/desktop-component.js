@@ -142,13 +142,6 @@ class DesktopComponent extends HTMLElement {
     this.setupPasteDrop();
     // Notification display setup is now handled by StartupManager
     await this.setupAppEventListeners();
-    // this.showTestNotification();
-
-    // Initialize and run startup sequence
-    //pass attribute "config" to StartupManager
-
-    // Initialize services that were successfully loaded
-    // this._initializeLoadedServices();
   }
 
   _populateLegacyReferences() {
@@ -156,16 +149,9 @@ class DesktopComponent extends HTMLElement {
     this.contextMenuManager = this.startupManager.getComponent(
       "ContextMenuManager",
     );
-    // this.windowManager = this.startupManager.getComponent("WindowManager");
   }
 
   _initializeLoadedServices() {
-    // AppService.init() is now called during instantiation in StartupManager
-
-    // if (this.contextMenuManager) {
-    //   this.contextMenuManager.init();
-    // }
-    // this.windowManager = this.startupManager.getComponent("WindowManager");
 
     if (this.windowManager) {
       this.windowManager.setupEventListeners();
@@ -501,33 +487,6 @@ class DesktopComponent extends HTMLElement {
     return windowEl;
   }
 
-  // async importText(text, sourceUrl = undefined) {
-  //   try {
-  //     const tagName = await DynamicComponentSystem.importText(text, sourceUrl);
-  //     if (!tagName) {
-  //       // If it's not a web component, maybe it's just a module we want to run?
-  //       // Or maybe we should just display it as text if it failed to load?
-  //       // For now, let's assume if it failed to return a tag name, it might still have executed side effects
-  //       // or it wasn't a component.
-        
-  //       // If we want to fallback to displaying text:
-  //       // this.appService?.displayPlainTextInWindow(text, "Pasted Text");
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to import text as module:", error);
-  //     this.appService?.displayPlainTextInWindow(text, "Import Error");
-  //   }
-  // }
-
-  // async importUrl(sourceUrl) {
-  //   try {
-  //     await DynamicComponentSystem.importUrl(sourceUrl);
-  //   } catch (err) {
-  //     console.error(`Failed to import module from ${sourceUrl}:`, err);
-  //     throw err;
-  //   }
-  // }
-
   async addApp(app) {
     // Singleton check
     if (app.singleton && this.shadowRoot.querySelector(app.tag)) {
@@ -539,7 +498,8 @@ class DesktopComponent extends HTMLElement {
     if (app.sourceUrl && URL_PATTERN.test(app.sourceUrl)) {
       try {
         // await this.importUrl(app.sourceUrl);
-        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail: { url: app.sourceUrl, mimeType: "application/javascript" } }));
+        // document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail: { url: app.sourceUrl, mimeType: "application/javascript", launch: true } }));
+        
       } catch (err) {
         return; // Error already logged in importUrl
       }

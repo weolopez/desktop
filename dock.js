@@ -36,7 +36,7 @@ export const APPS = [
         id: 'system-preferences', 
         name: 'System Preferences', 
         icon: '⚙️', 
-        sourceUrl: '../apps/system-preferences-webapp.js', 
+        sourceUrl: '/desktop/src/apps/system-preferences-webapp.js', 
         tag: "system-preferences-webapp", 
         onstartup: false,
         singleton: true

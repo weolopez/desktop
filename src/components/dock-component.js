@@ -341,14 +341,15 @@ class DockComponent extends HTMLElement {
         });
     }
     launchApp(app) {
-        // Dispatch the launch message first
-        eventBus.publish(MESSAGES.LAUNCH_APP, app);
-
         // Update the running state
         const appData = this.apps.find(a => a.id === app.id);
         if (appData) {
             appData.running = true;
         }
+
+        const detail = { url: app.sourceUrl, code: '', mimeType: "application/javascript", launch: (appData && appData.running && !appData.singleton) };
+        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
+
         
         // Re-render to update the running state
         this.render();
