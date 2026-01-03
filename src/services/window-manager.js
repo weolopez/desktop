@@ -132,26 +132,8 @@ export class WindowManager {
                 const windowsState = JSON.parse(savedState);
                 console.log('🔄 WindowManager - Found saved state:', windowsState);
                 
-                // Use a for...of loop to handle async app launching sequentially
                 for (const state of windowsState) {
-
-                    // if (!state || !state.sourceUrl) {
-                    //     console.warn('🔄 WindowManager - Invalid window state, skipping:', state);
-
-                    //     // get text and tag to local storage
-                        const text = localStorage.getItem(`web-component-${state.appTag}`)  || undefined;
-                    //     if (text) {
-                    //         console.log('🔄 WindowManager - Found saved text for tag:', state.appTag);
-                    //     } else {
-                    //         console.warn('🔄 WindowManager - No saved text found for tag:', state.appTag);
-                    //         continue
-                    //     }
-                    //     await this.desktopComponent.importText(text, state.sourceUrl);
-                    // } else {
-                    //     await this.desktopComponent.importUrl(state.sourceUrl);
-                    // }
-                        // document.addEventListener('PUBLISH_COMPONENT', async (e) => { const { url, code, mimeType, launch} = e.detail || {};
-                    // instead   const detail = { code: text, mimeType: "application/javascript", launch: true }; 
+                    const text = localStorage.getItem(`web-component-${state.appTag}`)  || undefined;
                     const detail = { url: state.sourceUrl, code: text, mimeType: "application/javascript", launch: false };
                     document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
                     

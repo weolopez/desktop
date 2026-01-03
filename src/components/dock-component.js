@@ -341,15 +341,16 @@ class DockComponent extends HTMLElement {
         });
     }
     launchApp(app) {
+        const running = localStorage.getItem(`desktopWindowsState`) && JSON.parse(localStorage.getItem(`desktopWindowsState`)).some(w => w.appTag === app.id);
+
+        const detail = { url: app.sourceUrl, code: '', mimeType: "application/javascript", launch: (!running && app.singleton) };
+        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
+
         // Update the running state
         const appData = this.apps.find(a => a.id === app.id);
         if (appData) {
             appData.running = true;
         }
-
-        const detail = { url: app.sourceUrl, code: '', mimeType: "application/javascript", launch: (appData && appData.running && !appData.singleton) };
-        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
-
         
         // Re-render to update the running state
         this.render();

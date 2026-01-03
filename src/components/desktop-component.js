@@ -494,17 +494,6 @@ class DesktopComponent extends HTMLElement {
       return;
     }
 
-    // Load source if it's a URL
-    if (app.sourceUrl && URL_PATTERN.test(app.sourceUrl)) {
-      try {
-        // await this.importUrl(app.sourceUrl);
-        // document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail: { url: app.sourceUrl, mimeType: "application/javascript", launch: true } }));
-        
-      } catch (err) {
-        return; // Error already logged in importUrl
-      }
-    }
-
     const content = document.createElement(app.tag || "div");
     this._createWindow(app, content);
 
@@ -527,7 +516,6 @@ class DesktopComponent extends HTMLElement {
     return this.shadowRoot.querySelector(".desktop-surface");
   }
 
-  // Attribute handler methods
   _updateWallpaper(wallpaper) {
     // Wallpaper is handled by CSS attribute selectors
   }
