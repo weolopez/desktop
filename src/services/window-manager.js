@@ -2,17 +2,23 @@ import eventBus from "../events/event-bus.js";
 import { MESSAGES } from "../events/message-types.js";
 
 export class WindowManager {
-    constructor(desktopComponent, appService) {
-        console.log('🔧 WindowManager constructor - Setting up with desktopComponent:', desktopComponent);
-        this.desktopComponent = desktopComponent
-        this.desktopComponent.windowManager = this;
-        console.log('🔧 WindowManager constructor - windowManager assigned to desktopComponent:', !!this.desktopComponent.windowManager);
-        this.appService = appService
+    constructor(appService) {
+        this.desktopComponent = document.querySelector('desktop-component');
+        console.log('🔧 WindowManager constructor - Found desktopComponent:', this.desktopComponent);
+        
+        if (this.desktopComponent) {
+            this.desktopComponent.windowManager = this;
+            console.log('🔧 WindowManager constructor - windowManager assigned to desktopComponent:', !!this.desktopComponent.windowManager);
+            this.desktopComponent._initializeLoadedServices();
+        }
+        
+        this.appService = appService;
         this.setupEventListeners();
-        this.desktopComponent._initializeLoadedServices()
     }
 
     setupEventListeners() {
+        if (!this.desktopComponent) return;
+        
         // Listen for window focus requests bubbling up from window components
         this.desktopComponent.shadowRoot.addEventListener('window-request-focus', (e) => {
             const targetWindow = e.target;

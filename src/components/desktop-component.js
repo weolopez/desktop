@@ -6,7 +6,6 @@ import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
 import '../components/window-component.js';
 
-const URL_PATTERN = /^(https?:\/\/|www\.|[\w.-]+\.[a-z]{2,})|^\/|^\.\.?\//i;
 
 class DesktopComponent extends HTMLElement {
   static get observedAttributes() {
@@ -24,7 +23,6 @@ class DesktopComponent extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" })
-    // new DynamicComponentSystem()
 
     // Initialize startup manager for configurable component loading
     this.startupManager = new StartupManager();
@@ -54,8 +52,8 @@ class DesktopComponent extends HTMLElement {
   async _initializeAttributes() {
 
     const configURL = this.getAttribute("config") || window.startupConfig || '/desktop/config.json';
-    await this.startupManager.init(configURL);
-    await this.startupManager.startupSequence(this);
+    // await this.startupManager.init(configURL);
+    // await this.startupManager.startupSequence(this);
 
     try {
       await this._getDB();

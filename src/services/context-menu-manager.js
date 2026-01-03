@@ -2,8 +2,8 @@ import eventBus from "../events/event-bus.js";
 import { MESSAGES } from "../events/message-types.js";
 
 export class ContextMenuManager {
-  constructor(desktopComponent) {
-    this.desktopComponent = desktopComponent;
+  constructor() {
+    this.desktopComponent = document.querySelector('desktop-component');
     this.contextMenuHtml = `
             <div class="context-menu" id="contextMenu">
                 <div class="context-menu-item" data-action="clear-cache">Clear Cache</div>
@@ -55,6 +55,10 @@ export class ContextMenuManager {
   }
 
   init() {
+    if (!this.desktopComponent) {
+      console.warn('⚠️ ContextMenuManager: desktop-component not found');
+      return;
+    }
     const style = document.createElement("style");
     style.textContent = this.contextMenuCss;
     this.desktopComponent.appendContextMenu(this.contextMenuHtml, style);
@@ -62,6 +66,7 @@ export class ContextMenuManager {
   }
 
   setupEventListeners() {
+    if (!this.desktopComponent) return;
 
     this.desktopComponent.getDesktopSurface().addEventListener(
       "contextmenu",

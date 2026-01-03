@@ -27,7 +27,7 @@
             "dependencies": [],
             "enabled": true,
             "config": {
-              "constructorArgs": ["desktopComponent", "deps.AppService"],
+              "constructorArgs": ["deps.AppService"],
               "postInit": null
             }
           },
@@ -40,7 +40,7 @@
             "config": {
               "constructorArgs": [],
               "postInit": "init",
-              "postInitArgs": ["desktopComponent"]
+              "postInitArgs": []
             }
           }
         ]
@@ -58,7 +58,7 @@
             "dependencies": [],
             "enabled": true,
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           },
@@ -71,7 +71,7 @@
             "isWebComponent": true,
             "tagName": "dock-component",
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           }
@@ -91,7 +91,7 @@
             "enabled": true,
             "fallbackGraceful": true,
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           },
@@ -133,7 +133,7 @@
             "isWebComponent": true,
             "tagName": "spotlight-component",
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           },
@@ -150,7 +150,7 @@
             "connectTo": "NotificationService",
             "connectMethod": "setDisplayComponent",
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           }

@@ -10,7 +10,7 @@ import { MESSAGES, validateMessagePayload } from '../events/message-types.js';
 import eventBus from '../events/event-bus.js';
 
 export class NotificationService {
-    constructor(desktopComponent = null) {
+    constructor() {
         this.notifications = new Map(); // Active notifications
         this.history = []; // All notifications (for history/center)
         this.permissions = new Map(); // App permissions

@@ -4,11 +4,14 @@
  */
 export class StartupManager {
   constructor() {
-    this.config = null;
     this.loadedComponents = new Map();
     this.loadingPhases = new Map();
     this.dependencies = new Map();
     this.startTime = performance.now();
+    const scriptWithConfig = document.querySelector('script[data-config]');
+    if (scriptWithConfig) {
+      this.init(scriptWithConfig.dataset.config);
+    }
   }
 
   async init(config) {
@@ -37,9 +40,10 @@ export class StartupManager {
       console.warn('⚠️ Failed to load config.json, using defaults:', error);
       alert('⚙️ Using default startup config:', this.config.startup.phases.length, 'phases');
     }
+    await this.startupSequence();
   }
 
-  async startupSequence(desktopComponent) {
+  async startupSequence() {
     const phases = this.config.startup.phases;
     
     console.log(`🚀 Starting ${phases.length} phase startup sequence`);
@@ -54,14 +58,14 @@ export class StartupManager {
       }
 
       if (phase.defer && this.shouldDeferPhase(phase)) {
-        this.deferPhase(phase, desktopComponent);
+        this.deferPhase(phase);
         continue;
       }
 
       if (phase.parallel) {
-        await this.loadPhaseParallel(phase, desktopComponent);
+        await this.loadPhaseParallel(phase);
       } else {
-        await this.loadPhaseSequential(phase, desktopComponent);
+        await this.loadPhaseSequential(phase);
       }
     }
 
@@ -69,7 +73,7 @@ export class StartupManager {
     console.log(`✅ Startup complete in ${totalTime.toFixed(2)}ms`);
   }
 
-  async loadPhaseParallel(phase, desktopComponent) {
+  async loadPhaseParallel(phase) {
     const { maxConcurrentLoads = 3 } = this.config.startup.performance;
     // Filter enabled components only
     const components = [...phase.components]
@@ -84,14 +88,14 @@ export class StartupManager {
     
     const loadPromises = [];
     for (let i = 0; i < Math.min(components.length, maxConcurrentLoads); i++) {
-      loadPromises.push(this.loadComponentsFromQueue(components, desktopComponent));
+      loadPromises.push(this.loadComponentsFromQueue(components));
     }
     
     await Promise.all(loadPromises);
     this.loadingPhases.set(phase.name, 'completed');
   }
 
-  async loadPhaseSequential(phase, desktopComponent) {
+  async loadPhaseSequential(phase) { 
     // Filter enabled components only
     const enabledComponents = phase.components
       .filter(component => component.enabled !== false)
@@ -104,24 +108,24 @@ export class StartupManager {
     }
     
     for (const component of enabledComponents) {
-      await this.loadComponent(component, desktopComponent);
+      await this.loadComponent(component);
     }
     this.loadingPhases.set(phase.name, 'completed');
   }
 
-  async loadComponentsFromQueue(queue, desktopComponent) {
+  async loadComponentsFromQueue(queue) {
     const pendingComponents = [];
     
     while (queue.length > 0) {
       const component = queue.shift();
       if (component && component.enabled !== false) {
         if (await this.checkDependencies(component)) {
-          await this.loadComponent(component, desktopComponent);
+          await this.loadComponent(component)
           // After loading a component, check if any pending components can now be loaded
           for (let i = pendingComponents.length - 1; i >= 0; i--) {
             const pendingComponent = pendingComponents[i];
             if (await this.checkDependencies(pendingComponent)) {
-              await this.loadComponent(pendingComponent, desktopComponent);
+              await this.loadComponent(pendingComponent)
               pendingComponents.splice(i, 1); // Remove from pending list
             }
           }
@@ -142,7 +146,7 @@ export class StartupManager {
       
       for (const component of remainingComponents) {
         if (await this.checkDependencies(component)) {
-          await this.loadComponent(component, desktopComponent);
+          await this.loadComponent(component);
         } else {
           pendingComponents.push(component); // Still pending
         }
@@ -192,12 +196,12 @@ export class StartupManager {
     return phase.defer && (performance.now() - this.startTime) > 1000;
   }
 
-  deferPhase(phase, desktopComponent) {
+  deferPhase(phase) {
     console.log(`⏰ Deferring phase "${phase.name}" for lazy loading`);
     
     setTimeout(() => {
       console.log(`🔄 Loading deferred phase "${phase.name}"`);
-      this.loadPhaseParallel(phase, desktopComponent);
+      this.loadPhaseParallel(phase);
     }, 2000);
   }
 
@@ -214,7 +218,7 @@ export class StartupManager {
     });
   }
 
-  async loadComponent(component, desktopComponent) {
+  async loadComponent(component) {
     if (this.loadedComponents.has(component.name)) {
       return this.loadedComponents.get(component.name);
     }
@@ -238,7 +242,7 @@ export class StartupManager {
       );
 
       const moduleResult = await Promise.race([loadPromise, timeoutPromise]);
-      const instance = await this.instantiateComponent(component, moduleResult, desktopComponent);
+      const instance = await this.instantiateComponent(component, moduleResult);
       
       this.loadedComponents.set(component.name, instance);
       
@@ -293,10 +297,10 @@ export class StartupManager {
     return path.split('.').reduce((current, key) => current && current[key], obj);
   }
 
-  async instantiateComponent(config, moduleResult, desktopComponent) {
+  async instantiateComponent(config, moduleResult) {
     // Handle web components differently from service classes
     if (config.isWebComponent) {
-      return this.instantiateWebComponent(config, moduleResult, desktopComponent);
+      return this.instantiateWebComponent(config, moduleResult);
     }
 
     const ComponentClass = moduleResult.default ||
@@ -311,13 +315,12 @@ export class StartupManager {
     
     // Get instantiation configuration from component's config section
     const instantiationConfig = config.config || {
-      constructorArgs: ["desktopComponent"],
+      constructorArgs: [],
       postInit: null
     };
     
     // Resolve constructor arguments
     const constructorArgs = this.resolveConstructorArgs(instantiationConfig.constructorArgs, {
-      desktopComponent,
       deps,
       config
     });
@@ -329,7 +332,7 @@ export class StartupManager {
     if (instantiationConfig.postInit) {
       const postInitArgs = this.resolveConstructorArgs(
         instantiationConfig.postInitArgs || [],
-        { desktopComponent, deps, config }
+        { deps, config }
       );
       
       if (instantiationConfig.async) {
@@ -343,7 +346,7 @@ export class StartupManager {
     return instance;
   }
 
-  async instantiateWebComponent(config, moduleResult, desktopComponent) {
+  async instantiateWebComponent(config, moduleResult) {
     await customElements.whenDefined(config.tagName);
     
     const customElement = document.createElement(config.tagName);
@@ -360,10 +363,10 @@ export class StartupManager {
     // Determine where to append the element
     let appendTarget;
     if (config.appendTo === 'shadowRoot') {
-      appendTarget = desktopComponent.shadowRoot;
+      appendTarget = document.querySelector('desktop-component').shadowRoot;
     } else {
       // Default to desktop surface for most components
-      appendTarget = desktopComponent.shadowRoot.children[2];
+      appendTarget = document.querySelector('desktop-component').shadowRoot.children[2];
     }
     
     appendTarget.appendChild(customElement);
