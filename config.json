@@ -5,12 +5,26 @@
         "name": "critical",
         "parallel": true,
         "components": [
+          
+          {
+            "name": "DynamicComponentSystem",
+            "path": "./dynamic-component-system.js",
+            "required": true,
+            "priority": 1,
+            "dependencies": [],
+            "enabled": true,
+            "config": {
+              "constructorArgs": [],
+              "postInit": null
+            }
+          },
+
           {
             "name": "WindowManager",
             "path": "./window-manager.js",
             "required": false,
             "priority": 1,
-            "dependencies": ["AppService"],
+            "dependencies": [],
             "enabled": true,
             "config": {
               "constructorArgs": ["desktopComponent", "deps.AppService"],

@@ -1,6 +1,5 @@
-import '../services/window-manager.js'
 import StorageService from '../services/storage-service.js';
-import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
+// import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
 import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
@@ -25,7 +24,7 @@ class DesktopComponent extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" })
-    new DynamicComponentSystem()
+    // new DynamicComponentSystem()
 
     // Initialize startup manager for configurable component loading
     this.startupManager = new StartupManager();
@@ -54,7 +53,8 @@ class DesktopComponent extends HTMLElement {
 
   async _initializeAttributes() {
 
-    await this.startupManager.init(this.getAttribute("config"));
+    const configURL = this.getAttribute("config") || window.startupConfig || '/desktop/config.json';
+    await this.startupManager.init(configURL);
     await this.startupManager.startupSequence(this);
 
     try {
@@ -430,7 +430,7 @@ class DesktopComponent extends HTMLElement {
         if (!/^https?:\/\//i.test(sourceUrl)) {
           sourceUrl = window.location.origin + "/" + sourceUrl;
         }
-        const detail = { url: sourceUrl, mimeType: "application/javascript" };
+        const detail = { url: sourceUrl, mimeType: "application/javascript", launch: true};
         document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
       } else if (this._isValidUrl(text)) {
         eventBus.publish(MESSAGES.PUBLISH_URL, { url: text });
@@ -501,32 +501,32 @@ class DesktopComponent extends HTMLElement {
     return windowEl;
   }
 
-  async importText(text, sourceUrl = undefined) {
-    try {
-      const tagName = await DynamicComponentSystem.importText(text, sourceUrl);
-      if (!tagName) {
-        // If it's not a web component, maybe it's just a module we want to run?
-        // Or maybe we should just display it as text if it failed to load?
-        // For now, let's assume if it failed to return a tag name, it might still have executed side effects
-        // or it wasn't a component.
+  // async importText(text, sourceUrl = undefined) {
+  //   try {
+  //     const tagName = await DynamicComponentSystem.importText(text, sourceUrl);
+  //     if (!tagName) {
+  //       // If it's not a web component, maybe it's just a module we want to run?
+  //       // Or maybe we should just display it as text if it failed to load?
+  //       // For now, let's assume if it failed to return a tag name, it might still have executed side effects
+  //       // or it wasn't a component.
         
-        // If we want to fallback to displaying text:
-        // this.appService?.displayPlainTextInWindow(text, "Pasted Text");
-      }
-    } catch (error) {
-      console.error("Failed to import text as module:", error);
-      this.appService?.displayPlainTextInWindow(text, "Import Error");
-    }
-  }
+  //       // If we want to fallback to displaying text:
+  //       // this.appService?.displayPlainTextInWindow(text, "Pasted Text");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to import text as module:", error);
+  //     this.appService?.displayPlainTextInWindow(text, "Import Error");
+  //   }
+  // }
 
-  async importUrl(sourceUrl) {
-    try {
-      await DynamicComponentSystem.importUrl(sourceUrl);
-    } catch (err) {
-      console.error(`Failed to import module from ${sourceUrl}:`, err);
-      throw err;
-    }
-  }
+  // async importUrl(sourceUrl) {
+  //   try {
+  //     await DynamicComponentSystem.importUrl(sourceUrl);
+  //   } catch (err) {
+  //     console.error(`Failed to import module from ${sourceUrl}:`, err);
+  //     throw err;
+  //   }
+  // }
 
   async addApp(app) {
     // Singleton check
@@ -538,7 +538,8 @@ class DesktopComponent extends HTMLElement {
     // Load source if it's a URL
     if (app.sourceUrl && URL_PATTERN.test(app.sourceUrl)) {
       try {
-        await this.importUrl(app.sourceUrl);
+        // await this.importUrl(app.sourceUrl);
+        document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail: { url: app.sourceUrl, mimeType: "application/javascript" } }));
       } catch (err) {
         return; // Error already logged in importUrl
       }

@@ -409,3 +409,17 @@ export class StartupManager {
     };
   }
 }
+
+// Read config from script data attributes and initialize desktop
+const script = document.currentScript;
+if (script) {
+  window.startupConfig = script.dataset.config || '/desktop/config.json';
+}
+
+if (!document.querySelector('desktop-component')) {
+  // Import and create desktop component
+  import('../components/desktop-component.js').then(() => {
+      const desktop = document.createElement('desktop-component');
+      document.body.appendChild(desktop);
+  });
+}
