@@ -37,10 +37,6 @@ document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', {
         mimeType: 'application/javascript' 
     }
 }));
-
-// Direct API usage
-import { loadComponentFromUrl } from '/wc/dynamic-component-system/src/component-loader.js';
-const tagName = await loadComponentFromUrl('/apps/my-webapp.js');
 ```
 
 **Features:**
@@ -194,34 +190,127 @@ const allComponents = registry.listRegistered();
 
 ### Startup System Integration
 
-The Dynamic Component System is integrated into WE-OS's startup system as the **AppService**:
+The Dynamic Component System is integrated into WE-OS's startup system via the `StartupManager`. It is defined as a critical component in `config.json`:
 
-```javascript
+```json
 // config.json
 {
-    "name": "AppService",
-    "path": "/wc/dynamic-component-system/src/index.js",
-    "required": false,
-    "priority": 1,
-    "config": {
-        "constructorArgs": [],
-        "postInit": "init",
-        "postInitArgs": ["desktopComponent"]
-    }
+  "startup": {
+    "phases": [
+      {
+        "name": "critical",
+        "parallel": true,
+        "components": [
+          {
+            "name": "DynamicComponentSystem",
+            "path": "./dynamic-component-system.js",
+            "required": true,
+            "priority": 1,
+            "dependencies": [],
+            "enabled": true,
+            "config": {
+              "constructorArgs": [],
+              "postInit": null
+            }
+          },
+          {
+            "name": "WindowManager",
+            "path": "./window-manager.js",
+            "required": false,
+            "priority": 1,
+            "dependencies": [],
+            "enabled": true,
+            "config": {
+              "constructorArgs": ["desktopComponent", "deps.AppService"],
+              "postInit": null
+            }
+          },
+          {
+            "name": "AppService",
+            "path": "/desktop/src/services/dynamic-component-system.js",
+            "required": false,
+            "priority": 1,
+            "enabled": true,
+            "config": {
+              "constructorArgs": [],
+              "postInit": "init",
+              "postInitArgs": ["desktopComponent"]
+            }
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
 ### Desktop Component Integration
 
-The desktop component initializes the system and provides access to the registry:
+The desktop component uses the `StartupManager` to initialize the system and retrieve services:
 
 ```javascript
 // In desktop-component.js
-async function initializeAppService() {
-    this.appService = startupManager.getComponent('AppService');
-    if (this.appService) {
-        // System is ready for dynamic component loading
-        console.log('Dynamic Component System available');
+constructor() {
+    super();
+    // Initialize startup manager for configurable component loading
+    this.startupManager = new StartupManager();
+    // ...
+}
+
+async _initializeAttributes() {
+    const configURL = this.getAttribute("config") || window.startupConfig || '/desktop/config.json';
+    await this.startupManager.init(configURL);
+    await this.startupManager.startupSequence(this);
+}
+
+_populateLegacyReferences() {
+    this.appService = this.startupManager.getComponent("AppService");
+    this.contextMenuManager = this.startupManager.getComponent("ContextMenuManager");
+    // ...
+}
+```
+
+### Window Restoration and State Management
+
+The `WindowManager` handles the persistence and restoration of application windows, leveraging the Dynamic Component System to restore custom elements.
+
+1.  **State Saving**: Window state (position, size, source URL, app tag) is saved to `localStorage`.
+2.  **Component Caching**: The source code of loaded components is cached in `localStorage` (e.g., `web-component-my-app`).
+3.  **Restoration Process**:
+    *   The `WindowManager` retrieves the saved window state.
+    *   It attempts to retrieve the cached component source code.
+    *   It dispatches a `PUBLISH_COMPONENT` event with the source code (or URL if code is missing) to re-register the component.
+    *   Once registered, the window is re-added to the desktop.
+
+```javascript
+// window-manager.js restoration logic
+async restoreWindowsState() {
+    const savedState = localStorage.getItem('desktopWindowsState');
+    if (savedState) {
+        const windowsState = JSON.parse(savedState);
+        
+        for (const state of windowsState) {
+            // Retrieve cached component code
+            const text = localStorage.getItem(`web-component-${state.appTag}`);
+            
+            // Re-publish the component to ensure it is registered
+            const detail = { 
+                url: state.sourceUrl, 
+                code: text, 
+                mimeType: "application/javascript", 
+                launch: false 
+            };
+            document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
+
+            // Re-create the window
+            await this.desktopComponent.addApp({
+                name: state.appName,
+                icon: state.appIcon,
+                tag: state.appTag,
+                sourceUrl: state.sourceUrl,
+                // ... position and size
+            });
+        }
     }
 }
 ```

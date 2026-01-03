@@ -126,32 +126,39 @@ The StartupManager orchestrates the entire system initialization process:
         "parallel": true,
         "components": [
           {
-            "name": "AppService",
-            "path": "/wc/dynamic-component-system/src/index.js",
-            "required": false,
+            "name": "DynamicComponentSystem",
+            "path": "./dynamic-component-system.js",
+            "required": true,
             "priority": 1,
+            "dependencies": [],
+            "enabled": true,
             "config": {
               "constructorArgs": [],
-              "postInit": "init",
-              "postInitArgs": ["desktopComponent"]
-            }
-          },
-          {
-            "name": "WallpaperManager",
-            "path": "./wallpaper-manager.js",
-            "required": false,
-            "priority": 1,
-            "config": {
-              "constructorArgs": ["desktopComponent"]
+              "postInit": null
             }
           },
           {
             "name": "WindowManager",
             "path": "./window-manager.js",
-            "dependencies": ["AppService"],
+            "required": false,
             "priority": 1,
+            "dependencies": [],
+            "enabled": true,
             "config": {
-              "constructorArgs": ["desktopComponent", "deps.AppService"]
+              "constructorArgs": ["desktopComponent", "deps.AppService"],
+              "postInit": null
+            }
+          },
+          {
+            "name": "AppService",
+            "path": "/desktop/src/services/dynamic-component-system.js",
+            "required": false,
+            "priority": 1,
+            "enabled": true,
+            "config": {
+              "constructorArgs": [],
+              "postInit": "init",
+              "postInitArgs": ["desktopComponent"]
             }
           }
         ]
@@ -249,12 +256,13 @@ WE-OS integrates with a sophisticated **Dynamic Component System** that provides
 ```javascript
 // WE-OS config.json integration
 {
-  "name": "AppService",
-  "path": "/wc/dynamic-component-system/src/index.js",
+  "name": "DynamicComponentSystem",
+  "path": "./dynamic-component-system.js",
+  "required": true,
+  "priority": 1,
   "config": {
     "constructorArgs": [],
-    "postInit": "init",
-    "postInitArgs": ["desktopComponent"]
+    "postInit": null
   }
 }
 ```
@@ -404,6 +412,17 @@ Complete windowing system implementation:
 5. **Persistence**: State saved to sessionStorage
 6. **Cleanup**: Proper resource cleanup on close
 
+**Window Restoration Architecture**:
+The system implements a robust window restoration mechanism that persists application state across sessions:
+
+1.  **State Capture**: The `WindowManager` listens for window events (move, resize, close) and saves the state (position, size, source URL, app tag) to `localStorage`.
+2.  **Component Caching**: To ensure custom elements can be restored even if the network is unavailable, the source code of loaded components is cached in `localStorage`.
+3.  **Restoration Sequence**:
+    *   On startup, `WindowManager` retrieves the saved window state.
+    *   It attempts to retrieve the cached component source code.
+    *   It dispatches a `PUBLISH_COMPONENT` event with the cached code (or URL) to re-register the web component.
+    *   Once registered, the window is re-instantiated with its previous state.
+
 ### 4. New Service Integrations
 
 #### 4.1. WebLLM Service - AI Integration
@@ -460,7 +479,7 @@ Image and file preview system:
 
 **File**: `src/apps/terminal-webapp.js`
 
-Sophisticated virtual filesystem with Unix-like commands:
+Sophisticated virtualfilesystem with Unix-like commands:
 
 **Directory Structure**:
 ```
