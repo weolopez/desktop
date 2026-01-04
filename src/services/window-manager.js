@@ -20,10 +20,20 @@ export class WindowManager {
         if (!this.desktopComponent) return;
         
         // Listen for window focus requests bubbling up from window components
-        this.desktopComponent.shadowRoot.addEventListener('window-request-focus', (e) => {
-            const targetWindow = e.target;
-            if (targetWindow && targetWindow.tagName === 'WINDOW-COMPONENT') {
-                targetWindow.style.zIndex = this.getNextZIndex();
+        document.querySelector(".desktop-content").addEventListener('window-request-focus', (e) => {
+            const target = e.target;
+            const id = e.detail.windowId
+            const children = target.children
+            //for each child look for attribute called windowId and match it with id
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                if (child.windowId === id) {
+                    const targetWindow = child;
+                    if (targetWindow && targetWindow.tagName === 'WINDOW-COMPONENT') {
+                        targetWindow.style.zIndex = this.getNextZIndex();
+                    }
+                    break;
+                }
             }
         });
 

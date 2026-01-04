@@ -542,7 +542,7 @@ class WindowComponent extends HTMLElement {
         this.isFocused = true;
         
         // Dispatch event to request focus from parent/manager
-        this.dispatchEvent(new CustomEvent('window-request-focus', { 
+        document.querySelector(".desktop-content").dispatchEvent(new CustomEvent('window-request-focus', { 
             bubbles: true, 
             composed: true,
             detail: { windowId: this.windowId }
