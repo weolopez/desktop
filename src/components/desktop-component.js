@@ -188,36 +188,10 @@ class DesktopComponent extends HTMLElement {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     
                     /* CSS Custom Properties for reactive theming */
-                    --desktop-wallpaper: var(--wallpaper-gradient);
                     --dock-position: bottom;
                     --accent-color: #007AFF;
                     --grid-snap-size: 20px;
                     --desktop-icons-visible: block;
-                }
-
-                .desktop-background {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    z-index: -1;
-                    background: var(--desktop-wallpaper);
-                }
-
-                :host([wallpaper="gradient"]) {
-                    --desktop-wallpaper: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                }
-
-                :host([wallpaper="monterey"]) {
-                    --desktop-wallpaper: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%);
-                }
-
-                :host([wallpaper="big-sur"]) {
-                    --desktop-wallpaper: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
-                }
-                :host([wallpaper="ice-blue"]) {
-                    --desktop-wallpaper: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);
                 }
 
                 :host([dock-position="bottom"]) .dock-container {
@@ -283,8 +257,6 @@ class DesktopComponent extends HTMLElement {
                 }
             </style>
             
-            <div class="desktop-background"></div>
-            
             <div class="desktop-surface">
                 <div class="desktop-content">
                     <slot></slot>
@@ -293,6 +265,7 @@ class DesktopComponent extends HTMLElement {
         `;
     // Apply current attribute values to CSS custom properties
     this._updateAccentColor(this.getAttribute("accent-color") || "#007AFF");
+    this._updateWallpaper(this.getAttribute("wallpaper") || "gradient");
   }
 
   setupPasteDrop() {
@@ -467,7 +440,13 @@ class DesktopComponent extends HTMLElement {
   }
 
   _updateWallpaper(wallpaper) {
-    // Wallpaper is handled by CSS attribute selectors
+    const wallpapers = {
+      "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      "monterey": "linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%)",
+      "big-sur": "linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)",
+      "ice-blue": "linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%)"
+    };
+    document.body.style.background = wallpapers[wallpaper] || wallpapers.gradient;
   }
 
   // Wallpaper helpers (migrated from WallpaperManager)
