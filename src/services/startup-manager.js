@@ -426,3 +426,5 @@ if (!document.querySelector('desktop-component')) {
       document.body.appendChild(desktop);
   });
 }
+
+new StartupManager();

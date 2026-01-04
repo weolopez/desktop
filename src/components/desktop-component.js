@@ -1,6 +1,4 @@
 import StorageService from '../services/storage-service.js';
-// import {DynamicComponentSystem} from '../services/dynamic-component-system.js'
-import { StartupManager } from "../services/startup-manager.js";
 import { MESSAGES } from "../events/message-types.js";
 import eventBus from "../events/event-bus.js";
 import "../events/event-monitor.js";
@@ -23,9 +21,6 @@ class DesktopComponent extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" })
-
-    // Initialize startup manager for configurable component loading
-    this.startupManager = new StartupManager();
 
     // Legacy service references will be populated after startup
     this.appService = null;
@@ -52,8 +47,6 @@ class DesktopComponent extends HTMLElement {
   async _initializeAttributes() {
 
     const configURL = this.getAttribute("config") || window.startupConfig || '/desktop/config.json';
-    // await this.startupManager.init(configURL);
-    // await this.startupManager.startupSequence(this);
 
     try {
       await this._getDB();
@@ -61,10 +54,6 @@ class DesktopComponent extends HTMLElement {
       if (!this.hasAttribute("wallpaper")) {
         const savedWallpaper = await this.storageService.getItem("desktop-wallpaper", 'preferences') || "gradient";
         this.setAttribute("wallpaper", savedWallpaper);
-      }
-      if (!this.hasAttribute("dock-position")) {
-        const savedDockPosition = await this.storageService.getItem("dock-position", 'preferences') || "bottom";
-        this.setAttribute("dock-position", savedDockPosition);
       }
       if (!this.hasAttribute("grid-snap")) {
         const savedGridSnap = await this.storageService.getItem("grid-snap", 'preferences') || "false";
@@ -130,24 +119,10 @@ class DesktopComponent extends HTMLElement {
   async connectedCallback() {
     this.render();
 
-    // Populate legacy service references for backwards compatibility
-    this._populateLegacyReferences();
-
-
-    // Log startup metrics for debugging
-    this._logStartupMetrics();
-
     this.setupPasteDrop();
-    // Notification display setup is now handled by StartupManager
     await this.setupAppEventListeners();
   }
 
-  _populateLegacyReferences() {
-    this.appService = this.startupManager.getComponent("AppService");
-    this.contextMenuManager = this.startupManager.getComponent(
-      "ContextMenuManager",
-    );
-  }
 
   _initializeLoadedServices() {
 
@@ -157,19 +132,6 @@ class DesktopComponent extends HTMLElement {
     }
   }
 
-  _logStartupMetrics() {
-    const metrics = this.startupManager.getStartupMetrics();
-    console.log("🎯 Desktop Startup Metrics:", {
-      totalTime: `${metrics.totalTime.toFixed(2)}ms`,
-      componentsLoaded: metrics.componentsLoaded,
-      phasesCompleted: metrics.phasesCompleted,
-      servicesStatus: {
-        appService: !!this.appService,
-        contextMenuManager: !!this.contextMenuManager,
-        windowManager: !!this.windowManager,
-      },
-    });
-  }
 
   showTestNotification() {
     setTimeout(() => {
@@ -324,20 +286,10 @@ class DesktopComponent extends HTMLElement {
             <div class="desktop-background"></div>
             
             <div class="desktop-surface">
-                <!--<div class="menu-bar-container">
-                    <menu-bar-component></menu-bar-component>
-                </div>-->
-
                 <div class="desktop-content">
                     <slot></slot>
                 </div>
-                
-                    <!-- 
-                <div class="dock-container" id="dock-container">
-                </div>
-                    dock-component will be inserted here by StartupManager -->
             </div>
-            <!-- notification-display-component is now loaded dynamically by StartupManager -->
         `;
     // Apply current attribute values to CSS custom properties
     this._updateAccentColor(this.getAttribute("accent-color") || "#007AFF");
@@ -533,20 +485,6 @@ class DesktopComponent extends HTMLElement {
     const nextIndex = (currentIndex + 1) % wallpapers.length;
     const newWallpaper = wallpapers[nextIndex];
     this.currentWallpaper = newWallpaper; // triggers attributeChangedCallback which persists
-  }
-
-  _updateDockPosition(position) {
-    // Dock position is now handled by CSS attribute selectors
-    // Notify dock component if needed
-    const dockComponent = this.shadowRoot.querySelector("dock-component");
-    if (dockComponent) {
-      dockComponent.setAttribute("position", position);
-    } else if (this.startupManager) {
-      // If dock not loaded yet, it will get the position when it loads
-      console.log(
-        `📍 Dock position will be set to "${position}" when dock loads`,
-      );
-    }
   }
 
   _updateGridSnap(enabled) {
