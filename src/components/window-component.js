@@ -114,8 +114,15 @@ class WindowComponent extends HTMLElement {
                 }
 
                 .window.unfocused {
-                    opacity: 0.9;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                    background: transparent;
+                    backdrop-filter: none;
+                    box-shadow: none;
+                    border-radius: 0;
+                }
+
+                .window.unfocused .title-bar,
+                .window.unfocused .resize-handle {
+                    display: none;
                 }
 
                 .window.minimizing {
@@ -222,6 +229,11 @@ class WindowComponent extends HTMLElement {
                     height: calc(100% - 36px);
                     overflow: auto;
                     background: white;
+                }
+
+                .window.unfocused .window-content {
+                    height: 100%;
+                    background: transparent;
                 }
 
                 .resize-handle {
@@ -580,17 +592,6 @@ class WindowComponent extends HTMLElement {
             id: event.target.id || '',
             textContent: event.target.textContent?.slice(0, 30) || ''
         };
-        
-        // console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
-        //     type: event.type,
-        //     target: targetInfo,
-        //     bubbles: event.bubbles,
-        //     composed: event.composed,
-        //     eventPhase: event.eventPhase,
-        //     currentTarget: event.currentTarget.constructor.name,
-        //     windowId: this.windowId,
-        //     appName: this.appName
-        // });
         
         // Store event flow data for global access
         if (!window.eventFlowTest) {
