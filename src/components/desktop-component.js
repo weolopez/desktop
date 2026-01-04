@@ -225,33 +225,6 @@ class DesktopComponent extends HTMLElement {
                     --desktop-wallpaper: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);
                 }
 
-                :host([dock-position="bottom"]) .dock-container {
-                    bottom: 8px;
-                    left: 50%;
-                    top: unset;
-                    right: unset;
-                    transform: translateX(-50%);
-                    flex-direction: row;
-                }
-
-                :host([dock-position="left"]) .dock-container {
-                    left: 8px;
-                    top: 50%;
-                    bottom: unset;
-                    right: unset;
-                    transform: translateY(-50%);
-                    flex-direction: column;
-                }
-
-                :host([dock-position="right"]) .dock-container {
-                    right: 8px;
-                    top: 50%;
-                    bottom: unset;
-                    left: unset;
-                    transform: translateY(-50%);
-                    flex-direction: column;
-                }
-
                 .desktop-surface {
                     width: 100%;
                     height: 100%;
@@ -269,11 +242,6 @@ class DesktopComponent extends HTMLElement {
                 .desktop-content {
                     flex: 1;
                     position: relative;
-                }
-
-                .dock-container {
-                    position: absolute;
-                    z-index: 999;
                 }
 
                 :host([show-desktop-icons="false"]) .desktop-icons {
@@ -489,6 +457,13 @@ class DesktopComponent extends HTMLElement {
     const nextIndex = (currentIndex + 1) % wallpapers.length;
     const newWallpaper = wallpapers[nextIndex];
     this.currentWallpaper = newWallpaper; // triggers attributeChangedCallback which persists
+  }
+
+  _updateDockPosition(newValue) {
+    const dock = this.shadowRoot.querySelector('dock-component');
+    if (dock) {
+      dock.setAttribute('dock-position', newValue);
+    }
   }
 
   _updateGridSnap(enabled) {

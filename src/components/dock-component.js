@@ -1,6 +1,10 @@
 import { MESSAGES } from '../events/message-types.js';
 import eventBus from '../events/event-bus.js';
 class DockComponent extends HTMLElement {
+    static get observedAttributes() {
+        return ['config', 'dock-position'];
+    }
+
     constructor(confg) {
         super();
         this.attachShadow({ mode: 'open' });
@@ -8,6 +12,9 @@ class DockComponent extends HTMLElement {
     }
 
     async connectedCallback() {
+        if (!this.hasAttribute('dock-position')) {
+            this.setAttribute('dock-position', 'bottom');
+        }
         const configURL = this.getAttribute("config") || '/desktop/dock.js';
         const { APPS } = await import(configURL);
 
@@ -17,20 +24,46 @@ class DockComponent extends HTMLElement {
         this.setupEventListeners();
     }
 
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue === newValue) return;
+        if (name === 'dock-position') {
+            this.render();
+        }
+    }
+
     render() {
+        const position = this.getAttribute('dock-position') || 'bottom';
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
                     display: block;
                     pointer-events: auto;
                     width: fit-content;
-                    margin: 0 auto;
+                    position: absolute;
+                    z-index: 999;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                :host([dock-position="bottom"]) {
+                    bottom: 8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                }
+
+                :host([dock-position="left"]) {
+                    left: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                }
+
+                :host([dock-position="right"]) {
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
                 }
 
                 .dock-container {
                     display: flex;
-                    align-items: end;
-                    justify-content: center;
                     padding: 8px 16px;
                     background: rgba(255, 255, 255, 0.2);
                     backdrop-filter: blur(20px);
@@ -41,24 +74,65 @@ class DockComponent extends HTMLElement {
                     position: relative;
                 }
 
+                :host([dock-position="bottom"]) .dock-container {
+                    flex-direction: row;
+                    align-items: end;
+                }
+
+                :host([dock-position="left"]) .dock-container,
+                :host([dock-position="right"]) .dock-container {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
                 .dock-apps {
                     display: flex;
-                    align-items: end;
                     gap: 16px;
                 }
 
+                :host([dock-position="bottom"]) .dock-apps {
+                    flex-direction: row;
+                    align-items: end;
+                }
+
+                :host([dock-position="left"]) .dock-apps,
+                :host([dock-position="right"]) .dock-apps {
+                    flex-direction: column;
+                    align-items: center;
+                }
+
                 .dock-separator {
-                    width: 1px;
-                    height: 32px;
                     background: rgba(255, 255, 255, 0.4);
                     margin: 0 4px;
+                }
+
+                :host([dock-position="bottom"]) .dock-separator {
+                    width: 1px;
+                    height: 32px;
                     align-self: end;
+                }
+
+                :host([dock-position="left"]) .dock-separator,
+                :host([dock-position="right"]) .dock-separator {
+                    width: 32px;
+                    height: 1px;
+                    margin: 4px 0;
                 }
 
                 .dock-minimized {
                     display: flex;
-                    align-items: end;
                     gap: 8px;
+                }
+
+                :host([dock-position="bottom"]) .dock-minimized {
+                    flex-direction: row;
+                    align-items: end;
+                }
+
+                :host([dock-position="left"]) .dock-minimized,
+                :host([dock-position="right"]) .dock-minimized {
+                    flex-direction: column;
+                    align-items: center;
                 }
 
                 .dock-icon {

@@ -71,7 +71,7 @@
             "isWebComponent": true,
             "tagName": "dock-component",
             "config": {
-              "constructorArgs": [],
+              "attributes": { "config": "/desktop/dock.js", "dock-position": "bottom" },
               "postInit": null
             }
           }
