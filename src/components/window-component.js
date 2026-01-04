@@ -541,19 +541,12 @@ class WindowComponent extends HTMLElement {
     focus() {
         this.isFocused = true;
         
-        // Dispatch event to request focus from parent/manager
-        document.querySelector(".desktop-content").dispatchEvent(new CustomEvent('window-request-focus', { 
-            bubbles: true, 
-            composed: true,
-            detail: { windowId: this.windowId }
-        }));
-        
         // Update visual state
         const window = this.shadowRoot.querySelector('.window');
         window.classList.remove('unfocused');
         window.classList.add('focused');
         
-        // Notify other windows to unfocus
+        // Notify other windows to unfocus and bring to front
         eventBus.publish(MESSAGES.WINDOW_FOCUS, {
             windowId: this.windowId,
             appName: this.appName

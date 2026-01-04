@@ -19,24 +19,6 @@ export class WindowManager {
     setupEventListeners() {
         if (!this.desktopComponent) return;
         
-        // Listen for window focus requests bubbling up from window components
-        document.querySelector(".desktop-content").addEventListener('window-request-focus', (e) => {
-            const target = e.target;
-            const id = e.detail.windowId
-            const children = target.children
-            //for each child look for attribute called windowId and match it with id
-            for (let i = 0; i < children.length; i++) {
-                const child = children[i];
-                if (child.windowId === id) {
-                    const targetWindow = child;
-                    if (targetWindow && targetWindow.tagName === 'WINDOW-COMPONENT') {
-                        targetWindow.style.zIndex = this.getNextZIndex();
-                    }
-                    break;
-                }
-            }
-        });
-
         // Window management events
         document.addEventListener(MESSAGES.WINDOW_CLOSED, (e) => {
             this.handleWindowClose(e.detail);
@@ -106,10 +88,12 @@ export class WindowManager {
     handleWindowFocus(details) {
         const { windowId, appName } = details;
         
-        // Unfocus all other windows
+        // Unfocus all other windows and bring target to front
         const windows = this.desktopComponent.getWindows();
         windows.forEach(window => {
-            if (window.windowState && window.windowState.id !== windowId) {
+            if (window.windowId === windowId) {
+                window.style.zIndex = this.getNextZIndex();
+            } else {
                 window.unfocus();
             }
         });
