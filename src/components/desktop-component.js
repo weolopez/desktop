@@ -20,6 +20,11 @@ class DesktopComponent extends HTMLElement {
 
   constructor() {
     super();
+    this.body = document.body;
+    this.desktopContent = document.createElement("div");
+    this.desktopContent.classList.add("desktop-content");
+    this.body.appendChild(this.desktopContent);
+
     this.attachShadow({ mode: "open" })
 
     // Legacy service references will be populated after startup
@@ -188,10 +193,36 @@ class DesktopComponent extends HTMLElement {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     
                     /* CSS Custom Properties for reactive theming */
+                    --desktop-wallpaper: var(--wallpaper-gradient);
                     --dock-position: bottom;
                     --accent-color: #007AFF;
                     --grid-snap-size: 20px;
                     --desktop-icons-visible: block;
+                }
+
+                .desktop-background {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: -1;
+                    background: var(--desktop-wallpaper);
+                }
+
+                :host([wallpaper="gradient"]) {
+                    --desktop-wallpaper: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                }
+
+                :host([wallpaper="monterey"]) {
+                    --desktop-wallpaper: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%);
+                }
+
+                :host([wallpaper="big-sur"]) {
+                    --desktop-wallpaper: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+                }
+                :host([wallpaper="ice-blue"]) {
+                    --desktop-wallpaper: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);
                 }
 
                 :host([dock-position="bottom"]) .dock-container {
@@ -257,15 +288,13 @@ class DesktopComponent extends HTMLElement {
                 }
             </style>
             
+            <div class="desktop-background"></div>
+            
             <div class="desktop-surface">
-                <div class="desktop-content">
-                    <slot></slot>
-                </div>
             </div>
         `;
     // Apply current attribute values to CSS custom properties
     this._updateAccentColor(this.getAttribute("accent-color") || "#007AFF");
-    this._updateWallpaper(this.getAttribute("wallpaper") || "gradient");
   }
 
   setupPasteDrop() {
@@ -365,9 +394,11 @@ class DesktopComponent extends HTMLElement {
 
   // Methods to be called by services
   addWindow(windowElement) {
-    this.shadowRoot.querySelector(".desktop-content").appendChild(
+    document.querySelector(".desktop-content").appendChild(
       windowElement,
     );
+    // let body = document.body;
+    // body.appendChild(windowElement);
   }
 
   /**
@@ -432,21 +463,15 @@ class DesktopComponent extends HTMLElement {
   }
 
   getWindows() {
-    return this.shadowRoot.querySelectorAll("window-component");
+    return document.querySelectorAll("window-component");
   }
 
   getDesktopSurface() {
-    return this.shadowRoot.querySelector(".desktop-surface");
+    return document.querySelector(".desktop-surface");
   }
 
   _updateWallpaper(wallpaper) {
-    const wallpapers = {
-      "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      "monterey": "linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%)",
-      "big-sur": "linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)",
-      "ice-blue": "linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%)"
-    };
-    document.body.style.background = wallpapers[wallpaper] || wallpapers.gradient;
+    // Wallpaper is handled by CSS attribute selectors
   }
 
   // Wallpaper helpers (migrated from WallpaperManager)
