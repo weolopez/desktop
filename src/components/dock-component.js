@@ -5,7 +5,7 @@ class DockComponent extends HTMLElement {
         return ['config', 'dock-position'];
     }
 
-    constructor(confg) {
+    constructor() {
         super();
         this.attachShadow({ mode: 'open' });
         this.minimizedWindows = [];
@@ -221,6 +221,11 @@ class DockComponent extends HTMLElement {
 
             const { appId, windowId } = icon.dataset;
             windowId ? this.restoreWindow(windowId) : this.launchApp(this.apps.find(a => a.id === appId));
+        });
+
+        eventBus.subscribe(MESSAGES.APP_LAUNCHED, (app) => {
+            alert("App launched event received:", app);
+            // app : icon : "📦" name : "github-explorer" sourceUrl : "/experiments/editor/wc/github-explorer.js" tag : "github-explorer"
         });
     }
 

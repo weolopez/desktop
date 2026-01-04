@@ -151,9 +151,7 @@ class DesktopComponent extends HTMLElement {
 
   async setupAppEventListeners() {
     eventBus.subscribe(MESSAGES.LAUNCH_APP, await this.addApp.bind(this));
-    // new CustomEvent('COMPONENT_REGISTERED' ` detail: { mimeType, success: true, tagName }
     document.addEventListener('COMPONENT_REGISTERED', async (e) => {
-      // if e.detail.error alert it
       if (e.detail.error) {
         alert(`Error registering component: ${e.detail.error}`);
         return;
@@ -419,7 +417,7 @@ class DesktopComponent extends HTMLElement {
     const content = document.createElement(app.tag || "div");
     this._createWindow(app, content);
 
-    eventBus.publish(MESSAGES.APP_LAUNCHED, { name: app.name });
+    eventBus.publish(MESSAGES.APP_LAUNCHED, app);
   }
 
   addContent(config) {
