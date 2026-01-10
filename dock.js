@@ -16,6 +16,14 @@ export const APPS = [
         onstartup: false 
     },
     { 
+        id: 'chat2', 
+        name: 'Chat2', 
+        icon: '💬2', 
+        sourceUrl: '/experiments/vibe-coder/vibe-coder-chat.js', 
+        tag: "vibe-coder-chat", 
+        onstartup: false 
+    },
+    { 
         id: 'user-management', 
         name: 'User Management', 
         icon: '👨‍⚕️', 
@@ -29,7 +37,7 @@ export const APPS = [
         icon: '🔮', 
         sourceUrl: '/resume-component.js', 
         tag: "resume-component", 
-        onstartup: true,
+        onstartup: false,
         singleton: true 
     },
     { 
@@ -63,15 +71,17 @@ export const APPS = [
         icon: '🛠️',
         sourceUrl: '/experiments/wc/vibe-event-debugger.js',
         tag: "vibe-event-debugger",
-        onstartup: false
+        onstartup: false,
+        singleton: true
     },
     { 
-        id: 'safari', 
-        name: 'Safari', 
+        id: 'controls', 
+        name: 'Controls', 
         icon: '🧭', 
-        sourceUrl: '../apps/safari-webapp.js', 
-        tag: "safari-webapp", 
-        onstartup: false 
+        sourceUrl: '/experiments/vibe-coder/vibe-coder-controls.js', 
+        tag: "vibe-coder-controls.js", 
+        onstartup: false,
+        singleton: true 
     }, // add /wc/mouse-trail.js a mouse trail
     { 
         id: 'mouse-trail', 

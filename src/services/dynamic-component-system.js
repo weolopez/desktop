@@ -213,11 +213,11 @@ export function initializeEventHandlers(registry) {
             }
         } catch (error) {
             console.error(`Failed to register component for ${mimeType}:`, error);
-            document.dispatchEvent(new CustomEvent('COMPONENT_REGISTERED', {
-                bubbles: true,
-                composed: true,
-                detail: { mimeType, success: false, error: error.message }
-            }));
+            // document.dispatchEvent(new CustomEvent('COMPONENT_REGISTERED', {
+            //     bubbles: true,
+            //     composed: true,
+            //     detail: { mimeType, success: false, error: error.message }
+            // }));
         }
     });
 

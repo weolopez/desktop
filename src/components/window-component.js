@@ -7,6 +7,7 @@ class WindowComponent extends HTMLElement {
         
         // Window properties
         this.windowId = 'window-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
         this.appName = this.getAttribute('app-name') || 'Untitled';
         this.appIcon = this.getAttribute('app-icon') || '📄';
         this.sourceUrl = this.getAttribute('source-url') || '';
@@ -171,6 +172,10 @@ class WindowComponent extends HTMLElement {
                     background: #28ca42;
                 }
 
+                .traffic-light.edit {
+                    background: #007aff;
+                }
+
                 .traffic-light:hover {
                     filter: brightness(1.1);
                     transform: scale(1.1);
@@ -206,6 +211,17 @@ class WindowComponent extends HTMLElement {
                     transform: translate(-50%, -50%);
                     font-size: 8px;
                     color: rgba(0, 0, 0, 0.6);
+                    font-weight: bold;
+                }
+
+                .traffic-light.edit:hover::after {
+                    content: '✎';
+                    position: absolute;
+                    top: 45%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 8px;
+                    color: rgba(255, 255, 255, 0.9);
                     font-weight: bold;
                 }
 
@@ -314,6 +330,7 @@ class WindowComponent extends HTMLElement {
                         <div class="traffic-light close" data-action="close"></div>
                         <div class="traffic-light minimize" data-action="minimize"></div>
                         <div class="traffic-light maximize" data-action="maximize"></div>
+                        <div class="traffic-light edit" data-action="edit"></div>
                     </div>
                     
                     <div class="window-title">
@@ -488,7 +505,17 @@ class WindowComponent extends HTMLElement {
             case 'maximize':
                 this.maximize();
                 break;
+            case 'edit':
+                this.edit();
+                break;
         }
+    }
+
+    edit() {
+        eventBus.publish(MESSAGES.FINDER_FILE_EDIT, {
+            filePath: this.sourceUrl || this.appTag,
+            windowId: this.windowId
+        });
     }
 
     close() {

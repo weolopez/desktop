@@ -68,6 +68,8 @@ export const MESSAGES = {
     FINDER_ITEMS_TRASHED: 'finder-items-trashed',
     FINDER_ITEMS_MOVED: 'finder-items-moved',
     FINDER_FILE_OPENED: 'finder-file-opened',
+    FINDER_FILE_EDITED: 'finder-file-edited',
+    FINDER_FILE_EDIT: 'finder-file-edit',
     
     // Finder file content events
     FINDER_FILE_CONTENT: 'finder-file-content',
@@ -228,6 +230,14 @@ export const MESSAGES = {
  * @typedef {Object} FinderFileOpenedPayload
  * @property {string} path - File path
  * @property {string} name - File name
+ */
+
+/**
+ * @typedef {Object} FinderFileEditedPayload
+ * @property {string} id - File unique identifier (e.g. SHA)
+ * @property {string} name - File name
+ * @property {string} content - File content
+ * @property {string} path - File path
  */
 
 /**
@@ -495,6 +505,10 @@ export function validateMessagePayload(messageType, payload) {
             return typeof payload.mode === 'string';
         case MESSAGES.FINDER_FILE_OPENED:
             return typeof payload.path === 'string' && typeof payload.name === 'string';
+        case MESSAGES.FINDER_FILE_EDIT:
+            return typeof payload.filePath === 'string';
+        case MESSAGES.FINDER_FILE_EDITED:
+            return typeof payload.id === 'string' && typeof payload.path === 'string' && typeof payload.content === 'string';
         case MESSAGES.FINDER_FILE_CONTENT:
             return typeof payload.path === 'string' && 
                    typeof payload.name === 'string' && 
@@ -586,6 +600,8 @@ export function getMessageDescription(messageType) {
         [MESSAGES.FINDER_VIEW_MODE_CHANGED]: 'Finder view mode was changed',
         [MESSAGES.FINDER_SELECTION_CHANGED]: 'Finder selection was changed',
         [MESSAGES.FINDER_FILE_OPENED]: 'File was opened in Finder',
+        [MESSAGES.FINDER_FILE_EDITED]: 'File was opened for editing',
+        [MESSAGES.FINDER_FILE_EDIT]: 'Request to edit a file',
         [MESSAGES.FINDER_FILE_CONTENT]: 'File content is available for processing',
         [MESSAGES.FINDER_FILE_REFERENCE]: 'File reference is available (binary or large file)',
         [MESSAGES.WALLPAPER_CHANGED]: 'Desktop wallpaper was changed',

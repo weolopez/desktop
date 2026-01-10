@@ -153,7 +153,7 @@ class DesktopComponent extends HTMLElement {
     eventBus.subscribe(MESSAGES.LAUNCH_APP, await this.addApp.bind(this));
     document.addEventListener('COMPONENT_REGISTERED', async (e) => {
       if (e.detail.error) {
-        alert(`Error registering component: ${e.detail.error}`);
+        console.error(`Error registering component: ${e.detail.error}`, e.detail);
         return;
       }
       if (!e.detail.launch) return
@@ -384,7 +384,8 @@ class DesktopComponent extends HTMLElement {
     } = config;
 
     const windowEl = document.createElement("window-component");
-    
+    //set data-window-id attribute
+    windowEl.setAttribute('data-window-id', windowEl.windowId);
     // Set properties
     Object.assign(windowEl, {
       appName: name,
