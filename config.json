@@ -8,7 +8,7 @@
           
           {
             "name": "DynamicComponentSystem",
-            "path": "./dynamic-component-system.js",
+            "path": "/desktop/src/services/dynamic-component-system.js",
             "required": true,
             "priority": 1,
             "dependencies": [],
@@ -27,20 +27,8 @@
             "dependencies": [],
             "enabled": true,
             "config": {
-              "constructorArgs": ["deps.AppService"],
+              "constructorArgs": ["deps.DynamicComponentSystem"],
               "postInit": null
-            }
-          },
-          {
-            "name": "AppService",
-            "path": "/desktop/src/services/dynamic-component-system.js",
-            "required": false,
-            "priority": 1,
-            "enabled": true,
-            "config": {
-              "constructorArgs": [],
-              "postInit": "init",
-              "postInitArgs": []
             }
           }
         ]
