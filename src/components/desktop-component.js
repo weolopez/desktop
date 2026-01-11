@@ -25,8 +25,6 @@ class DesktopComponent extends HTMLElement {
     this.desktopContent.classList.add("desktop-content");
     this.body.appendChild(this.desktopContent);
 
-    this.attachShadow({ mode: "open" })
-
     // Legacy service references will be populated after startup
     this.appService = null;
     this.contextMenuManager = null;
@@ -180,9 +178,9 @@ class DesktopComponent extends HTMLElement {
   }
 
   render() {
-    this.shadowRoot.innerHTML = `
+    this.innerHTML = `
             <style>
-                :host {
+                desktop-component {
                     display: block;
                     width: 100vw;
                     height: 100vh;
@@ -208,18 +206,18 @@ class DesktopComponent extends HTMLElement {
                     background: var(--desktop-wallpaper);
                 }
 
-                :host([wallpaper="gradient"]) {
+                desktop-component[wallpaper="gradient"] {
                     --desktop-wallpaper: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 }
 
-                :host([wallpaper="monterey"]) {
+                desktop-component[wallpaper="monterey"] {
                     --desktop-wallpaper: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #764ba2 100%);
                 }
 
-                :host([wallpaper="big-sur"]) {
+                desktop-component[wallpaper="big-sur"] {
                     --desktop-wallpaper: linear-gradient(180deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
                 }
-                :host([wallpaper="ice-blue"]) {
+                desktop-component[wallpaper="ice-blue"] {
                     --desktop-wallpaper: linear-gradient(to bottom, #dff3ff 0%, #0088ff 100%);
                 }
 
@@ -242,11 +240,11 @@ class DesktopComponent extends HTMLElement {
                     position: relative;
                 }
 
-                :host([show-desktop-icons="false"]) .desktop-icons {
+                desktop-component[show-desktop-icons="false"] .desktop-icons {
                     display: none;
                 }
 
-                :host([grid-snap="true"]) .desktop-content {
+                desktop-component[grid-snap="true"] .desktop-content {
                     background-image: 
                         linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
                         linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px);
@@ -360,7 +358,7 @@ class DesktopComponent extends HTMLElement {
 
   // Methods to be called by services
   addWindow(windowElement) {
-    document.querySelector(".desktop-content").appendChild(
+    return document.querySelector(".desktop-content").appendChild(
       windowElement,
     );
     // let body = document.body;
@@ -383,7 +381,7 @@ class DesktopComponent extends HTMLElement {
       isMinimized = false
     } = config;
 
-    const windowEl = document.createElement("window-component");
+    let windowEl = document.createElement("window-component");
     //set data-window-id attribute
     windowEl.setAttribute('data-window-id', windowEl.windowId);
     // Set properties
@@ -395,22 +393,23 @@ class DesktopComponent extends HTMLElement {
       x, y, width, height,
       isMinimized
     });
+    windowEl=this.addWindow(windowEl);
 
+    const slot = windowEl.querySelector('#window-slot') || windowEl;
     if (content) {
       if (typeof content === "string") {
-        windowEl.innerHTML = content;
+        slot.innerHTML = content;
       } else {
-        windowEl.appendChild(content);
+        slot.appendChild(content);
       }
     }
 
-    this.addWindow(windowEl);
     return windowEl;
   }
 
   async addApp(app) {
     // Singleton check
-    if (app.singleton && this.shadowRoot.querySelector(app.tag)) {
+    if (app.singleton && this.querySelector(app.tag)) {
       console.warn(`App ${app.name} is already running.`);
       return;
     }
@@ -459,7 +458,7 @@ class DesktopComponent extends HTMLElement {
   }
 
   _updateDockPosition(newValue) {
-    const dock = this.shadowRoot.querySelector('dock-component');
+    const dock = this.querySelector('dock-component');
     if (dock) {
       dock.setAttribute('dock-position', newValue);
     }
@@ -483,7 +482,7 @@ class DesktopComponent extends HTMLElement {
   }
 
   showContextMenu(x, y) {
-    const contextMenu = this.shadowRoot.getElementById("contextMenu");
+    const contextMenu = this.getElementById("contextMenu");
     if (!contextMenu) return;
 
     contextMenu.style.display = "block";
@@ -500,7 +499,7 @@ class DesktopComponent extends HTMLElement {
   }
 
   hideContextMenu() {
-    const contextMenu = this.shadowRoot.getElementById("contextMenu");
+    const contextMenu = this.getElementById("contextMenu");
     if (contextMenu) {
       contextMenu.style.display = "none";
     }
@@ -510,9 +509,9 @@ class DesktopComponent extends HTMLElement {
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = menuHtml;
     while (tempDiv.firstChild) {
-      this.shadowRoot.appendChild(tempDiv.firstChild);
+      this.appendChild(tempDiv.firstChild);
     }
-    this.shadowRoot.appendChild(style);
+    this.appendChild(style);
   }
 
   logEventFlow(level, event) {

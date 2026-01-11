@@ -366,7 +366,7 @@ export class StartupManager {
       appendTarget = document.querySelector('desktop-component').shadowRoot;
     } else {
       // Default to desktop surface for most components
-      appendTarget = document.querySelector('desktop-component').shadowRoot.children[2];
+      appendTarget = document.querySelector('desktop-component').children[2];
     }
     
     appendTarget.appendChild(customElement);

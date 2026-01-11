@@ -3,7 +3,6 @@ import { MESSAGES } from "../events/message-types.js";
 class WindowComponent extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
         
         // Window properties
         this.windowId = 'window-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -86,9 +85,9 @@ class WindowComponent extends HTMLElement {
     }
 
     render() {
-        this.shadowRoot.innerHTML = `
+        this.innerHTML = `
             <style>
-                :host {
+               window-component  {
                     position: absolute;
                     top: 0;
                     left: 0;
@@ -339,8 +338,7 @@ class WindowComponent extends HTMLElement {
                     </div>
                 </div>
                 
-                <div class="window-content">
-                    <slot></slot>
+                <div id="window-slot" class="window-content">
                 </div>
                 
                 <!-- Resize handles -->
@@ -357,11 +355,11 @@ class WindowComponent extends HTMLElement {
     }
 
     setupEventListeners() {
-        const titleBar = this.shadowRoot.querySelector('.title-bar');
-        const window = this.shadowRoot.querySelector('.window');
+        const titleBar = this.querySelector('.title-bar');
+        const window = this.querySelector('.window');
 
         // Traffic light actions
-        this.shadowRoot.addEventListener('click', (e) => {
+        titleBar.addEventListener('click', (e) => {
             const action = e.target.getAttribute('data-action');
             if (action) {
                 e.stopPropagation();
@@ -383,7 +381,7 @@ class WindowComponent extends HTMLElement {
         });
 
         // Window resizing
-        this.shadowRoot.addEventListener('mousedown', (e) => {
+        this.addEventListener('mousedown', (e) => {
             const resizeHandle = e.target.getAttribute('data-resize');
             if (resizeHandle) {
                 this.isResizing = true;
@@ -415,7 +413,7 @@ class WindowComponent extends HTMLElement {
 
         // Prevent desktop context menu from showing when right-clicking on window content
         // but allow the browser's native context menu for the content area
-        this.shadowRoot.addEventListener('contextmenu', (e) => {
+        this.addEventListener('contextmenu', (e) => {
             // Only stop propagation if not clicking on the content area
             if (!e.target.closest('.window-content')) {
                 e.stopPropagation();
@@ -527,7 +525,7 @@ class WindowComponent extends HTMLElement {
     }
 
     minimize() {
-        const window = this.shadowRoot.querySelector('.window');
+        const window = this.querySelector('.window');
         window.classList.add('minimizing');
         
         eventBus.publish(MESSAGES.WINDOW_MINIMIZE, {
@@ -570,7 +568,7 @@ class WindowComponent extends HTMLElement {
     }
 
     restore() {
-        const window = this.shadowRoot.querySelector('.window');
+        const window = this.querySelector('.window');
         this.style.display = 'block';
         window.classList.remove('minimizing');
         this.isMinimized = false;
@@ -581,7 +579,7 @@ class WindowComponent extends HTMLElement {
         this.isFocused = true;
         
         // Update visual state
-        const window = this.shadowRoot.querySelector('.window');
+        const window = this.querySelector('.window');
         window.classList.remove('unfocused');
         window.classList.add('focused');
         
@@ -594,7 +592,7 @@ class WindowComponent extends HTMLElement {
 
     unfocus() {
         this.isFocused = false;
-        const window = this.shadowRoot.querySelector('.window');
+        const window = this.querySelector('.window');
         window.classList.remove('focused');
         window.classList.add('unfocused');
     }
@@ -605,7 +603,7 @@ class WindowComponent extends HTMLElement {
     }
 
     updateSize() {
-        const window = this.shadowRoot.querySelector('.window');
+        const window = this.querySelector('.window');
         window.style.width = `${this.width}px`;
         window.style.height = `${this.height}px`;
     }

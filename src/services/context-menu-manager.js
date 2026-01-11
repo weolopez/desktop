@@ -55,6 +55,7 @@ export class ContextMenuManager {
   }
 
   init() {
+    this.desktopComponent = document.querySelector('desktop-component');
     if (!this.desktopComponent) {
       console.warn('⚠️ ContextMenuManager: desktop-component not found');
       return;
@@ -77,14 +78,14 @@ export class ContextMenuManager {
     );
 
     this.desktopComponent.addEventListener("click", (e) => {
-      const contextMenu = this.desktopComponent.shadowRoot.getElementById(
+      const contextMenu = this.desktopComponent.getElementById(
         "contextMenu",
       );
       if (contextMenu && !contextMenu.contains(e.target)) {
         this.desktopComponent.hideContextMenu();
       }
     });
-    const comp = this.desktopComponent.shadowRoot.getElementById("contextMenu");
+    const comp = this.desktopComponent.getElementById("contextMenu");
     comp.addEventListener("click", (e) => {
       if (e.target.hasAttribute("data-action")) {
         const action = e.target.getAttribute("data-action");

@@ -39,18 +39,6 @@
         "waitFor": "critical",
         "components": [
           {
-            "name": "ContextMenuManager",
-            "path": "./context-menu-manager.js",
-            "required": false,
-            "priority": 2,
-            "dependencies": [],
-            "enabled": true,
-            "config": {
-              "constructorArgs": [],
-              "postInit": null
-            }
-          },
-          {
             "name": "DockComponent",
             "path": "../components/dock-component.js",
             "required": false,
