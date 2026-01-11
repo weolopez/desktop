@@ -14,6 +14,7 @@
             "dependencies": [],
             "enabled": true,
             "config": {
+              "name": "ComponentRegistry",
               "constructorArgs": [],
               "postInit": null
             }
@@ -27,7 +28,7 @@
             "dependencies": [],
             "enabled": true,
             "config": {
-              "constructorArgs": ["deps.DynamicComponentSystem"],
+              "constructorArgs": [],
               "postInit": null
             }
           }
@@ -78,7 +79,7 @@
             "priority": 3,
             "enabled": true,
             "config": {
-              "constructorArgs": ["desktopComponent"],
+              "constructorArgs": [],
               "postInit": null
             }
           },

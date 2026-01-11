@@ -258,7 +258,7 @@ export function initializeEventHandlers(registry) {
  * @class DynamicComponentSystem
  * @description Main class to initialize and manage the dynamic component system.
  */
-export class DynamicComponentSystem {
+export default class DynamicComponentSystem {
     constructor() {
         this.setupEventListeners();
     }

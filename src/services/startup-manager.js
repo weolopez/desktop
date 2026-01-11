@@ -303,8 +303,9 @@ export class StartupManager {
       return this.instantiateWebComponent(config, moduleResult);
     }
 
-    const ComponentClass = moduleResult.default ||
+    const ComponentClass = 
                            moduleResult[config.name] ||
+                           moduleResult.default ||
                            Object.values(moduleResult)[0];
 
     if (!ComponentClass) {

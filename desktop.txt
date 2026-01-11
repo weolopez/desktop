@@ -13,7 +13,7 @@
             "dependencies": [],
             "enabled": true,
             "config": {
-              "constructorArgs": ["desktopComponent", "deps.AppService"],
+              "constructorArgs": ["weoComponent", "deps.AppService"],
               "postInit": null
             }
           }
