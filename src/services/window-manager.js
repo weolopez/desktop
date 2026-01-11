@@ -67,7 +67,7 @@ export class WindowManager {
         const { windowId, appName, appIcon, appTag } = details;
         
         // Add to dock's minimized windows
-        const dock = this.desktopComponent.shadowRoot.querySelector('dock-component');
+        const dock = this.desktopComponent.querySelector('dock-component');
         if (dock) {
             dock.minimizeWindow(windowId, appName, appIcon, appTag);
         }
