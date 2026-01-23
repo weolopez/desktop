@@ -1,0 +1,30 @@
+[
+    {
+        "id": "desktop",
+        "label": "Desktop & Dock",
+        "icon": "🖥️",
+        "path": "./panels/desktop-panel.js",
+        "tagName": "sys-pref-desktop-panel"
+    },
+    {
+        "id": "appearance",
+        "label": "Appearance",
+        "icon": "🎨",
+        "path": "./panels/appearance-panel.js",
+        "tagName": "sys-pref-appearance-panel"
+    },
+    {
+        "id": "notifications",
+        "label": "Notifications",
+        "icon": "🔔",
+        "path": "./panels/notifications-panel.js",
+        "tagName": "sys-pref-notifications-panel"
+    },
+    {
+        "id": "system",
+        "label": "System",
+        "icon": "⚙️",
+        "path": "./panels/system-panel.js",
+        "tagName": "sys-pref-system-panel"
+    }
+]

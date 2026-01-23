@@ -1,3 +1,5 @@
+import "/chat-component/chat-component.js" //TODO keep only for debugging
+
 /**
  * StartupManager - Orchestrates configurable component loading with dependency management
  * Provides phased, prioritized loading with graceful fallbacks for optional components

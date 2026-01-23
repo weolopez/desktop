@@ -25,9 +25,6 @@ class DesktopComponent extends HTMLElement {
     this.desktopContent.classList.add("desktop-content");
     this.body.appendChild(this.desktopContent);
 
-    // Legacy service references will be populated after startup
-    this.appService = null;
-    this.contextMenuManager = null;
     this.windowManager = null;
 
     // Storage service
@@ -93,7 +90,7 @@ class DesktopComponent extends HTMLElement {
 
     switch (name) {
       case "wallpaper":
-        this._updateWallpaper(newValue);
+        // this._updateWallpaper(newValue);
         this.storageService.setItem("desktop-wallpaper", newValue, 'preferences').catch(console.error);
         break;
       case "dock-position":
@@ -162,19 +159,6 @@ class DesktopComponent extends HTMLElement {
         sourceUrl: e.detail.url || e.detail.sourceUrl || ""
       });
     });
-    // eventBus.subscribe(MESSAGES.APP_LAUNCHED, () => {
-    //   console.log("App launched event received");
-    // });
-
-    // eventBus.subscribe(MESSAGES.WINDOW_CLOSED, () => {
-    //   setTimeout(() => {
-    //     console.log("Window closed event received");
-    //   }, 100);
-    // });
-
-    // eventBus.subscribe(MESSAGES.LAUNCH_FINDER_WEBAPP, (e) => {
-    //     eventBus.publish(MESSAGES.PUBLISH_TEXT, { texts: [e.detail.url] });
-    // });
   }
 
   render() {
@@ -281,13 +265,7 @@ class DesktopComponent extends HTMLElement {
       }
     });
 
-    // Add click event logging for testing event flow hierarchy
-    desktopSurface.addEventListener("click", (e) => {
-      this.logEventFlow("DESKTOP", e);
-      // Don't stop propagation - let events flow to windows and apps
-    });
   }
-  // 'apps/finder/finder-webapp.js' is a valid URL too
   _isValidUrl(text) {
     try {
       //if ends with .js, treat as URL
@@ -300,9 +278,6 @@ class DesktopComponent extends HTMLElement {
 
   handleFileDrop(e) {
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0 && this.appService) {
-      this.appService.handleFiles(files);
-    }
     //handle text if available
     if (e.dataTransfer.getData("text/plain")) {
       const text = e.dataTransfer.getData("text/plain");
@@ -338,7 +313,6 @@ class DesktopComponent extends HTMLElement {
         eventBus.publish(MESSAGES.PUBLISH_URL, { url: text });
       } else {
         const WEB_COMPONENT_TAG_REGEX = /customElements\.define\s*\(\s*['"`]([^'"`]+)['"`]/;
-        // check if text has a web component tag
         if (WEB_COMPONENT_TAG_REGEX.test(text)) {
           const detail = { code: text, mimeType: "application/javascript", launch: true };
           document.dispatchEvent(new CustomEvent('PUBLISH_COMPONENT', { detail }));
@@ -347,22 +321,10 @@ class DesktopComponent extends HTMLElement {
       }
     }
   }
-  // processImageFile(file) {
-  //     const reader = new FileReader();
-  //     reader.onload = (e) => {
-  //         const imageData = e.target.result;
-  //         this.previewService.launchPreview(imageData);
-  //     };
-  //     reader.readAsDataURL(file);
-  // }
-
-  // Methods to be called by services
   addWindow(windowElement) {
     return document.querySelector(".desktop-content").appendChild(
       windowElement,
     );
-    // let body = document.body;
-    // body.appendChild(windowElement);
   }
 
   /**
@@ -376,8 +338,8 @@ class DesktopComponent extends HTMLElement {
       sourceUrl = "",
       x = 150 + (Math.random() * 200),
       y = 150 + (Math.random() * 100),
-      width = 600,
-      height = 400,
+      width,
+      height,
       isMinimized = false
     } = config;
 
@@ -390,7 +352,9 @@ class DesktopComponent extends HTMLElement {
       appIcon: icon,
       sourceUrl,
       appTag: tag,
-      x, y, width, height,
+      x, y, 
+      width: width || 600,
+      height: height || 400,
       isMinimized
     });
     windowEl=this.addWindow(windowEl);
@@ -401,6 +365,33 @@ class DesktopComponent extends HTMLElement {
         slot.innerHTML = content;
       } else {
         slot.appendChild(content);
+      }
+
+      // If width or height weren't explicitly provided, measure the natural size of the content
+      if (width === undefined || height === undefined) {
+        const windowDiv = windowEl.querySelector('.window');
+        const windowContent = windowEl.querySelector('.window-content');
+        
+        if (windowDiv) {
+          // Temporarily set to auto to measure natural size
+          windowDiv.style.width = 'auto';
+          windowDiv.style.height = 'auto';
+          if (windowContent) windowContent.style.height = 'auto';
+          
+          // Measure the window dimensions (includes title bar and content)
+          const rect = windowDiv.getBoundingClientRect();
+          
+          if (width === undefined) {
+            windowEl.width = Math.max(Math.ceil(rect.width), 200);
+          }
+          if (height === undefined) {
+            windowEl.height = Math.max(Math.ceil(rect.height), 150);
+          }
+          
+          // Restore the window-content height calc and apply final measured size
+          if (windowContent) windowContent.style.height = ''; 
+          windowEl.updateSize();
+        }
       }
     }
 
@@ -430,14 +421,6 @@ class DesktopComponent extends HTMLElement {
 
   getWindows() {
     return document.querySelectorAll("window-component");
-  }
-
-  getDesktopSurface() {
-    return document.querySelector(".desktop-surface");
-  }
-
-  _updateWallpaper(wallpaper) {
-    // Wallpaper is handled by CSS attribute selectors
   }
 
   // Wallpaper helpers (migrated from WallpaperManager)
@@ -481,158 +464,6 @@ class DesktopComponent extends HTMLElement {
     this._notificationSoundsEnabled = enabled;
   }
 
-  showContextMenu(x, y) {
-    const contextMenu = this.getElementById("contextMenu");
-    if (!contextMenu) return;
-
-    contextMenu.style.display = "block";
-    contextMenu.style.left = `${x}px`;
-    contextMenu.style.top = `${y}px`;
-
-    const rect = contextMenu.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      contextMenu.style.left = `${x - rect.width}px`;
-    }
-    if (rect.bottom > window.innerHeight) {
-      contextMenu.style.top = `${y - rect.height}px`;
-    }
-  }
-
-  hideContextMenu() {
-    const contextMenu = this.getElementById("contextMenu");
-    if (contextMenu) {
-      contextMenu.style.display = "none";
-    }
-  }
-
-  appendContextMenu(menuHtml, style) {
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = menuHtml;
-    while (tempDiv.firstChild) {
-      this.appendChild(tempDiv.firstChild);
-    }
-    this.appendChild(style);
-  }
-
-  logEventFlow(level, event) {
-    return;
-    const timestamp = Date.now();
-    const targetInfo = {
-      tagName: event.target.tagName?.toLowerCase() || "unknown",
-      className: event.target.className || "",
-      id: event.target.id || "",
-      textContent: event.target.textContent?.slice(0, 30) || "",
-    };
-
-    console.log(`🖱️ [${level}] Event received at ${timestamp}:`, {
-      type: event.type,
-      target: targetInfo,
-      bubbles: event.bubbles,
-      composed: event.composed,
-      eventPhase: event.eventPhase,
-      currentTarget: event.currentTarget.constructor.name,
-    });
-
-    // Store event flow data for global access
-    if (!window.eventFlowTest) {
-      window.eventFlowTest = {
-        events: [],
-        clear: () => {
-          window.eventFlowTest.events = [];
-          console.log("🧹 Event flow test data cleared");
-        },
-        analyze: () => {
-          console.log("🔍 Event Flow Analysis:");
-          console.log("=".repeat(50));
-
-          if (window.eventFlowTest.events.length === 0) {
-            console.log(
-              "No events recorded. Click something in the System Preferences app!",
-            );
-            return;
-          }
-
-          // Group events by unique click sequence (within 50ms window)
-          const sequences = [];
-          let currentSequence = [];
-          let lastTimestamp = 0;
-
-          window.eventFlowTest.events.forEach((event) => {
-            if (event.timestamp - lastTimestamp > 50) {
-              if (currentSequence.length > 0) {
-                sequences.push([...currentSequence]);
-              }
-              currentSequence = [];
-            }
-            currentSequence.push(event);
-            lastTimestamp = event.timestamp;
-          });
-
-          if (currentSequence.length > 0) {
-            sequences.push(currentSequence);
-          }
-
-          sequences.forEach((sequence, index) => {
-            console.log(`\n📋 Event Sequence ${index + 1}:`);
-            sequence.forEach((event, eventIndex) => {
-              const phases = ["", "CAPTURING", "AT_TARGET", "BUBBLING"];
-              const phaseText = phases[event.eventPhase] || "UNKNOWN";
-              console.log(
-                `  ${
-                  eventIndex + 1
-                }. [${event.level}] ${event.type} - ${phaseText} phase`,
-              );
-              console.log(
-                `     Target: ${event.target.tagName}${
-                  event.target.id ? "#" + event.target.id : ""
-                }`,
-              );
-              if (event.appName) console.log(`     App: ${event.appName}`);
-              console.log(
-                `     Time: +${event.timestamp - sequence[0].timestamp}ms`,
-              );
-            });
-          });
-
-          console.log("\n✅ Actual Event Flow Discovered:");
-          console.log(
-            "   Window (mousedown) → App (click target) → Desktop (click bubbling)",
-          );
-          console.log(
-            "   This is correct DOM behavior: Target phase first, then bubbling up!",
-          );
-          console.log(
-            "\n💡 To test: Click buttons in System Preferences, then run eventFlowTest.analyze()",
-          );
-        },
-        help: () => {
-          console.log(`
-🖱️ Event Flow Test Utility
-=========================
-
-Commands:
-  eventFlowTest.clear()    - Clear recorded events
-  eventFlowTest.analyze()  - Analyze event flow patterns
-  eventFlowTest.help()     - Show this help
-
-How to test:
-1. Open System Preferences app
-2. Click various buttons/checkboxes
-3. Run eventFlowTest.analyze() to see the flow
-
-Expected flow: Desktop → Window → App
-          `);
-        },
-      };
-    }
-    window.eventFlowTest.events.push({
-      level,
-      timestamp,
-      type: event.type,
-      target: targetInfo,
-      eventPhase: event.eventPhase,
-    });
-  }
 }
 
 customElements.define("desktop-component", DesktopComponent);

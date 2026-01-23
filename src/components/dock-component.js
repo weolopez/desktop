@@ -70,15 +70,23 @@ class DockComponent extends HTMLElement {
         if (!this.hasAttribute('dock-position')) {
             this.setAttribute('dock-position', 'bottom');
         }
-        const configURL = this.getAttribute("config") || '/desktop/dock.js';
-        const { APPS } = await import(configURL);
-
-        this.apps = APPS.map(app => ({ ...app, running: app.id === 'finder' }));
-        this.apps.filter(a => a.onstartup).forEach(a => this.launchApp(a));
-        this.render();
-        this.setupEventListeners();
-        this.setupAutoHide();
-        this.updateScale();
+        const configURL = this.getAttribute("config") || '/desktop/dock.json';
+        
+        try {
+            const response = await fetch(configURL);
+            this.apps = await response.json();
+            
+            // Map running state
+            this.apps = this.apps.map(app => ({ ...app, running: app.id === 'finder' }));
+            this.apps.filter(a => a.onstartup).forEach(a => this.launchApp(a));
+            
+            this.render();
+            this.setupEventListeners();
+            this.setupAutoHide();
+            this.updateScale();
+        } catch (error) {
+            console.error('Failed to load dock config:', error);
+        }
     }
 
     attributeChangedCallback(name, oldValue, newValue) {

@@ -16,14 +16,6 @@ export const APPS = [
         onstartup: false 
     },
     { 
-        id: 'chat2', 
-        name: 'Chat2', 
-        icon: '💬2', 
-        sourceUrl: '/experiments/vibe-coder/vibe-coder-chat.js', 
-        tag: "vibe-coder-chat", 
-        onstartup: false 
-    },
-    { 
         id: 'user-management', 
         name: 'User Management', 
         icon: '👨‍⚕️', 
@@ -50,13 +42,13 @@ export const APPS = [
         singleton: true
     },
     { 
-        id: 'terminal', 
-        name: 'Terminal', 
-        icon: '⚫', 
-        sourceUrl: '../apps/terminal-webapp.js', 
-        tag: "terminal-webapp", 
+        id: 'xeyes', 
+        name: 'Xeyes', 
+        icon: '👁️', 
+        sourceUrl: '/experiments/xeyes.js', 
+        tag: "xeyes", 
         onstartup: false 
-    },
+    }, 
     {
         id: 'monaco-editor-instance',
         name: 'Monaco Editor Instance',
