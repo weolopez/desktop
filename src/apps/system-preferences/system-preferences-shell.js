@@ -29,7 +29,6 @@ class SystemPreferencesShell extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    height: 100%;
                     background: #f6f6f6;
                     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
                 }

@@ -55,23 +55,25 @@ const getContextMenu = () => {
 
 class DockComponent extends HTMLElement {
     static get observedAttributes() {
-        return ['config', 'dock-position'];
+        return ['configURL', 'dock-position'];
     }
 
-    constructor() {
+    constructor(configURL) {
         super();
         this.attachShadow({ mode: 'open' });
         this.minimizedWindows = [];
         this.autoHide = false;
         this.magnification = 1;
+        const urlParams = new URLSearchParams(window.location.search);
+        this.configURL = configURL || urlParams.get('configURL') || '/desktop/dock.json';
     }
 
     async connectedCallback() {
         if (!this.hasAttribute('dock-position')) {
             this.setAttribute('dock-position', 'bottom');
         }
-        const configURL = this.getAttribute("config") || '/desktop/dock.json';
-        
+        const configURL = this.getAttribute("configURL") || this.configURL;
+
         try {
             const response = await fetch(configURL);
             this.apps = await response.json();
@@ -247,6 +249,50 @@ class DockComponent extends HTMLElement {
                 :host([dock-position="left"]) .dock-icon.bouncing { --bounce-dir: 15px; animation-name: bounceX; }
                 :host([dock-position="right"]) .dock-icon.bouncing { --bounce-dir: -15px; animation-name: bounceX; }
 
+                .app-label {
+                    position: absolute;
+                    background: rgba(0, 0, 0, 0.6);
+                    backdrop-filter: blur(10px);
+                    color: white;
+                    padding: 4px 10px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    white-space: nowrap;
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.2s, transform 0.2s;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    z-index: 100;
+                }
+
+                :host([dock-position="bottom"]) .app-label {
+                    bottom: 130%;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(10px);
+                }
+
+                :host([dock-position="left"]) .app-label {
+                    left: 130%;
+                    top: 50%;
+                    transform: translateY(-50%) translateX(-10px);
+                }
+
+                :host([dock-position="right"]) .app-label {
+                    right: 130%;
+                    top: 50%;
+                    transform: translateY(-50%) translateX(10px);
+                }
+
+                .dock-icon:hover .app-label {
+                    opacity: 1;
+                }
+
+                :host([dock-position="bottom"]) .dock-icon:hover .app-label { transform: translateX(-50%) translateY(0) scale(0.8); }
+                :host([dock-position="left"]) .dock-icon:hover .app-label { transform: translateY(-50%) translateX(0) scale(0.8); }
+                :host([dock-position="right"]) .dock-icon:hover .app-label { transform: translateY(-50%) translateX(0) scale(0.8); }
+
                 .dock-icon.new-app { animation: popIn 0.3s ease; }
                 @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
 
@@ -285,6 +331,7 @@ class DockComponent extends HTMLElement {
                              data-app-url="${app.sourceUrl}"
                              data-app-name="${app.name}">
                             ${app.icon}
+                            <div class="app-label">${app.name}</div>
                             <div class="running-indicator${app.running ? ' visible' : ''}"></div>
                         </div>
                     `).join('')}
@@ -298,6 +345,7 @@ class DockComponent extends HTMLElement {
                                  data-window-id="${window.id}"
                                  data-app-name="${window.name}">
                                 ${window.icon}
+                                <div class="app-label">${window.name}</div>
                             </div>
                         `).join('')}
                     </div>

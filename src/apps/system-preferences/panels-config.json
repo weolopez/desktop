@@ -1,4 +1,4 @@
-[
+[ 
     {
         "id": "desktop",
         "label": "Desktop & Dock",
@@ -26,5 +26,12 @@
         "icon": "⚙️",
         "path": "./panels/system-panel.js",
         "tagName": "sys-pref-system-panel"
+    },
+    {
+        "id": "config-editor",
+        "label": "Config Editor",
+        "icon": "📝",
+        "path": "/desktop/src/apps/system-preferences/panels/config-editor-panel.js",
+        "tagName": "sys-pref-config-editor-panel"
     }
 ]

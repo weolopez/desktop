@@ -1,4 +1,4 @@
-[
+[ 
     { 
         "id": "finder", 
         "name": "Finder", 
@@ -71,7 +71,7 @@
         "name": "Controls", 
         "icon": "🧭", 
         "sourceUrl": "/experiments/vibe-coder/vibe-coder-controls.js", 
-        "tag": "vibe-coder-controls.js", 
+        "tag": "vibe-coder-controls", 
         "onstartup": false,
         "singleton": true 
     },

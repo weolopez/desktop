@@ -12,8 +12,8 @@ class SystemPreferencesWebapp extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    height: 100%;
-                    width: 100%;
+                    min-width: 510px;
+                    min-height: 525px;
                 }
                 system-preferences-shell {
                     height: 100%;

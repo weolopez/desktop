@@ -55,12 +55,12 @@ export class WindowManager {
             }
         });
 
-        if (count <= 1) { // <= 1 because the closing window is still in DOM
-            const dock = document.querySelector('dock-component');
-            if (dock) {
-                dock.closeApp(this.appService.getAppIdFromName(appName));
-            }
-        }
+        // if (count <= 1) { // <= 1 because the closing window is still in DOM
+        //     const dock = document.querySelector('dock-component');
+        //     if (dock) {
+        //         dock.closeApp(this.appService.getAppIdFromName(appName));
+        //     }
+        // }
     }
 
     handleWindowMinimize(details) {
