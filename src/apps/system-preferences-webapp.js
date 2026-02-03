@@ -12,10 +12,13 @@ class SystemPreferencesWebapp extends HTMLElement {
             <style>
                 :host {
                     display: block;
-                    min-width: 510px;
-                    min-height: 525px;
+                    min-width: 814;
+                    min-height: 773px;
+                    display: flex;
+                    height: 100%;
                 }
                 system-preferences-shell {
+                    display: flex;
                     height: 100%;
                     width: 100%;
                 }

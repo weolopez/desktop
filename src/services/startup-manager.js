@@ -1,4 +1,6 @@
-import "/desktop/src/apps/system-preferences/system-preferences-shell.js" //TODO keep only for debugging
+// import "/desktop/src/apps/system-preferences/system-preferences-shell.js" //TODO keep only for debugging
+import "/chat-component/chat-component.js" //TODO keep only for debugging
+
 
 /**
  * StartupManager - Orchestrates configurable component loading with dependency management
